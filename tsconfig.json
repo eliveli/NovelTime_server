@@ -1,0 +1,30 @@
+{
+    "extends": "@tsconfig/node16/tsconfig.json",
+     // 위 설정 + third party용 @types/모듈 설치 + import 사용 
+     // => 그렇지 않으면 (예시)express 모듈 사용시 콜백 타입이 any로서 에러.
+     //    @types/express 설치 후 모듈의 타입 설정 파일을 읽어올 때
+     //        express의 콜백 타입 읽기 import 가능, require() 불가능
+
+     "compilerOptions": {
+        //-@tsconfig/node16/tsconfig.json 기본 설정 (위에서 extends한 것)
+        // "lib": ["es2021"],
+        // "module": "commonjs",
+        // "target": "es2021",
+        // "strict": true,      // 여기에 "noImplicitAny": true 설정 포함
+        // "esModuleInterop": true,
+        // "skipLibCheck": true,
+        // "forceConsistentCasingInFileNames": true         
+        //----------------------------------------------------------------//
+
+         "module": "commonjs", // which system for the program AMD, UMD, System, CommonJS
+         "target": "es6",  // which level of JS support to target
+         "esModuleInterop": true,
+
+         "outDir": "dist", // where to put the compiled JS files
+    
+        // Recommended: Compiler complains about expressions implicitly typed as 'any'
+        "noImplicitAny": true, 
+      },
+      "include": ["src"], // which files to compile
+      "exclude": ["node_modules"], // which files to skip
+  }
