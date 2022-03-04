@@ -17,7 +17,7 @@ interface novelInfo {
   novelUrl: string;
 }
 
-const setNovel = async (novelInfo: novelInfo) => {
+export const setNovel = async (novelInfo: novelInfo) => {
   await pool
     .getConnection()
     .then((connection) => {
@@ -55,7 +55,7 @@ const setNovel = async (novelInfo: novelInfo) => {
     });
 };
 
-const getNovels = (novelTitle: string) => {
+export const getNovels = (novelTitle: string) => {
   return new Promise(async (resolve) => {
     await pool
       .getConnection()
@@ -79,5 +79,3 @@ const getNovels = (novelTitle: string) => {
       });
   });
 };
-
-export { setNovel, getNovels };

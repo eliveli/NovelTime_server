@@ -12,7 +12,7 @@ const genreFilter = {
 };
 
 // 스크랩: 완료: 시리즈 로판, 리디 로판, 리디 판타지
-scrapeKakape(genreFilter.kakape.RF, 2619); // scrapeKakape(genreNO, currentOrder)
+scrapeKakape(genreFilter.kakape.RF, 2713); // scrapeKakape(genreNO, currentOrder)
 // scrapeKakape(genreFilter.kakape.F, 369); // scrapeKakape(genreNO, currentOrder)
 // scrapeSeries(genreFilter.series.RF); // scrapeSeries(genreNO)
 // scrapeRidi(genreFilter.ridi.F); // scrapeRidi(genreNOs)

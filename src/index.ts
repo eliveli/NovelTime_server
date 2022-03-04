@@ -1,7 +1,7 @@
 import express from "express"; // import를 써야 express의 콜백(app.get("/", (req, res) ...에서 req, res)의 타입을 읽을 수 있음(@types/express 설치 후)
 
 // routes
-import novels from "./routes/api/novels";
+import novels from "./routes/novels";
 
 const cors = require("cors");
 
@@ -20,7 +20,7 @@ app.get("/", (req, res) => {
 });
 
 // use Routes
-app.use("/api/novels", novels);
+app.use("/novels", novels);
 
 const port = process.env.PORT || 8082;
 // left || right  :  if left is "falsy value" then get right    //falsy value: null, undefined, 0, "", '', ``, false, NaN(Not a Number), etc
