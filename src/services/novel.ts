@@ -1,4 +1,4 @@
-import pool from "./connect";
+import pool from "../configs/db";
 const query = {
   insertNovel: "INSERT INTO novelInfo values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
   getNovels: " SELECT * FROM novelInfo WHERE novelTitle like (?) ",
