@@ -1,9 +1,12 @@
 import puppeteer, { ElementHandle } from "puppeteer";
-import { setNovel } from "../../services/novel";
+import dotenv from "dotenv";
 import getCurrentTime from "./getCurrentTime";
-require("dotenv").config(); // 여기(이 명령어를 실행한 파일)에서만 환경변수 사용 가능
+import { setNovel } from "../../services/novel";
 
-let novelInfo = {
+dotenv.config(); // 여기(이 명령어를 실행한 파일)에서만 환경변수 사용 가능
+// require("dotenv").config();
+
+const novelInfo = {
   novelId: "",
   novelImg: "",
   novelTitle: "",
@@ -17,28 +20,27 @@ let novelInfo = {
 };
 
 // 스크래퍼 카카페용 (무한스크롤)
-async function scrapeKakape(genreNO: string, currentOrder: number) {
+export async function scrapeKakape(genreNO: string, currentOrder: number) {
   // 크로미엄에서 열기 (디폴트)
   const browser = await puppeteer.launch({
     headless: true, // 브라우저 화면 열려면 false
     // defaultViewport: { width: 800, height: 1080 }, // 실행될 브라우저의 화면 크기
 
-    //-크롬에서 열기 (when 카카페 기존 로그인된 상태로 작업 / but 로그인상태가 항상 유지되지 않음)
+    // -크롬에서 열기 (when 카카페 기존 로그인된 상태로 작업 / but 로그인상태가 항상 유지되지 않음)
     // executablePath: "C:/Program Files/Google/Chrome/Application/chrome.exe", // 크롬 경로
     // userDataDir: "C:/Users/user/AppData/Local/Google/Chrome/User Data",  // 크롬 사용자 정보를 가지는 경로
     // args: [],
   });
 
-  const novelListUrl: string =
-    "https://page.kakao.com/genre-total?categoryUid=11&subCategoryUid=" + genreNO;
+  const novelListUrl = `https://page.kakao.com/genre-total?categoryUid=11&subCategoryUid=${genreNO}`;
 
-  let totalNovelNO: number = currentOrder; //총 작품 수
-  let currentNovelNO: number = currentOrder; //현재 작품 번호
+  let totalNovelNO: number = currentOrder; // 총 작품 수
+  let currentNovelNO: number = currentOrder; // 현재 작품 번호
 
   // 반복. 브라우저 컨텍스트 열고 닫기. out of memory 방지
   // 시크릿창. 캐시나 쿠키 등을 공유하지 않음.
   // <중요> puppeteer.launch({headless:true}) 설정해야 context.close()로 브라우저 데이터 지울 수 있음.
-  secretWindow: while (totalNovelNO >= currentNovelNO) {
+  while (totalNovelNO >= currentNovelNO) {
     const context = await browser.createIncognitoBrowserContext();
 
     const page = await context.newPage();
@@ -59,7 +61,7 @@ async function scrapeKakape(genreNO: string, currentOrder: number) {
     await loginBtn.click(); // click, a new tab/window opens
     const newPage = (await newPagePromise) as puppeteer.Page; // declare new tab/window, now you can work with it
 
-    //-카카페 회원정보 입력
+    // -카카페 회원정보 입력
     // set id, pw
     let kakaoID: string;
     let kakaoPW: string;
@@ -76,15 +78,15 @@ async function scrapeKakape(genreNO: string, currentOrder: number) {
     }
 
     const idElement = await newPage.waitForSelector("#id_email_2");
-    await newPage.evaluate((kakaoID, idElement) => (idElement.value = kakaoID), kakaoID, idElement); //email
+    await newPage.evaluate((kakaoID, idElement) => (idElement.value = kakaoID), kakaoID, idElement); // email
     const pwElement = await newPage.waitForSelector("#id_password_3");
-    await newPage.evaluate((kakaoPW, pwElement) => (pwElement.value = kakaoPW), kakaoPW, pwElement); //password
+    await newPage.evaluate((kakaoPW, pwElement) => (pwElement.value = kakaoPW), kakaoPW, pwElement); // password
     await newPage.click(
       "#login-form > fieldset > div.set_login > div > label > span.ico_account.ico_check",
-    ); //check 로그인상태유지
-    await newPage.click("#login-form > fieldset > div.wrap_btn > button.btn_g.btn_confirm.submit"); //submit
+    ); // check 로그인상태유지
+    await newPage.click("#login-form > fieldset > div.wrap_btn > button.btn_g.btn_confirm.submit"); // submit
 
-    //-----------------------------------------------------------------------------------------//
+    // -----------------------------------------------------------------------------------------//
 
     // 새 창에서 로그인 후 화면 로그인 아이콘 바뀔 때까지 대기
     await page.waitForSelector("#kpw-header > div > div > div > button > img");
@@ -101,17 +103,17 @@ async function scrapeKakape(genreNO: string, currentOrder: number) {
     await page.click(newBtn);
     await page.click(searchBtn);
 
-    //총 작품 수 구하기
+    // 총 작품 수 구하기
     const regex = /[^0-9]/g; // 숫자가 아닌 문자열을 선택하는 정규식
     const noElement = await page.waitForSelector(
       "#root > div.jsx-885677927.mainContents.mainContents_pc.hiddenMenuContent > div > div > div.css-18fshcv > div.css-doe2ia",
     );
     const _novelNO = await page.evaluate((noElement) => noElement.textContent, noElement);
-    totalNovelNO = _novelNO.replace(regex, ""); //총 작품 수
+    totalNovelNO = _novelNO.replace(regex, ""); // 총 작품 수
 
     // 카카페 크롤러.
-    scrape: while (currentNovelNO <= totalNovelNO) {
-      console.log("currentNovelNO: " + currentNovelNO + ", totalNovelNO: " + totalNovelNO);
+    while (currentNovelNO <= totalNovelNO) {
+      console.log(`currentNovelNO: ${currentNovelNO}, totalNovelNO: ${totalNovelNO}`);
 
       // 작품 목록 받아오는 함수: 화면 최하단 이동(작품 페이지에서 무한스크롤로 받아옴)
       const getNovelList = async () => {
@@ -128,8 +130,8 @@ async function scrapeKakape(genreNO: string, currentOrder: number) {
       };
 
       // 작품 25개 단위로 새로 불러오기 (via 무한스크롤. 뒤로가기로 상세->목록 페이지이동한 상태)
-      const scrollCnt = Math.floor(currentNovelNO / 25); //Math.floor(숫자) 소수점 버리고 반환
-      let currLoopNO = 0; //현재 스크롤루프 넘버
+      const scrollCnt = Math.floor(currentNovelNO / 25); // Math.floor(숫자) 소수점 버리고 반환
+      let currLoopNO = 0; // 현재 스크롤루프 넘버
       currLoopNO = 1;
       while (scrollCnt >= 1 && currLoopNO <= scrollCnt) {
         await getNovelList();
@@ -244,19 +246,19 @@ async function scrapeKakape(genreNO: string, currentOrder: number) {
 
         console.log(novelInfo);
 
-        //db 저장
+        // db 저장
         setNovel(novelInfo);
 
         currentNovelNO += 1;
 
-        if (currentNovelNO % 10 === 0) break scrape; // 작품 10번째 마다 loop 탈출, 시크릿창 여닫기
+        if (currentNovelNO % 10 === 0) break; // 작품 10번째 마다 loop 탈출, 시크릿창 여닫기
         // : 작품 번호가 클수록 무한스크롤 횟수가 많으므로 루프 탈출 주기도 점점 짧게 하기
 
-        await page.goBack(); //목록 페이지로 이동
+        await page.goBack(); // 목록 페이지로 이동
       } catch (err) {
         console.log(`${err} 현재작품: ${currentNovelNO}, 마지막작품: ${totalNovelNO}`);
         // 에러 발생 시 시크릿창 닫고 현 작품 번호부터 다시 실행
-        break scrape;
+        break;
       }
     }
 
@@ -267,45 +269,49 @@ async function scrapeKakape(genreNO: string, currentOrder: number) {
 }
 
 // 스크래퍼 시리즈용 (페이지네이션)-----------------------------------------------------------------------------//
-async function scrapeSeries(genreNO: string) {
+export async function scrapeSeries(genreNO: string) {
   const browser = await puppeteer.launch({ headless: true });
 
-  let totalPageNO = 1; //전체 페이지 수
-  let currentPageNO = 1; //현재 페이지 넘버
-  let totalNovelNO = 1; //전체 작품 수
-  let currentNovelNO = 1; //현재 작품 넘버
+  let totalPageNO = 1; // 전체 페이지 수
+  let currentPageNO = 1; // 현재 페이지 넘버
+  let totalNovelNO = 1; // 전체 작품 수
+  let currentNovelNO = 1; // 현재 작품 넘버
 
   const novelListUrl = `https://series.naver.com/novel/categoryProductList.series?categoryTypeCode=genre&genreCode=${genreNO}&orderTypeCode=new&is&isFinished=true&page=`;
 
+  interface aboutNovel {
+    url: string;
+    isEnd: boolean;
+  }
   // 작품 리스트 : 작품 url, 완결여부 저장
-  const novelList = [];
+  const novelList: aboutNovel[] = [];
 
   // 반복. 브라우저 컨텍스트 열고 닫기. out of memory 방지
   // 시크릿창. 캐시나 쿠키 등을 공유하지 않음.
   // <중요> puppeteer.launch({headless:true}) 설정해야 context.close()로 브라우저 데이터 지울 수 있음.
-  secretWindow: while (true) {
-    const context = await browser.createIncognitoBrowserContext(); //시크릿창 열기
+  while (true) {
+    const context = await browser.createIncognitoBrowserContext(); // 시크릿창 열기
     const page = await context.newPage();
 
     await page.goto(novelListUrl + currentPageNO);
 
-    //총 작품 수 구하기
+    // 총 작품 수 구하기
     const regex = /[^0-9]/g; // 숫자가 아닌 문자열을 선택하는 정규식
     const noElement = await page.waitForSelector("#content > div > div > div.total");
     const _novelNO = await page.evaluate((noElement) => noElement.textContent, noElement);
-    totalNovelNO = _novelNO.replace(regex, ""); //총 작품 수
+    totalNovelNO = _novelNO.replace(regex, ""); // 총 작품 수
 
-    //총 페이지 수 구하기
+    // 총 페이지 수 구하기
     const _totalNO: number = Math.floor(totalNovelNO / 25);
     totalPageNO = totalNovelNO % 25 !== 0 ? _totalNO + 1 : _totalNO;
 
     // console.log(totalPageNO, "totalPageNO", totalNovelNO, "totalNovelNO");
 
-    //목록 페이지 조회 반복
-    listLoop: while (currentPageNO <= totalPageNO) {
+    // 목록 페이지 조회 반복
+    while (currentPageNO <= totalPageNO) {
       console.log(currentPageNO, "현재 페이지 번호");
 
-      //마지막 페이지 작품 수
+      // 마지막 페이지 작품 수
       let lastPageNovelNO = 1;
       if (currentPageNO === totalPageNO) {
         const lastList = await page.waitForSelector("#content > div > ul");
@@ -313,9 +319,8 @@ async function scrapeSeries(genreNO: string) {
       }
       // 목록에서 각 작품 정보(url, 완결여부) 가져오기
       for (let novelNO = 1; novelNO < 26; novelNO++) {
-        if (currentPageNO === totalPageNO && lastPageNovelNO < novelNO)
-          // 마지막페이지 작품 수가 25보다 작을 때 루프 탈출
-          break;
+        if (currentPageNO === totalPageNO && lastPageNovelNO < novelNO) break;
+        // 마지막페이지 작품 수가 25보다 작을 때 루프 탈출
 
         const urlElement = await page.waitForSelector(
           `#content > div > ul > li:nth-child(${novelNO}) > div > h3 > a`,
@@ -326,22 +331,23 @@ async function scrapeSeries(genreNO: string) {
         );
 
         const endElement = await page.waitForSelector(
-          `#content > div > ul > li:nth-child(1) > div > h3 > a`,
+          "#content > div > ul > li:nth-child(1) > div > h3 > a",
         );
         const _isEnd = await page.evaluate((endElement) => endElement.innerText, endElement);
 
         novelList.push({ url: novelURL, isEnd: !_isEnd.includes("미완결") });
         // console.log(novelList[novelNO - 1], "novel", novelNO);
       }
-      //다음 페이지 이동
+
+      // 다음 페이지 이동
       currentPageNO += 1;
       if (currentPageNO > totalPageNO) break;
       await page.goto(novelListUrl + currentPageNO);
     }
 
-    //로그인
+    // 로그인
     if (currentPageNO > totalPageNO) {
-      //-시리즈 회원정보 입력
+      // -시리즈 회원정보 입력
       // set id, pw
       let seriesID: string;
       let seriesPW: string;
@@ -364,30 +370,30 @@ async function scrapeSeries(genreNO: string) {
         (seriesID, idElement) => (idElement.value = seriesID),
         seriesID,
         idElement,
-      ); //id
+      ); // id
       const pwElement = await page.waitForSelector("#pw");
       await page.evaluate(
         (seriesPW, pwElement) => (pwElement.value = seriesPW),
         seriesPW,
         pwElement,
-      ); //password
+      ); // password
 
-      await page.click("#login_keep_wrap > div.keep_check > label"); //check 로그인상태유지
-      await page.click("#frmNIDLogin > ul > li > div > div.btn_login_wrap"); //submit
+      await page.click("#login_keep_wrap > div.keep_check > label"); // check 로그인상태유지
+      await page.click("#frmNIDLogin > ul > li > div > div.btn_login_wrap"); // submit
       await page.waitForSelector("#frmNIDLogin > fieldset > span.btn_upload");
       await page.click("#frmNIDLogin > fieldset > span.btn_upload");
     }
-    //----------------------------------------------------------------//
+    // ----------------------------------------------------------------//
 
     // 작품 상세페이지 조회 반복
-    detailLoop: while (currentNovelNO <= totalNovelNO) {
+    while (currentNovelNO <= totalNovelNO) {
       console.log(currentNovelNO, "currentNovelNO");
-      await page.goto("https://series.naver.com" + novelList[currentNovelNO - 1].url);
+      await page.goto(`https://series.naver.com${novelList[currentNovelNO - 1].url}`);
 
-      //상세페이지 정보 읽기
+      // 상세페이지 정보 읽기
       try {
         // get img
-        const imgElement = await page.waitForSelector(`#container > div.aside img`);
+        const imgElement = await page.waitForSelector("#container > div.aside img");
         novelInfo.novelImg = await page.evaluate(
           (imgElement) => imgElement.getAttribute("src"),
           imgElement,
@@ -399,16 +405,17 @@ async function scrapeSeries(genreNO: string) {
           if (titleElement.childNodes.length !== 1) {
             const beforeTitle = titleElement.children[0].innerText;
             return titleElement.innerText.slice(beforeTitle.length);
-          } else return titleElement.innerText;
+          }
+          return titleElement.innerText;
         }, titleElement);
 
         // get url, isEnd
-        novelInfo.novelUrl = "https://series.naver.com" + novelList[currentNovelNO - 1].url;
+        novelInfo.novelUrl = `https://series.naver.com${novelList[currentNovelNO - 1].url}`;
         novelInfo.novelIsEnd = novelList[currentNovelNO - 1].isEnd;
 
         // get desc : [더보기] 여부에 따라
         const descElement = await page.waitForSelector("#content > div.end_dsc > div:nth-child(1)");
-        let _desc = await page.evaluate((descElement) => descElement.innerText, descElement);
+        const _desc = await page.evaluate((descElement) => descElement.innerText, descElement);
         // [더보기] 버튼 있을 때 상세정보 받아오기
         if (_desc.slice(-3) === "더보기") {
           await page.click("#content > div.end_dsc > div:nth-child(1) span > a");
@@ -416,11 +423,11 @@ async function scrapeSeries(genreNO: string) {
           const moreDescElement = await page.waitForSelector(
             "#content > div.end_dsc > div:nth-last-child(1)",
           );
-          let desc = await page.evaluate(
+          const desc = await page.evaluate(
             (moreDescElement) => moreDescElement.innerText,
             moreDescElement,
           );
-          novelInfo.novelDesc = desc.slice(0, -3); //'접기' 글자 제외
+          novelInfo.novelDesc = desc.slice(0, -3); // '접기' 글자 제외
         }
         // [더보기] 없을 때 기존 정보 할당
         else {
@@ -456,7 +463,7 @@ async function scrapeSeries(genreNO: string) {
 
         console.log(novelInfo);
 
-        //db 저장
+        // db 저장
         setNovel(novelInfo);
 
         currentNovelNO += 1; // 작품 번호 +1
@@ -466,7 +473,7 @@ async function scrapeSeries(genreNO: string) {
         console.log(`${err} 현재작품: ${currentNovelNO}, 마지막작품: ${totalNovelNO}`);
         // 에러 발생 시 해당 작품은 통과. 시크릿창 여닫으며 다음 작품으로 넘어감
         currentNovelNO += 1; // 작품 번호 +1
-        break detailLoop;
+        break;
       }
     }
     await context.close(); // 시크릿창 닫기
@@ -476,15 +483,15 @@ async function scrapeSeries(genreNO: string) {
 }
 
 // 스크래퍼 리디용 (페이지네이션)-----------------------------------------------------------------------------//
-async function scrapeRidi(genreNOs: string[]) {
+export async function scrapeRidi(genreNOs: string[]) {
   const browser = await puppeteer.launch({ headless: true });
 
-  let isCategoryLoopEnd = false; //전체 카테고리별 목록페이지 조회완료 여부
+  let isCategoryLoopEnd = false; // 전체 카테고리별 목록페이지 조회완료 여부
 
-  let totalPageNO = []; //필터 별 전체 페이지 수(참고용)
-  let totalNovelNO = 0; //전체 작품 수 : 0으로 해야 함. 필터 별 작품 수 추가하여 계산
-  let currentPageNO = 1; //현재 페이지 넘버
-  let currentNovelNO = 1; //현재 작품 넘버
+  const totalPageNO = []; // 필터 별 전체 페이지 수(참고용)
+  let totalNovelNO = 0; // 전체 작품 수 : 0으로 해야 함. 필터 별 작품 수 추가하여 계산
+  let currentPageNO = 1; // 현재 페이지 넘버
+  let currentNovelNO = 1; // 현재 작품 넘버
 
   // 작품 리스트 : 작품 url 저장
   const novelList = [
@@ -494,8 +501,8 @@ async function scrapeRidi(genreNOs: string[]) {
   // 반복. 브라우저 컨텍스트 열고 닫기. out of memory 방지
   // 시크릿창. 캐시나 쿠키 등을 공유하지 않음.
   // <중요> puppeteer.launch({headless:true}) 설정해야 context.close()로 브라우저 데이터 지울 수 있음.
-  secretWindow: while (true) {
-    const context = await browser.createIncognitoBrowserContext(); //시크릿창 열기
+  while (true) {
+    const context = await browser.createIncognitoBrowserContext(); // 시크릿창 열기
     const page = await context.newPage();
     page.setDefaultTimeout(15000); // 마지막번호+1 작품(없음) 조회 시 대기 시간 줄이기
 
@@ -505,13 +512,12 @@ async function scrapeRidi(genreNOs: string[]) {
       if (isCategoryLoopEnd) break;
 
       // 목록페이지 url // with 최신순(최신화등록일)
-      const novelListUrl =
-        "https://ridibooks.com/category/books/" + genreNOs[ctgIdx] + "?order=recent&page=";
+      const novelListUrl = `https://ridibooks.com/category/books/${genreNOs[ctgIdx]}?order=recent&page=`;
 
-      await page.goto(novelListUrl + currentPageNO); //목록 페이지 이동
+      await page.goto(novelListUrl + currentPageNO); // 목록 페이지 이동
 
-      //목록 페이지 조회 반복
-      listLoop: while (true) {
+      // 목록 페이지 조회 반복
+      while (true) {
         console.log(currentPageNO, "현재 페이지 번호");
 
         // 목록에서 각 작품 url 가져오기
@@ -543,7 +549,7 @@ async function scrapeRidi(genreNOs: string[]) {
               adultElement,
             );
 
-            novelList.push({ url: novelURL, isAdult: isAdult });
+            novelList.push({ url: novelURL, isAdult });
             // console.log("noveNO: " + novelNO + " novelURL: " + novelURL);
           } catch (err) {
             console.log(err, "읽어올 작품이 더 없을 확률 높음");
@@ -551,28 +557,28 @@ async function scrapeRidi(genreNOs: string[]) {
             // 읽어올 작품이 더 없을 때 현재 필터의 조회 종료
             // 직전 페이지가 마지막 페이지일 때
             if (novelNO === 1) {
-              totalPageNO.push(currentPageNO - 1); //해당 필터의 전체 페이지 수 표시
-              totalNovelNO += (currentPageNO - 1) * 20; //전체 작품 수에 해당 필터의 작품 수 추가
+              totalPageNO.push(currentPageNO - 1); // 해당 필터의 전체 페이지 수 표시
+              totalNovelNO += (currentPageNO - 1) * 20; // 전체 작품 수에 해당 필터의 작품 수 추가
             }
             // 현재 페이지가 마지막 페이지일 때
             else if (novelNO !== 1) {
-              totalPageNO.push(currentPageNO); //해당 필터의 전체 페이지 수 표시
-              totalNovelNO += (currentPageNO - 1) * 20 + (novelNO - 1); //전체 작품 수에 해당 필터의 작품 수 추가
+              totalPageNO.push(currentPageNO); // 해당 필터의 전체 페이지 수 표시
+              totalNovelNO += (currentPageNO - 1) * 20 + (novelNO - 1); // 전체 작품 수에 해당 필터의 작품 수 추가
             }
 
-            console.log("totalPageNO: " + totalPageNO + "totalNovelNO: " + totalNovelNO);
-            currentPageNO = 1; //현재 작품 넘버 1로 리셋
+            console.log(`totalPageNO: ${totalPageNO}totalNovelNO: ${totalNovelNO}`);
+            currentPageNO = 1; // 현재 작품 넘버 1로 리셋
 
-            continue categoryLoop; //다음 카테고리 조회
+            continue categoryLoop; // 다음 카테고리 조회
           }
         }
-        //다음 페이지 이동
+        // 다음 페이지 이동
         currentPageNO += 1;
         await page.goto(novelListUrl + currentPageNO);
       }
     }
 
-    //로그인
+    // 로그인
     if (isCategoryLoopEnd) {
       // set id, pw
       let ridiID: string;
@@ -597,30 +603,25 @@ async function scrapeRidi(genreNOs: string[]) {
       await page.evaluate((ridiID, idElement) => (idElement.value = ridiID), ridiID, idElement);
       const pwElement = await page.waitForSelector("#login_pw");
       await page.evaluate((ridiPW, pwElement) => (pwElement.value = ridiPW), ridiPW, pwElement);
-      await page.click("#login > form > div > div > label > input[type=checkbox]"); //check 로그인상태유지
-      await page.click("#login > form > button"); //submit
+      await page.click("#login > form > div > div > label > input[type=checkbox]"); // check 로그인상태유지
+      await page.click("#login > form > button"); // submit
     }
-    //----------------------------------------------------------------//
+    // ----------------------------------------------------------------//
 
     // 작품 상세페이지 조회 반복
-    detailLoop: while (isCategoryLoopEnd && totalNovelNO >= currentNovelNO) {
+    while (isCategoryLoopEnd && totalNovelNO >= currentNovelNO) {
       console.log(
-        "currentNovelNO: " +
-          currentNovelNO +
-          ", totalNovelNO: " +
-          totalNovelNO +
-          ", totalPageNoList:" +
-          totalPageNO,
+        `currentNovelNO: ${currentNovelNO}, totalNovelNO: ${totalNovelNO}, totalPageNoList:${totalPageNO}`,
       );
       try {
         // set url
-        novelInfo.novelUrl = "https://ridibooks.com" + novelList[currentNovelNO - 1].url;
+        novelInfo.novelUrl = `https://ridibooks.com${novelList[currentNovelNO - 1].url}`;
 
         // go to detail page
-        await new Promise((resolve) => setTimeout(resolve, 500)); //로그인 후 페이지 리다이렉트 됨. 잠시 대기 후 상세페이지로 이동해야 에러 안 남.
+        await new Promise((resolve) => setTimeout(resolve, 500)); // 로그인 후 페이지 리다이렉트 됨. 잠시 대기 후 상세페이지로 이동해야 에러 안 남.
         await page.goto(novelInfo.novelUrl);
 
-        //상세페이지 정보 읽기
+        // 상세페이지 정보 읽기
         // get img
         const imgElement = await page.waitForSelector(
           "#page_detail > div.detail_wrap > div.detail_body_wrap > section > article.detail_header.trackable > div.header_thumbnail_wrap > div.header_thumbnail.book_macro_200.detail_scalable_thumbnail > div > div > div > img",
@@ -643,7 +644,7 @@ async function scrapeRidi(genreNOs: string[]) {
           const notEndElement = document.querySelector(
             "#page_detail > div.detail_wrap > div.detail_body_wrap > section > article.detail_header.trackable > div.header_info_wrap > div:nth-child(4) > p.metadata.metadata_info_series_complete_wrap > span.metadata_item.not_complete",
           );
-          return notEndElement === null ? true : false;
+          return notEndElement === null;
         });
 
         // get desc
@@ -660,7 +661,7 @@ async function scrapeRidi(genreNOs: string[]) {
             return descElement.innerText.slice(_idx + 11);
           }
           // 첫 줄 제목 제외
-          else if (
+          if (
             descElement.children[0].tagName === "SPAN" &&
             (descElement.children.length === 1 || descElement.children[1].tagName !== "IMG")
           ) {
@@ -668,7 +669,7 @@ async function scrapeRidi(genreNOs: string[]) {
             return descElement.innerText.slice(_idx + 2);
           }
           // 첫 줄에 제목, 둘째 줄에 이미지, 셋째 넷째 비어있을 때 제외
-          else if (
+          if (
             descElement.children[0].tagName === "SPAN" &&
             descElement.children[1].tagName === "IMG" &&
             descElement.children[2].tagName === "BR" &&
@@ -685,7 +686,7 @@ async function scrapeRidi(genreNOs: string[]) {
           );
           let keywords = "";
           filterKeyword: for (let i = 0; i < keywordList.length; i++) {
-            let keyword = keywordList[i].textContent;
+            const keyword = keywordList[i].textContent;
             if (keyword === null) {
               throw new Error("키워드가 없는데도 반복문 실행됨");
             }
@@ -706,7 +707,7 @@ async function scrapeRidi(genreNOs: string[]) {
             for (let j = 0; j < exceptKeys.length; j++) {
               if (keyword.includes(exceptKeys[j])) continue filterKeyword;
               if (exceptKeys[j] === exceptKeys[exceptKeys.length - 1]) {
-                keywords += keyword + " ";
+                keywords += `${keyword} `;
               }
             }
           }
@@ -719,7 +720,7 @@ async function scrapeRidi(genreNOs: string[]) {
         }
         // set desc with keywords
         else {
-          novelInfo.novelDesc = keywords + "\n\n" + desc;
+          novelInfo.novelDesc = `${keywords}\n\n${desc}`;
         }
 
         // get author
@@ -774,7 +775,7 @@ async function scrapeRidi(genreNOs: string[]) {
 
         console.log(novelInfo);
 
-        //db 저장
+        // db 저장
         setNovel(novelInfo);
 
         currentNovelNO += 1; // 작품 번호 +1
@@ -784,7 +785,7 @@ async function scrapeRidi(genreNOs: string[]) {
         console.log(`${err} \n 현재작품: ${currentNovelNO}, 마지막작품: ${totalNovelNO}`);
         // 에러 발생 시 해당 작품은 통과. 시크릿창 여닫으며 다음 작품으로 넘어감
         currentNovelNO += 1; // 작품 번호 +1
-        break detailLoop;
+        break;
       }
     }
     // 카테고리 전체 조회 완료 시 표시 : 조회 완료 후 시크릿창 한 번 닫기 위해 이 위치에 넣음
@@ -796,5 +797,3 @@ async function scrapeRidi(genreNOs: string[]) {
   }
   await browser.close();
 }
-
-export { scrapeKakape, scrapeSeries, scrapeRidi };

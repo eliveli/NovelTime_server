@@ -2,21 +2,26 @@
     "env": {
         "browser": true,
         "node": true, // Enable Node.js global variables
-        "commonjs": true,
+        // "commonjs": true,
         "es2021": true
     },
     "plugins": ["@typescript-eslint"],
     
     "extends": ["eslint:recommended", "plugin:prettier/recommended",
+        "airbnb-base",
+        "plugin:import/errors",
+        "plugin:import/warnings",
+        "plugin:import/typescript",
+
         "plugin:@typescript-eslint/recommended",
         "plugin:@typescript-eslint/recommended-requiring-type-checking",
-        "airbnb-base"],
+        ],
         
     "parser": "@typescript-eslint/parser",
     "parserOptions": {
         "ecmaVersion": "latest", // Allows the use of modern ECMAScript features
         "sourceType": "module", // Allows for the use of imports
-        "project":"./tsconfig.json"
+        "project":"server/tsconfig.json" // package.json이 있는 경로가 기준이 아닌 듯
     },
     // "overrides": [
     //     {
@@ -27,18 +32,32 @@
     //     }
     // ],
     "rules": {
+        "indent": ["warn", 2, { "SwitchCase": 1 }],
         "no-console": "warn",
         "quotes": ["warn", "double"],
+        "no-unused-vars": "warn",
+        "object-curly-newline": "warn",
 
         "@typescript-eslint/no-var-requires": "warn",
         "@typescript-eslint/no-unsafe-assignment": "warn",
         "@typescript-eslint/no-unsafe-call": "warn",
 
+        "import/extensions": [
+            "error",
+            "ignorePackages",
+            {
+              "js": "never",
+              "jsx": "never",
+              "ts": "never",
+              "tsx": "never"
+            }
+        ],
+
 
         //* Avoid Bugs
         "no-undef": "error",
         "semi": "error",
-        "semi-spacing": "error",
+        "semi-spacing": "error"
         // //* Best Practices
         // "eqeqeq": "warn",
         // "no-invalid-this": "error",
