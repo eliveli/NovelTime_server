@@ -12,7 +12,7 @@ const genreFilter = {
 };
 
 // 스크랩: 완료: 시리즈 로판, 리디 로판, 리디 판타지
-scrapeKakape(genreFilter.kakape.RF, 2884); // scrapeKakape(genreNO, currentOrder)
+scrapeKakape(genreFilter.kakape.RF, 3609); // scrapeKakape(genreNO, currentOrder)
 // scrapeKakape(genreFilter.kakape.F, 369); // scrapeKakape(genreNO, currentOrder)
 // scrapeSeries(genreFilter.series.RF); // scrapeSeries(genreNO)
 // scrapeRidi(genreFilter.ridi.F); // scrapeRidi(genreNOs)
@@ -24,5 +24,5 @@ scrapeKakape(genreFilter.kakape.RF, 2884); // scrapeKakape(genreNO, currentOrder
 // ); // shareSeries(inputUrl)
 // shareKakape(
 //   "link-page.kakao.com/goto_view?series_id=58884103&referrer=utm_source%3Dsh_clip [카카오페이지 | 소설] 의무 결혼 "
-// ); //shareKakape(inputUrl)
+); //shareKakape(inputUrl)
 // shareJoara("https://www.joara.com/book/1601829");

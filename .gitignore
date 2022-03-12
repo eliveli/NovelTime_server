@@ -3,3 +3,6 @@ node_modules
 .env
 .env.dev
 .env.prod
+
+_books.js
+_cheerio.js

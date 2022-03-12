@@ -1,9 +1,11 @@
 import puppeteer, { ElementHandle } from "puppeteer";
-import { setNovel } from "../../services/novel";
+import dotenv from "dotenv";
+import { setNovel } from "../../services/novels";
 import getCurrentTime from "./getCurrentTime";
-require("dotenv").config(); // 여기(이 명령어를 실행한 파일)에서만 환경변수 사용 가능
 
-let novelInfo = {
+dotenv.config(); // 여기(이 명령어를 실행한 파일)에서만 환경변수 사용 가능
+
+const novelInfo = {
   novelId: "",
   novelImg: "",
   novelTitle: "",
@@ -20,13 +22,13 @@ interface SystemError {
   name: string;
 }
 
-//공유하기 카카페용------------------------------------------------------------------------------------------------//
+// 공유하기 카카페용------------------------------------------------------------------------------------------------//
 async function shareKakape(inputUrl: string) {
-  const browser = await puppeteer.launch({ headless: false });
+  const browser = await puppeteer.launch({ headless: true });
   const page = await browser.newPage(); // 창 열기
   page.setDefaultTimeout(10000); // 대기 시간 줄이기
 
-  await page.goto("https://page.kakao.com/main"); //카카오페이지 이동
+  await page.goto("https://page.kakao.com/main"); // 카카오페이지 이동
 
   // 카카페 로그인 바로 하기 : 작품url 이동 시 로그인이 필요한 작품은 바로 홈으로 가기 때문
   const loginBtn = (await page.waitForSelector(
@@ -42,7 +44,7 @@ async function shareKakape(inputUrl: string) {
   await loginBtn.click(); // click, a new tab/window opens
   const newPage = (await newPagePromise) as puppeteer.Page; // declare new tab/window, now you can work with it
 
-  //-카카페 회원정보 입력
+  // -카카페 회원정보 입력
   // set id, pw
   let kakaoID: string;
   let kakaoPW: string;
@@ -59,15 +61,15 @@ async function shareKakape(inputUrl: string) {
   }
 
   const idElement = await newPage.waitForSelector("#id_email_2");
-  await newPage.evaluate((kakaoID, idElement) => (idElement.value = kakaoID), kakaoID, idElement); //email
+  await newPage.evaluate((kakaoID, idElement) => (idElement.value = kakaoID), kakaoID, idElement); // email
   const pwElement = await newPage.waitForSelector("#id_password_3");
-  await newPage.evaluate((kakaoPW, pwElement) => (pwElement.value = kakaoPW), kakaoPW, pwElement); //password
+  await newPage.evaluate((kakaoPW, pwElement) => (pwElement.value = kakaoPW), kakaoPW, pwElement); // password
   await newPage.click(
     "#login-form > fieldset > div.set_login > div > label > span.ico_account.ico_check",
-  ); //check 로그인상태유지
-  await newPage.click("#login-form > fieldset > div.wrap_btn > button.btn_g.btn_confirm.submit"); //submit
+  ); // check 로그인상태유지
+  await newPage.click("#login-form > fieldset > div.wrap_btn > button.btn_g.btn_confirm.submit"); // submit
 
-  //-----------------------------------------------------------------------------------------//
+  // -----------------------------------------------------------------------------------------//
 
   // url 확인 : 직행 url 또는 간접 url (via공유하기 : 그 중 url 복사 눌러도 url만 나오지는 않음)
   const directUrl = "page.kakao.com/home?seriesId=";
@@ -79,34 +81,31 @@ async function shareKakape(inputUrl: string) {
   // set url : 간접 url은 작품 번호를 잘라내어 직접 url로 만들기
   let novelUrl = inputUrl;
   if (inputUrl.includes(indirectUrl)) {
-    novelUrl =
-      "https://" +
-      directUrl +
-      inputUrl.slice(
-        inputUrl.indexOf(indirectUrl) + indirectUrl.length,
-        inputUrl.indexOf("&referrer"),
-      );
+    novelUrl = `https://${directUrl}${inputUrl.slice(
+      inputUrl.indexOf(indirectUrl) + indirectUrl.length,
+      inputUrl.indexOf("&referrer"),
+    )}`;
   }
   novelInfo.novelUrl = novelUrl;
 
   try {
     console.log(novelUrl, "novelurl");
-    await new Promise((resolve) => setTimeout(resolve, 1500)); //새창에서 로그인 완료할 때까지 대기
-    //작품페이지 이동
+    await new Promise((resolve) => setTimeout(resolve, 1500)); // 새창에서 로그인 완료할 때까지 대기
+    // 작품페이지 이동
     await page.goto(novelUrl);
 
     page.setDefaultTimeout(3000); // 대기 시간 줄이기
     await page.waitForSelector(
       "#root > div.jsx-885677927.mainContents.mainContents_pc.hiddenMenuContent > div > div > div.css-sgpdfd > div > div.css-1y42t5x > img",
     );
-  } catch (err) {
+  } catch {
     // 타임아웃 에러 시 주소 오류
     try {
       await page.waitForSelector("#login_id");
     } catch (error) {
       const err = error as SystemError;
       if (err.name === "TimeoutError") {
-        throw new Error("주소가 올바르지 않아요"); //오류 표시 후 실행 종료
+        throw new Error("주소가 올바르지 않아요"); // 오류 표시 후 실행 종료
       }
     }
   }
@@ -117,10 +116,9 @@ async function shareKakape(inputUrl: string) {
   const imgElement = await page.waitForSelector(
     "#root > div.jsx-885677927.mainContents.mainContents_pc.hiddenMenuContent > div > div > div.css-sgpdfd > div > div.css-1y42t5x > img",
   );
-  novelInfo.novelImg = await page.evaluate(
-    (imgElement) => imgElement.getAttribute("src"),
-    imgElement,
-  );
+  const _imgUrl = await page.evaluate((imgElement) => imgElement.getAttribute("src"), imgElement);
+
+  novelInfo.novelImg = _imgUrl.slice(0, _imgUrl.indexOf("&filename=th1"));
 
   // get title
   const titleElement = await page.waitForSelector(
@@ -189,7 +187,7 @@ async function shareKakape(inputUrl: string) {
 
   console.log(novelInfo);
 
-  //db 저장
+  // db 저장
   setNovel(novelInfo);
 
   await browser.close(); // 브라우저 닫기
@@ -197,13 +195,13 @@ async function shareKakape(inputUrl: string) {
 
 // 공유하기 시리즈용-----------------------------------------------------------------------------//
 async function shareSeries(inputUrl: string) {
-  const browser = await puppeteer.launch({ headless: false });
+  const browser = await puppeteer.launch({ headless: true });
   const page = await browser.newPage(); // 창 열기
   page.setDefaultTimeout(10000); // 대기 시간 줄이기
 
-  //로그인
-  const login = () => {
-    return new Promise<void>(async (resolve) => {
+  // 로그인
+  const login = () =>
+    new Promise<void>(async (resolve) => {
       // set id, pw
       let seriesID: string;
       let seriesPW: string;
@@ -225,7 +223,7 @@ async function shareSeries(inputUrl: string) {
       } catch (error) {
         const err = error as SystemError;
         if (err.name === "TimeoutError") {
-          throw new Error("주소가 올바르지 않아요"); //오류 표시 후 실행 종료
+          throw new Error("주소가 올바르지 않아요"); // 오류 표시 후 실행 종료
         }
       }
       const idElement = await page.waitForSelector("#id");
@@ -233,24 +231,23 @@ async function shareSeries(inputUrl: string) {
         (seriesID, idElement) => (idElement.value = seriesID),
         seriesID,
         idElement,
-      ); //id
+      ); // id
       const pwElement = await page.waitForSelector("#pw");
       await page.evaluate(
         (seriesPW, pwElement) => (pwElement.value = seriesPW),
         seriesPW,
         pwElement,
-      ); //password
-      await page.click("#login_keep_wrap > div.keep_check > label"); //check 로그인상태유지
-      await page.click("#frmNIDLogin > ul > li > div > div.btn_login_wrap"); //submit
+      ); // password
+      await page.click("#login_keep_wrap > div.keep_check > label"); // check 로그인상태유지
+      await page.click("#frmNIDLogin > ul > li > div > div.btn_login_wrap"); // submit
       await page.waitForSelector("#frmNIDLogin > fieldset > span.btn_upload");
       await page.click("#frmNIDLogin > fieldset > span.btn_upload");
       resolve();
     });
-  };
 
-  //----------------------------------------------------------------//
+  // ----------------------------------------------------------------//
 
-  //작품 완결 여부 확인 : 작품 검색 페이지에서 작품 제목 옆 완결 표시 확인
+  // 작품 완결 여부 확인 : 작품 검색 페이지에서 작품 제목 옆 완결 표시 확인
   // const checkEnd = (novelTitle: string) => {
   //   return new Promise(async (resolve) => {
   //     // 작품 검색
@@ -298,27 +295,27 @@ async function shareSeries(inputUrl: string) {
   // set url : 간접 url은 url 부분만 잘라내어 넣기
   let novelUrl = inputUrl;
   if (inputUrl.includes("naver.me/")) {
-    novelUrl = "https://" + inputUrl.slice(inputUrl.indexOf("naver.me/"));
+    novelUrl = `https://${inputUrl.slice(inputUrl.indexOf("naver.me/"))}`;
   }
   novelInfo.novelUrl = novelUrl;
 
   try {
-    //작품페이지 이동
+    // 작품페이지 이동
     await page.goto(novelUrl);
 
     page.setDefaultTimeout(1000); // 대기 시간 줄이기
-    await page.waitForSelector(`#container > div.aside img`);
+    await page.waitForSelector("#container > div.aside img");
   } catch (err) {
-    //성인작품일 경우 로그인
+    // 성인작품일 경우 로그인
     novelInfo.novelAge = "청소년 이용불가";
     await login();
-    await new Promise((resolve) => setTimeout(resolve, 500)); //로그인 후 페이지 리다이렉트 됨. 잠시 대기 후 상세페이지로 이동해야 에러 안 남.
+    await new Promise((resolve) => setTimeout(resolve, 500)); // 로그인 후 페이지 리다이렉트 됨. 잠시 대기 후 상세페이지로 이동해야 에러 안 남.
   }
   page.setDefaultTimeout(10000); // 대기 시간 원래대로
 
-  //상세페이지 정보 읽기
+  // 상세페이지 정보 읽기
   // get img
-  const imgElement = await page.waitForSelector(`#container > div.aside img`);
+  const imgElement = await page.waitForSelector("#container > div.aside img");
   novelInfo.novelImg = await page.evaluate(
     (imgElement) => imgElement.getAttribute("src"),
     imgElement,
@@ -331,7 +328,8 @@ async function shareSeries(inputUrl: string) {
     if (titleElement.childNodes.length !== 1) {
       const beforeTitle = titleElement.children[0].innerText;
       return titleElement.innerText.slice(beforeTitle.length);
-    } else return titleElement.innerText;
+    }
+    return titleElement.innerText;
   }, titleElement);
 
   // get isEnd
@@ -349,7 +347,7 @@ async function shareSeries(inputUrl: string) {
 
   // get desc : [더보기] 여부에 따라
   const descElement = await page.waitForSelector("#content > div.end_dsc > div:nth-child(1)");
-  let _desc = await page.evaluate((descElement) => descElement.innerText, descElement);
+  const _desc = await page.evaluate((descElement) => descElement.innerText, descElement);
   // [더보기] 버튼 있을 때 상세정보 받아오기
   if (_desc.slice(-3) === "더보기") {
     await page.click("#content > div.end_dsc > div:nth-child(1) span > a");
@@ -357,8 +355,11 @@ async function shareSeries(inputUrl: string) {
     const moreDescElement = await page.waitForSelector(
       "#content > div.end_dsc > div:nth-last-child(1)",
     );
-    let desc = await page.evaluate((moreDescElement) => moreDescElement.innerText, moreDescElement);
-    novelInfo.novelDesc = desc.slice(0, -3); //'접기' 글자 제외
+    const desc = await page.evaluate(
+      (moreDescElement) => moreDescElement.innerText,
+      moreDescElement,
+    );
+    novelInfo.novelDesc = desc.slice(0, -3); // '접기' 글자 제외
   }
   // [더보기] 없을 때 기존 정보 할당
   else {
@@ -394,7 +395,7 @@ async function shareSeries(inputUrl: string) {
 
   console.log(novelInfo);
 
-  //db 저장
+  // db 저장
   setNovel(novelInfo);
 
   await browser.close();
@@ -402,13 +403,13 @@ async function shareSeries(inputUrl: string) {
 
 // 공유하기 리디용 : 리디는 직접 작품별 url 넣어야 함. 공유하기 버튼 없음 ------------------//
 async function shareRidi(inputUrl: string) {
-  const browser = await puppeteer.launch({ headless: false });
+  const browser = await puppeteer.launch({ headless: true });
   const page = await browser.newPage(); // 창 열기
   page.setDefaultTimeout(10000); // 대기 시간 줄이기
 
-  //로그인 : 성인작품일 때 실행
-  const login = () => {
-    return new Promise<void>(async (resolve) => {
+  // 로그인 : 성인작품일 때 실행
+  const login = () =>
+    new Promise<void>(async (resolve) => {
       // set id, pw
       let ridiID: string;
       let ridiPW: string;
@@ -430,7 +431,7 @@ async function shareRidi(inputUrl: string) {
       } catch (error) {
         const err = error as SystemError;
         if (err.name === "TimeoutError") {
-          throw new Error("시간초과. 주소가 올바르지 않아요"); //오류 표시 후 실행 종료
+          throw new Error("시간초과. 주소가 올바르지 않아요"); // 오류 표시 후 실행 종료
         }
       }
 
@@ -438,12 +439,11 @@ async function shareRidi(inputUrl: string) {
       await page.evaluate((ridiID, idElement) => (idElement.value = ridiID), ridiID, idElement);
       const pwElement = await page.waitForSelector("#login_pw");
       await page.evaluate((ridiPW, pwElement) => (pwElement.value = ridiPW), ridiPW, pwElement);
-      await page.click("#login > form > div > div > label > input[type=checkbox]"); //check 로그인상태유지
-      await page.click("#login > form > button"); //submit
+      await page.click("#login > form > div > div > label > input[type=checkbox]"); // check 로그인상태유지
+      await page.click("#login > form > button"); // submit
       resolve();
     });
-  };
-  //----------------------------------------------------------------//
+  // ----------------------------------------------------------------//
 
   // url 확인
   let novelUrl;
@@ -451,16 +451,16 @@ async function shareRidi(inputUrl: string) {
     throw new Error("주소가 올바르지 않아요.");
   }
   // set url : "?" 부터 문자 제외
-  let mainIndx = inputUrl.indexOf("ridibooks.com/books/");
-  let filterIdx = inputUrl.indexOf("?");
+  const mainIndx = inputUrl.indexOf("ridibooks.com/books/");
+  const filterIdx = inputUrl.indexOf("?");
   let novelNO;
   novelNO =
     filterIdx !== -1 ? inputUrl.slice(mainIndx + 20, filterIdx) : inputUrl.slice(mainIndx + 20);
-  novelUrl = "https://ridibooks.com/books/" + novelNO;
+  novelUrl = `https://ridibooks.com/books/${novelNO}`;
   novelInfo.novelUrl = novelUrl;
 
   try {
-    //작품페이지 이동
+    // 작품페이지 이동
     await page.goto(novelUrl);
 
     page.setDefaultTimeout(1000); // 대기 시간 줄이기
@@ -468,14 +468,14 @@ async function shareRidi(inputUrl: string) {
       "#page_detail > div.detail_wrap > div.detail_body_wrap > section > article.detail_header.trackable > div.header_thumbnail_wrap > div.header_thumbnail.book_macro_200.detail_scalable_thumbnail > div > div > div > img",
     );
   } catch (err) {
-    //성인작품일 경우 로그인
+    // 성인작품일 경우 로그인
     novelInfo.novelAge = "청소년 이용불가";
     await login();
-    await new Promise((resolve) => setTimeout(resolve, 500)); //로그인 후 페이지 리다이렉트 됨. 잠시 대기 후 상세페이지로 이동해야 에러 안 남.
+    await new Promise((resolve) => setTimeout(resolve, 500)); // 로그인 후 페이지 리다이렉트 됨. 잠시 대기 후 상세페이지로 이동해야 에러 안 남.
   }
   page.setDefaultTimeout(10000); // 대기 시간 원래대로
 
-  //상세페이지 정보 읽기
+  // 상세페이지 정보 읽기
   // get img
   const imgElement = await page.waitForSelector(
     "#page_detail > div.detail_wrap > div.detail_body_wrap > section > article.detail_header.trackable > div.header_thumbnail_wrap > div.header_thumbnail.book_macro_200.detail_scalable_thumbnail > div > div > div > img",
@@ -491,7 +491,7 @@ async function shareRidi(inputUrl: string) {
     const notEndElement = document.querySelector(
       "#page_detail > div.detail_wrap > div.detail_body_wrap > section > article.detail_header.trackable > div.header_info_wrap > div:nth-child(4) > p.metadata.metadata_info_series_complete_wrap > span.metadata_item.not_complete",
     );
-    return notEndElement === null ? true : false;
+    return notEndElement === null;
   });
 
   // get desc
@@ -508,7 +508,7 @@ async function shareRidi(inputUrl: string) {
       return descElement.innerText.slice(_idx + 11);
     }
     // 첫 줄 제목 제외
-    else if (
+    if (
       descElement.children[0].tagName === "SPAN" &&
       (descElement.children.length === 1 || descElement.children[1].tagName !== "IMG")
     ) {
@@ -516,7 +516,7 @@ async function shareRidi(inputUrl: string) {
       return descElement.innerText.slice(_idx + 2);
     }
     // 첫 줄에 제목, 둘째 줄에 이미지, 셋째 넷째 비어있을 때 제외
-    else if (
+    if (
       descElement.children[0].tagName === "SPAN" &&
       descElement.children[1].tagName === "IMG" &&
       descElement.children[2].tagName === "BR" &&
@@ -527,14 +527,14 @@ async function shareRidi(inputUrl: string) {
     }
   }, descElement);
 
-  //get keywords
+  // get keywords
   const keywords = await page.evaluate(() => {
     const keywordList = document.querySelectorAll(
       "#page_detail > div.detail_wrap > div.detail_body_wrap > section > article.detail_box_module.detail_keyword.js_detail_keyword_module > ul > li",
     );
     let keywords = "";
     filterKeyword: for (let i = 0; i < keywordList.length; i++) {
-      let keyword = keywordList[i].textContent;
+      const keyword = keywordList[i].textContent;
       if (keyword === null) {
         throw new Error("키워드가 없는데도 반복문 실행됨");
       }
@@ -555,7 +555,7 @@ async function shareRidi(inputUrl: string) {
       for (let j = 0; j < exceptKeys.length; j++) {
         if (keyword.includes(exceptKeys[j])) continue filterKeyword;
         if (exceptKeys[j] === exceptKeys[exceptKeys.length - 1]) {
-          keywords += keyword + " ";
+          keywords += `${keyword} `;
         }
       }
     }
@@ -568,7 +568,7 @@ async function shareRidi(inputUrl: string) {
   }
   // set desc with keywords
   else {
-    novelInfo.novelDesc = keywords + "\n\n" + desc;
+    novelInfo.novelDesc = `${keywords}\n\n${desc}`;
   }
 
   // get author
@@ -619,7 +619,7 @@ async function shareRidi(inputUrl: string) {
   );
   let novelTitle = await page.evaluate((titleElement) => titleElement.innerText, titleElement);
   if (genre === "BL") {
-    novelTitle = "[BL] " + novelTitle;
+    novelTitle = `[BL] ${novelTitle}`;
   }
   novelInfo.novelTitle = novelTitle;
 
@@ -629,7 +629,7 @@ async function shareRidi(inputUrl: string) {
 
   console.log(novelInfo);
 
-  //db 저장
+  // db 저장
   setNovel(novelInfo);
 
   await browser.close();
@@ -638,13 +638,13 @@ async function shareRidi(inputUrl: string) {
 //--------------------------------------------------------------------------
 // 공유하기 조아라용 : 조아라는 무료 연재작이 많아 사용자들에게는 작품 검색 안 되게 해야할 듯. DB에는 저장해 두더라도..
 async function shareJoara(inputUrl: string) {
-  const browser = await puppeteer.launch({ headless: false });
+  const browser = await puppeteer.launch({ headless: true });
   const page = await browser.newPage(); // 창 열기
   page.setDefaultTimeout(10000); // 대기 시간 줄이기
 
-  //로그인
-  const login = () => {
-    return new Promise<void>(async (resolve) => {
+  // 로그인
+  const login = () =>
+    new Promise<void>(async (resolve) => {
       // set id, pw
       let joaraID: string;
       let joaraPW: string;
@@ -669,10 +669,9 @@ async function shareJoara(inputUrl: string) {
         joaraPW,
       );
 
-      await page.click("#root > div > div > div > button"); //submit
+      await page.click("#root > div > div > div > button"); // submit
       resolve();
     });
-  };
 
   // url 확인 : 직접 또는 간접 url (via공유하기) : "https://www.joara.com/book/1607139" or "http://s.joara.com/1BASN"
   if (!inputUrl.includes("joara.com/")) {
@@ -683,7 +682,7 @@ async function shareJoara(inputUrl: string) {
   novelInfo.novelUrl = inputUrl;
 
   try {
-    //작품페이지 이동
+    // 작품페이지 이동
     await page.goto(inputUrl);
 
     page.setDefaultTimeout(1000); // 대기 시간 줄이기
@@ -694,7 +693,7 @@ async function shareJoara(inputUrl: string) {
   } catch (error) {
     const err = error as SystemError;
     if (err.name === "TimeoutError") {
-      throw new Error("시간초과. 주소가 올바르지 않아요"); //오류 표시 후 실행 종료
+      throw new Error("시간초과. 주소가 올바르지 않아요"); // 오류 표시 후 실행 종료
     }
   }
 
@@ -702,7 +701,7 @@ async function shareJoara(inputUrl: string) {
   await login();
   page.setDefaultTimeout(100000); // 대기 시간 원래대로
 
-  //상세페이지 정보 읽기
+  // 상세페이지 정보 읽기
   // get img
   const imgElement = await page.waitForSelector(
     "#root > div > div.subpage-container.work-detail > div.content-info > div.content-info-top > div.cover > img",
@@ -734,18 +733,18 @@ async function shareJoara(inputUrl: string) {
       );
     }
   } catch (e) {
-    console.log("작품소개 더보기 버튼 없을 경우" + e);
+    console.log(`작품소개 더보기 버튼 없을 경우${e}`);
     page.setDefaultTimeout(10000);
   }
   const descElement = await page.waitForSelector("#book-intro-content");
   const desc = await page.evaluate((descElement) => descElement.innerText, descElement);
-  //get keywords
+  // get keywords
   const keywords = await page.evaluate(() => {
     const keywordList = document.querySelectorAll("#book-keyword-content > div");
     let keywords = "";
     for (let i = 0; i < keywordList.length; i++) {
-      let keyword = keywordList[i].textContent;
-      keywords += "#" + keyword + " ";
+      const keyword = keywordList[i].textContent;
+      keywords += `#${keyword} `;
     }
     return keywords;
   });
@@ -755,7 +754,7 @@ async function shareJoara(inputUrl: string) {
   }
   // set desc with keywords
   else {
-    novelInfo.novelDesc = keywords + "\n\n" + desc;
+    novelInfo.novelDesc = `${keywords}\n\n${desc}`;
   }
 
   // get age : 청불 or 전체
@@ -763,7 +762,7 @@ async function shareJoara(inputUrl: string) {
     () =>
       document.querySelector(
         "#root > div > div.subpage-container > div.content-info > div.content-info-top > div.cover > span > img",
-      ), //표지 위 19금 아이콘
+      ), // 표지 위 19금 아이콘
   );
   novelInfo.novelAge = adultElement !== null ? "청소년 이용불가" : "전체 이용가";
 
@@ -779,7 +778,7 @@ async function shareJoara(inputUrl: string) {
       ) {
         isEnd = true;
         break;
-      } //완결 아이콘
+      } // 완결 아이콘
     }
     return isEnd;
   });
@@ -816,7 +815,7 @@ async function shareJoara(inputUrl: string) {
     ? "라이트노벨"
     : inputGenre.includes("BL")
     ? "BL"
-    : "extra|" + inputGenre.slice(1, -1); //장르 구분 안 한 작품은 (extra|받아온장르이름)으로 넣기
+    : `extra|${inputGenre.slice(1, -1)}`; // 장르 구분 안 한 작품은 (extra|받아온장르이름)으로 넣기
   novelInfo.novelGenre = genre;
 
   // set platform, id
@@ -825,7 +824,7 @@ async function shareJoara(inputUrl: string) {
 
   console.log(novelInfo);
 
-  //db 저장
+  // db 저장
   setNovel(novelInfo);
 
   await browser.close();

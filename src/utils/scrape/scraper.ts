@@ -1,7 +1,7 @@
 import puppeteer, { ElementHandle } from "puppeteer";
 import dotenv from "dotenv";
 import getCurrentTime from "./getCurrentTime";
-import { setNovel } from "../../services/novel";
+import { setNovel } from "../../services/novels";
 
 dotenv.config(); // 여기(이 명령어를 실행한 파일)에서만 환경변수 사용 가능
 // require("dotenv").config();
@@ -151,10 +151,11 @@ export async function scrapeKakape(genreNO: string, currentOrder: number) {
         const imgElement = await page.waitForSelector(
           "#root > div.jsx-885677927.mainContents.mainContents_pc.hiddenMenuContent > div > div > div.css-sgpdfd > div > div.css-1y42t5x > img",
         );
-        novelInfo.novelImg = await page.evaluate(
+        const _imgUrl = await page.evaluate(
           (imgElement) => imgElement.getAttribute("src"),
           imgElement,
         );
+        novelInfo.novelImg = _imgUrl.slice(0, _imgUrl.indexOf("&filename=th1"));
 
         // get title
         const titleElement = await page.waitForSelector(
@@ -257,7 +258,8 @@ export async function scrapeKakape(genreNO: string, currentOrder: number) {
         await page.goBack(); // 목록 페이지로 이동
       } catch (err) {
         console.log(`${err} 현재작품: ${currentNovelNO}, 마지막작품: ${totalNovelNO}`);
-        // 에러 발생 시 시크릿창 닫고 현 작품 번호부터 다시 실행
+        currentNovelNO += 1;
+        // 에러 발생 시 시크릿창 닫고 다음 작품 번호부터 실행
         break;
       }
     }

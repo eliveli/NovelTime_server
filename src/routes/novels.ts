@@ -1,9 +1,14 @@
 import express from "express";
+
+import { searchByTitle, getNovelById } from "../controllers/getNovels";
+
 const router = express.Router();
 
-import { searchTitle } from "../controllers/searchNovels";
+router.get("/search/:title", searchByTitle);
 
-router.get("/search/:title", searchTitle);
+// router.get("/category/:category", searchByTitle);
+
+router.get("/detail/:novel_id", getNovelById);
 
 // Book.find()
 // .then((books) => res.json(books))
