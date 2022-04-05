@@ -21,7 +21,7 @@
     "parserOptions": {
         "ecmaVersion": "latest", // Allows the use of modern ECMAScript features
         "sourceType": "module", // Allows for the use of imports
-        "project":"server/tsconfig.json" // package.json이 있는 경로가 기준이 아닌 듯
+        "project":"**/tsconfig.json" // tsconfig 파일 못 찾는 에러 해결
     },
     // "overrides": [
     //     {
