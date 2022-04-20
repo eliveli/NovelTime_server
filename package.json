@@ -3,7 +3,6 @@
   "version": "1.0.0",
   "description": "",
   "main": "src/index.ts",
-  
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "nodemon --watch 'src/**/*.ts' --exec ts-node src/index.ts",
@@ -21,6 +20,7 @@
     "express": "^4.17.3",
     "http": "^0.0.1-security",
     "mariadb": "^3.0.0",
+    "node-fetch": "^2.6.7",
     "puppeteer": "^13.4.1",
     "socket.io": "^4.4.1"
   },
@@ -28,6 +28,7 @@
     "@tsconfig/node16": "^1.0.2",
     "@types/express": "^4.17.13",
     "@types/node": "^17.0.21",
+    "@types/node-fetch": "^2.6.1",
     "@types/puppeteer": "^5.4.5",
     "@typescript-eslint/eslint-plugin": "^5.13.0",
     "@typescript-eslint/parser": "^5.13.0",

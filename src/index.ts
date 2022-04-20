@@ -3,6 +3,7 @@ import http from "http";
 import { Server } from "socket.io";
 import cors from "cors";
 import novels from "./routes/novels";
+import login from "./routes/login";
 
 const app = express();
 const server = http.createServer(app);
@@ -29,6 +30,7 @@ app.get("/", (req, res) => {
 
 // use Routes
 app.use("/novels", novels);
+app.use("/login", login);
 
 // socket io server // configure private message
 // -- it is required
@@ -36,8 +38,10 @@ app.use("/novels", novels);
 // when user send a message,
 // get one just before the message from database
 // if two are same in userName, createTime,
-// set "isContinuous" of previous message "true"
-// and set "isContinuous" of current message "false"
+//
+// look at the socket client event handler
+// set isContinuous, isContinuousFirst, isContinuousLast of two messages
+//
 // and send the current message to user
 // ------------------------------------------------------------------//
 io.on("connection", (socket) => {
@@ -47,7 +51,14 @@ io.on("connection", (socket) => {
 
   socket.on("send message", (data) => {
     io.to(data.roomId).emit("new message", data.msg);
+    console.log("inside end message");
   });
+
+  socket.on("disconnect", (reason) => {
+    console.log("user disconnected");
+  });
+
+  console.log("outside send message ");
 });
 
 const port = process.env.PORT || 8082;

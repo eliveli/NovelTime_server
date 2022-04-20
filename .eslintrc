@@ -57,7 +57,9 @@
         //* Avoid Bugs
         "no-undef": "error",
         "semi": "error",
-        "semi-spacing": "error"
+        "semi-spacing": "error",
+        "linebreak-style":"off",
+        "prettier/prettier":"off"
         // //* Best Practices
         // "eqeqeq": "warn",
         // "no-invalid-this": "error",

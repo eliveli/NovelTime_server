@@ -6,7 +6,7 @@ const query = {
   getNovel: " SELECT * FROM novelInfo WHERE novelId = (?) ",
 };
 
-interface novelInfo {
+interface NovelInfo {
   novelId: string;
   novelImg: string;
   novelTitle: string;
@@ -19,7 +19,7 @@ interface novelInfo {
   novelUrl: string;
 }
 
-export const setNovel = async (novelInfo: novelInfo) => {
+export const setNovel = async (novelInfo: NovelInfo) => {
   await pool
     .getConnection()
     .then((connection) => {
@@ -42,7 +42,7 @@ export const setNovel = async (novelInfo: novelInfo) => {
           0,
           0,
         ])
-        .then((res) => {
+        .then(() => {
           // When done with the connection, release it.
           connection.release();
         })
