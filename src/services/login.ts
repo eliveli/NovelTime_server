@@ -5,7 +5,7 @@ import pool from "../configs/db";
 
 dotenv.config();
 
-async function getAccessToken(code: string) {
+async function getToken(code: string) {
   // 개발 환경에 따라 달라짐. NODE_ENV 환경변수 미리 설정
   const REDIRECT_URI =
     process.env.NODE_ENV === "production" ? "" : "http://localhost:3000/oauth/callback/kakao";
@@ -46,6 +46,28 @@ async function getAccessToken(code: string) {
   }
 }
 
+async function getUserInfo(accessToken: string) {
+  try {
+    return await fetch("https://kapi.kakao.com/v2/user/me", {
+      method: "GET",
+      headers: {
+        "Content-type": "application/x-www-form-urlencoded;charset=utf-8",
+        Authorization: `Bearer ${accessToken}`,
+      },
+    })
+      .then((res) => {
+        console.log("user info : ", res);
+        return res.json();
+      })
+      .catch((err) => {
+        console.log("in service : fail when getting user info : ", err);
+      });
+  } catch (error) {
+    console.log("in service, getUserInfo error: ", error);
+  }
+}
+
 export async function oauthKakao(code: string) {
-  return await getAccessToken(code);
+  const token = await getToken(code);
+  return await getUserInfo(token.access_token);
 }
