@@ -1,11 +1,11 @@
 /* eslint-disable import/prefer-default-export */
 import dotenv from "dotenv";
 import fetch from "node-fetch";
-import pool from "../configs/db";
+import pool from "../../configs/db";
 
 dotenv.config();
 
-async function getToken(code: string) {
+async function getKakaoToken(code: string) {
   // 개발 환경에 따라 달라짐. NODE_ENV 환경변수 미리 설정
   const REDIRECT_URI =
     process.env.NODE_ENV === "production" ? "" : "http://localhost:3000/oauth/callback/kakao";
@@ -46,7 +46,7 @@ async function getToken(code: string) {
   }
 }
 
-async function getUserInfo(accessToken: string) {
+async function getKakaoUserInfo(accessToken: string) {
   try {
     return await fetch("https://kapi.kakao.com/v2/user/me", {
       method: "GET",
@@ -67,7 +67,7 @@ async function getUserInfo(accessToken: string) {
   }
 }
 
-export async function oauthKakao(code: string) {
-  const token = await getToken(code);
-  return await getUserInfo(token.access_token);
+export async function loginKakao(code: string) {
+  const token = await getKakaoToken(code);
+  return await getKakaoUserInfo(token.access_token);
 }

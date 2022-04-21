@@ -3,7 +3,7 @@ import http from "http";
 import { Server } from "socket.io";
 import cors from "cors";
 import novels from "./routes/novels";
-import login from "./routes/login";
+import user from "./routes/user";
 
 const app = express();
 const server = http.createServer(app);
@@ -30,7 +30,7 @@ app.get("/", (req, res) => {
 
 // use Routes
 app.use("/novels", novels);
-app.use("/login", login);
+app.use("/user", user);
 
 // socket io server // configure private message
 // -- it is required

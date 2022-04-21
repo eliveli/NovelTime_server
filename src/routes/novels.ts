@@ -1,6 +1,6 @@
 import express from "express";
 
-import { searchByTitle, getNovelById } from "../controllers/getNovels";
+import { searchByTitle, getNovelById } from "../controllers/novels";
 
 const router = express.Router();
 
