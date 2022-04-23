@@ -157,14 +157,14 @@ export const setNewUserDB = async (userInfo: UserInfo) => {
 
 // expire seconds
 function expireAt(expireIn: number) {
-  const timestampSecond = Math.floor(+new Date() / 1000); // current time stamp seconds
+  const timestampSecond = +new Date() / 1000; // current time stamp seconds
   return timestampSecond + expireIn;
 }
 export async function loginKakao(code: string) {
   const tokenKakao = await getTokenKakao(code);
   const token = {
     accessToken: tokenKakao.access_token as string,
-    accessTokenExpire: expireAt(tokenKakao.expires_in as number),
+    accessTokenExpireAt: expireAt(tokenKakao.expires_in as number),
     refreshToken: tokenKakao.refresh_token as string,
     refreshTokenExpireAt: expireAt(tokenKakao.refresh_token_expires_in as number),
   };
@@ -198,6 +198,6 @@ export async function loginKakao(code: string) {
     }
     // new user
     setNewUserDB(userInfo);
-    return userInfo;
+    return { userName: userInfo.userName, userImg: userInfo.userImg, token };
   });
 }

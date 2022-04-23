@@ -2,6 +2,7 @@ import express from "express"; // import를 써야 express의 콜백(app.get("/"
 import http from "http";
 import { Server } from "socket.io";
 import cors from "cors";
+import cookieParser from "cookie-parser";
 import novels from "./routes/novels";
 import user from "./routes/user";
 
@@ -16,9 +17,15 @@ const io = new Server(server, {
   },
 });
 
-const corsOptions = { origin: "http://localhost:3000", credentials: true };
+const corsOptions = {
+  origin: "http://localhost:3000",
+  allowedHeaders: ["Content-Type", "Authorization", "x-csrf-token"],
+  exposedHeaders: ["*", "Authorization"],
+  credentials: true,
+};
 // credentials 사용자 인증이 필요한 리소스 접근이 필요한 경우 true
 app.use(cors(corsOptions));
+app.use(cookieParser());
 
 // Init Middleware
 app.use(express.json());
