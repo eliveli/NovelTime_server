@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-misused-promises */
 /* eslint-disable @typescript-eslint/no-floating-promises */
 /* eslint-disable @typescript-eslint/no-unsafe-return */
 /* eslint-disable consistent-return */
@@ -72,13 +73,13 @@ async function getUserInfoKakao(accessToken: string) {
   }
 }
 
-function getUserInfoDB(userEmail: string): Promise<any> {
+function getUserInfoDB(userId: string): Promise<any> {
   return new Promise(async (resolve) => {
     await pool
       .getConnection()
       .then((connection) => {
         connection
-          .query("SELECT userName, userImg FROM user WHERE userEmail = (?) ", userEmail)
+          .query("SELECT userName, userImg FROM user WHERE userId = (?) ", userId)
           .then((data) => {
             connection.release();
             resolve(data);
@@ -95,7 +96,7 @@ function getUserInfoDB(userEmail: string): Promise<any> {
 }
 
 export const setRefreshTokenDB = async (
-  userEmail: string,
+  userId: string,
   refreshToken: string,
   refreshTokenExpireAt: number,
 ) =>
@@ -103,10 +104,11 @@ export const setRefreshTokenDB = async (
     .getConnection()
     .then((connection) => {
       connection
-        .query(
-          "UPDATE user SET refreshToken = (?), refreshTokenExpireAt=(?) where userEmail = (?)",
-          [refreshToken, refreshTokenExpireAt, userEmail],
-        )
+        .query("UPDATE user SET refreshToken = (?), refreshTokenExpireAt=(?) where userId = (?)", [
+          refreshToken,
+          refreshTokenExpireAt,
+          userId,
+        ])
         .then(() => {
           // When done with the connection, release it.
           connection.release();
@@ -122,7 +124,7 @@ export const setRefreshTokenDB = async (
     });
 
 type UserInfo = {
-  userEmail: string;
+  userId: string;
   userName: string;
   userImg: string;
   refreshToken: string;
@@ -134,7 +136,7 @@ export const setNewUserDB = async (userInfo: UserInfo) => {
     .then((connection) => {
       connection
         .query("INSERT INTO user values (?,?,?,?,?)", [
-          userInfo.userEmail,
+          userInfo.userId,
           userInfo.userName,
           userInfo.userImg,
           userInfo.refreshToken,
@@ -171,7 +173,7 @@ export async function loginKakao(code: string) {
 
   const userInfoKakao = await getUserInfoKakao(token.accessToken);
   const userInfo = {
-    userEmail: userInfoKakao.kakao_account.email as string,
+    userId: userInfoKakao.kakao_account.email as string,
     userName: userInfoKakao.properties.nickname as string,
     userImg: userInfoKakao.properties.profile_image as string,
     refreshToken: token.refreshToken,
@@ -189,15 +191,15 @@ export async function loginKakao(code: string) {
   //     access token can't be reissue.
   //     in this case, user must login again and get new tokens.
   // - if user is new(signup user), set new user info in DB
-  return getUserInfoDB(userInfo.userEmail).then((data) => {
+  return getUserInfoDB(userInfo.userId).then((data) => {
     const { userName, userImg } = data[0];
     // user who is in DB
     if (userName) {
-      setRefreshTokenDB(userInfo.userEmail, token.refreshToken, token.refreshTokenExpireAt);
-      return { userName, userImg, token };
+      setRefreshTokenDB(userInfo.userId, token.refreshToken, token.refreshTokenExpireAt);
+      return { userId: userInfo.userId, userName, userImg };
     }
     // new user
     setNewUserDB(userInfo);
-    return { userName: userInfo.userName, userImg: userInfo.userImg, token };
+    return { userId: userInfo.userId, userName: userInfo.userName, userImg: userInfo.userImg };
   });
 }
