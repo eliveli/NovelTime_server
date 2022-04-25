@@ -5,27 +5,30 @@ dotenv.config();
 
 const privateKey = process.env.JWT_PRIVATE_KEY;
 
-export function generateAccessToken(userId: string) {
+interface UserInfo {
+  userInfo: { userId: string; userName: string; userImg: string };
+}
+export function generateAccessToken({ userInfo }: UserInfo) {
   const jwtExpirySeconds = 1800; // 30 min
-  const accessToken = jwt.sign({ userId }, privateKey as string, {
+  const accessToken = jwt.sign(userInfo, privateKey as string, {
     algorithm: "HS256",
     expiresIn: jwtExpirySeconds,
   });
   console.log("access token: ", accessToken);
   return accessToken;
 }
-export function generateRefreshToken(userId: string) {
+export function generateRefreshToken({ userInfo }: UserInfo) {
   const jwtExpirySeconds = 5184000; // 2 months
-  const refreshToken = jwt.sign({ userId }, privateKey as string, {
+  const refreshToken = jwt.sign(userInfo, privateKey as string, {
     algorithm: "HS256",
     expiresIn: jwtExpirySeconds,
   });
   console.log("refresh token: ", refreshToken);
   return refreshToken;
 }
-export function generateToken(userId: string) {
-  const accessToken = generateAccessToken(userId);
-  const refreshToken = generateRefreshToken(userId);
+export function generateToken({ userInfo }: UserInfo) {
+  const accessToken = generateAccessToken({ userInfo });
+  const refreshToken = generateRefreshToken({ userInfo });
 
   return { accessToken, refreshToken };
 }

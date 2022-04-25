@@ -8,7 +8,7 @@ export const loginKakaoController: RequestHandler = (req, res, next) => {
     .then((userInfo) => {
       console.log(userInfo);
 
-      const { accessToken, refreshToken } = generateToken(userInfo.userId);
+      const { accessToken, refreshToken } = generateToken({ userInfo });
 
       res.cookie("refreshToken", refreshToken, {
         path: "/refreshToken",
