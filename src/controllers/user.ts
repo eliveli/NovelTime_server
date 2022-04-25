@@ -18,7 +18,7 @@ export const loginKakaoController: RequestHandler = (req, res, next) => {
         const { accessToken, refreshToken } = generateToken({ userInfo });
 
         res.cookie("refreshToken", refreshToken, {
-          // path: "/refreshToken",
+          path: "/user/refreshToken",
           expires: new Date(Date.now() + 2 * 30 * 24 * 60 * 60 * 1000), // 2 months
           httpOnly: true, // You can't access these tokens in the client's javascript
           secure: process.env.NODE_ENV === "production", // Forces to use https in production
