@@ -95,20 +95,12 @@ function getUserInfoDB(userId: string): Promise<any> {
   });
 }
 
-export const setRefreshTokenDB = async (
-  userId: string,
-  refreshToken: string,
-  refreshTokenExpireAt: number,
-) =>
+export const setRefreshTokenDB = async (userId: string, refreshToken: string) =>
   pool
     .getConnection()
     .then((connection) => {
       connection
-        .query("UPDATE user SET refreshToken = (?), refreshTokenExpireAt=(?) where userId = (?)", [
-          refreshToken,
-          refreshTokenExpireAt,
-          userId,
-        ])
+        .query("UPDATE user SET refreshToken = (?) WHERE userId = (?)", [refreshToken, userId])
         .then(() => {
           // When done with the connection, release it.
           connection.release();
@@ -127,20 +119,17 @@ type UserInfo = {
   userId: string;
   userName: string;
   userImg: string;
-  refreshToken: string;
-  refreshTokenExpireAt: number;
 };
 export const setNewUserDB = async (userInfo: UserInfo) => {
   await pool
     .getConnection()
     .then((connection) => {
       connection
-        .query("INSERT INTO user values (?,?,?,?,?)", [
+        .query("INSERT INTO user values (?,?,?,?)", [
           userInfo.userId,
           userInfo.userName,
           userInfo.userImg,
-          userInfo.refreshToken,
-          userInfo.refreshTokenExpireAt,
+          "", // for refresh token
         ])
         .then(() => {
           // When done with the connection, release it.
@@ -157,18 +146,39 @@ export const setNewUserDB = async (userInfo: UserInfo) => {
     });
 };
 
-// expire seconds
-function expireAt(expireIn: number) {
-  const timestampSecond = +new Date() / 1000; // current time stamp seconds
-  return timestampSecond + expireIn;
+export async function getRefreshTokenDB(userId: string): Promise<any> {
+  return new Promise(async (resolve) => {
+    await pool
+      .getConnection()
+      .then((connection) => {
+        connection
+          .query("SELECT refreshToken FROM user WHERE userId = (?) ", userId)
+          .then((data) => {
+            connection.release();
+            resolve(data);
+          })
+          .catch((err) => {
+            console.log(err);
+            connection.release();
+          });
+      })
+      .catch((err) => {
+        console.log(`not connected due to error: ${err}`);
+      });
+  });
 }
+// expire seconds //
+// function expireAt(expireIn: number) {
+//   const timestampSecond = +new Date() / 1000; // current time stamp seconds
+//   return timestampSecond + expireIn;
+// }
 export async function loginKakao(code: string) {
   const tokenKakao = await getTokenKakao(code);
   const token = {
     accessToken: tokenKakao.access_token as string,
-    accessTokenExpireAt: expireAt(tokenKakao.expires_in as number),
-    refreshToken: tokenKakao.refresh_token as string,
-    refreshTokenExpireAt: expireAt(tokenKakao.refresh_token_expires_in as number),
+    // accessTokenExpireAt: expireAt(tokenKakao.expires_in as number),
+    // refreshToken: tokenKakao.refresh_token as string,
+    // refreshTokenExpireAt: expireAt(tokenKakao.refresh_token_expires_in as number),
   };
 
   const userInfoKakao = await getUserInfoKakao(token.accessToken);
@@ -176,8 +186,6 @@ export async function loginKakao(code: string) {
     userId: userInfoKakao.kakao_account.email as string,
     userName: userInfoKakao.properties.nickname as string,
     userImg: userInfoKakao.properties.profile_image as string,
-    refreshToken: token.refreshToken,
-    refreshTokenExpireAt: token.refreshTokenExpireAt,
   };
 
   // login user or signup user //
@@ -192,14 +200,12 @@ export async function loginKakao(code: string) {
   //     in this case, user must login again and get new tokens.
   // - if user is new(signup user), set new user info in DB
   return getUserInfoDB(userInfo.userId).then((data) => {
-    const { userName, userImg } = data[0];
     // user who is in DB
-    if (userName) {
-      setRefreshTokenDB(userInfo.userId, token.refreshToken, token.refreshTokenExpireAt);
-      return { userId: userInfo.userId, userName, userImg };
+    if (data[0]?.userName) {
+      return { userId: userInfo.userId, userName: data[0].userName, userImg: data[0].userImg };
     }
     // new user
     setNewUserDB(userInfo);
-    return { userId: userInfo.userId, userName: userInfo.userName, userImg: userInfo.userImg };
+    return userInfo;
   });
 }

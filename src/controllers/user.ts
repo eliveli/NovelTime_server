@@ -2,7 +2,7 @@
 import { RequestHandler } from "express";
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
-import { loginKakao } from "../services/oauth/oauthKakao";
+import { loginKakao, setRefreshTokenDB, getRefreshTokenDB } from "../services/oauth/oauthKakao";
 import { generateToken, generateAccessToken } from "../services/auth/generateToken";
 
 dotenv.config();
@@ -11,11 +11,13 @@ const privateKey = process.env.JWT_PRIVATE_KEY;
 
 export const loginKakaoController: RequestHandler = (req, res, next) => {
   loginKakao(req.query.code as string)
-    .then((userInfo) => {
+    .then(async (userInfo) => {
       console.log(userInfo);
 
       try {
         const { accessToken, refreshToken } = generateToken({ userInfo });
+
+        await setRefreshTokenDB(userInfo.userId, refreshToken);
 
         res.cookie("refreshToken", refreshToken, {
           path: "/user/refreshToken",
@@ -48,6 +50,7 @@ export const refreshTokenController: RequestHandler = (req, res, next) => {
 
   console.log("refresh token : ", refreshToken);
   // if the cookie is not set, return an unauthorized error
+  // user didn't login before
   if (!refreshToken) return res.sendStatus(401);
 
   let payload: UserInfo;
@@ -65,14 +68,33 @@ export const refreshTokenController: RequestHandler = (req, res, next) => {
       // if the error thrown is because the JWT is unauthorized, return a 401 error
       return res.status(401).end();
     }
+
     // otherwise, return a bad request error
     return res.status(400).end();
   }
 
-  const accessToken = generateAccessToken({
-    userInfo: { userId: payload.userId, userImg: payload.userImg, userName: payload.userName },
-  });
+  // Make sure that refresh token is the one in DB
+  getRefreshTokenDB(payload.userId)
+    .then((data) => {
+      console.log("data:", data);
 
-  console.log("new access token: ", accessToken);
-  return res.json({ accessToken, userInfo: payload });
+      if (!data[0]) {
+        throw new Error("user id might be not correct");
+      }
+      const isUsersToken = refreshToken === data[0].refreshToken;
+
+      if (!isUsersToken) {
+        throw new Error("access token is different from one in DB");
+      }
+      const accessToken = generateAccessToken({
+        userInfo: { userId: payload.userId, userImg: payload.userImg, userName: payload.userName },
+      });
+
+      console.log("new access token: ", accessToken);
+      return res.json({ accessToken, userInfo: payload });
+    })
+    .catch((err) => {
+      console.log(err);
+      return res.status(400).json("failed to get refresh token or make new access token");
+    });
 };
