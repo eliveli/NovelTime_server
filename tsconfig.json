@@ -26,7 +26,14 @@
     
         // Recommended: Compiler complains about expressions implicitly typed as 'any'
         "noImplicitAny": true, 
+
+        "typeRoots": [
+          "./src/types",
+          "./node_modules/types",
+        ] 
+
       },
       "include": ["src", "node_modules/@types/puppeteer/index.d.ts"], // which files to compile
       "exclude": ["node_modules"], // which files to skip
+
   }

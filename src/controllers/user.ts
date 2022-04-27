@@ -2,14 +2,19 @@
 import { RequestHandler } from "express";
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
-import { loginKakao, setRefreshTokenDB, getRefreshTokenDB } from "../services/oauth/oauthKakao";
+import {
+  loginKakao,
+  setRefreshTokenDB,
+  getRefreshTokenDB,
+  deleteRefreshTokenDB,
+} from "../services/oauth/oauthKakao";
 import { generateToken, generateAccessToken } from "../services/auth/generateToken";
 
 dotenv.config();
 
 const privateKey = process.env.JWT_PRIVATE_KEY;
 
-export const loginKakaoController: RequestHandler = (req, res, next) => {
+export const loginKakaoController: RequestHandler = (req, res) => {
   loginKakao(req.query.code as string)
     .then(async (userInfo) => {
       console.log(userInfo);
@@ -44,14 +49,58 @@ interface UserInfo {
   userName: string;
   userImg: string;
 }
+
+// access token의 유효성 검사
+export const authenticateAccessTokenMiddleware: RequestHandler = (req, res, next) => {
+  const authHeader = req.headers.authorization;
+  const token = authHeader && authHeader.split(" ")[1];
+
+  console.log("authHeader: ", authHeader);
+  console.log("token:", token);
+  if (!token) {
+    console.log("wrong token format or token is not sended");
+    return res.status(400);
+  }
+  try {
+    const payload = jwt.verify(token, privateKey as string) as UserInfo;
+
+    req.userId = payload.userId;
+
+    next();
+  } catch (error) {
+    console.log(error);
+    return res.status(403);
+  }
+};
+
+export const logoutController: RequestHandler = (req, res) => {
+  // 헤더에 있는 액세스 토큰 받아서 검증. 그리고 로그아웃
+  const { userId } = req;
+  console.log("userId:", userId);
+  if (!userId) {
+    console.log("user id was not set in header");
+    return res.status(400).end();
+  }
+  try {
+    deleteRefreshTokenDB(userId);
+    res.removeHeader("authorization");
+
+    // 리프레시 토큰 디비에서 지우기
+    // 헤더 액세스 토큰 지우기
+    // 프론트에서 로그인 유저 정보 지우기
+  } catch (error) {
+    console.log(error);
+  }
+};
+
 // 1. 리프레시 토큰 검증 2. 액세스 토큰 발급
-export const refreshTokenController: RequestHandler = (req, res, next) => {
+export const refreshTokenController: RequestHandler = (req, res) => {
   const { refreshToken } = req.cookies;
 
   console.log("refresh token : ", refreshToken);
   // if the cookie is not set, return an unauthorized error
   // user didn't login before
-  if (!refreshToken) return res.sendStatus(401);
+  if (!refreshToken) return res.status(401).end();
 
   let payload: UserInfo;
   try {
@@ -95,6 +144,8 @@ export const refreshTokenController: RequestHandler = (req, res, next) => {
     })
     .catch((err) => {
       console.log(err);
-      return res.status(400).json("failed to get refresh token or make new access token");
+      return res
+        .status(400)
+        .json("refresh token is different from one in DB or failed to make new access token");
     });
 };

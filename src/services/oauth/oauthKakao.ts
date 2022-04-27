@@ -146,6 +146,24 @@ export const setNewUserDB = async (userInfo: UserInfo) => {
     });
 };
 
+export function deleteRefreshTokenDB(userId: string) {
+  pool
+    .getConnection()
+    .then((connection) => {
+      connection
+        .query("UPDATE user SET refreshToken = (?) WHERE userId = (?)", ["", userId])
+        .then(() => {
+          connection.release();
+        })
+        .catch((err) => {
+          console.log(err);
+          connection.release();
+        });
+    })
+    .catch((err) => {
+      console.log(`not connected due to error: ${err}`);
+    });
+}
 export async function getRefreshTokenDB(userId: string): Promise<any> {
   return new Promise(async (resolve) => {
     await pool
