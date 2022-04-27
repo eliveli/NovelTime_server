@@ -74,7 +74,6 @@ export const authenticateAccessTokenMiddleware: RequestHandler = (req, res, next
 };
 
 export const logoutController: RequestHandler = (req, res) => {
-  // 헤더에 있는 액세스 토큰 받아서 검증. 그리고 로그아웃
   const { userId } = req;
   console.log("userId:", userId);
   if (!userId) {
@@ -83,9 +82,13 @@ export const logoutController: RequestHandler = (req, res) => {
   }
   try {
     deleteRefreshTokenDB(userId);
+    res.clearCookie("refreshToken", { path: "/user/refreshToken" });
     res.removeHeader("authorization");
 
+    console.log("로그아웃 완료");
+    res.json("로그아웃 완료");
     // 리프레시 토큰 디비에서 지우기
+    // 리프레시 토큰 쿠키 지우기
     // 헤더 액세스 토큰 지우기
     // 프론트에서 로그인 유저 정보 지우기
   } catch (error) {
