@@ -103,7 +103,7 @@ export const refreshTokenController: RequestHandler = (req, res) => {
   console.log("refresh token : ", refreshToken);
   // if the cookie is not set, return an unauthorized error
   // user didn't login before
-  if (!refreshToken) return res.status(401).end();
+  if (!refreshToken) return res.status(401).json({ message: "non login user" });
 
   let payload: UserInfo;
   try {
