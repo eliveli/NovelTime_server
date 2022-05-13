@@ -14,7 +14,7 @@ dotenv.config();
 async function getTokenKakao(code: string) {
   // 개발 환경에 따라 달라짐. NODE_ENV 환경변수 미리 설정
   const REDIRECT_URI =
-    process.env.NODE_ENV === "production" ? "" : "http://localhost:3000/oauth/callback/kakao";
+    process.env.NODE_ENV === "production" ? "" : "http://domainfordev:3000/oauth/callback/kakao";
 
   type BodyDataType = {
     grant_type: string;
