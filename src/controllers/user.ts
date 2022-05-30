@@ -9,6 +9,7 @@ import {
   deleteRefreshTokenDB,
 } from "../services/oauth/oauthKakao";
 import { generateToken, generateAccessToken } from "../services/auth/generateToken";
+import { checkUserName } from "../services/user/checkUserName";
 
 dotenv.config();
 
@@ -58,7 +59,7 @@ export const authenticateAccessTokenMiddleware: RequestHandler = (req, res, next
   console.log("authHeader: ", authHeader);
   console.log("token:", token);
   if (!token) {
-    console.log("wrong token format or token is not sended");
+    console.log("wrong token format or token was not sended");
     return res.status(400);
   }
   try {
@@ -101,7 +102,7 @@ export const refreshTokenController: RequestHandler = (req, res) => {
   const { refreshToken } = req.cookies;
 
   console.log("refresh token : ", refreshToken);
-  // if the cookie is not set, return an unauthorized error
+  // if the cookie was not set, return an unauthorized error
   // user didn't login before
   if (!refreshToken) return res.status(401).json({ message: "non login user" });
 
@@ -151,4 +152,19 @@ export const refreshTokenController: RequestHandler = (req, res) => {
         .status(400)
         .json("refresh token is different from one in DB or failed to make new access token");
     });
+};
+
+export const checkUserNameController: RequestHandler = (req, res) => {
+  const { newUserName } = req.body;
+  // check for duplicate username
+  checkUserName(newUserName).then((data) => {
+    console.log("data:", data);
+
+    // if the user name exists or not
+    // check again later as using this api in front end! //
+    if (!data[0]) {
+      return res.json("you can use this name");
+    }
+    return res.json("you can't use this name");
+  });
 };
