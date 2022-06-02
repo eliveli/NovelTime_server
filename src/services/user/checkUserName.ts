@@ -4,13 +4,15 @@ const query = {
   checkForDuplicate: " SELECT * FROM user WHERE userName = (?) ",
 };
 
+// eslint-disable-next-line import/prefer-default-export
 export const checkUserName = (newUserName: string) =>
-  new Promise(async (resolve) => {
+  // default return type is unknown. it makes error so I changed it as any
+  new Promise<any>(async (resolve) => {
     await pool
       .getConnection()
       .then((connection) => {
         connection
-          .query(query.checkForDuplicate, newUserName)
+          .query(query.checkForDuplicate, [newUserName])
           .then((data) => {
             resolve(data);
             // When done with the connection, release it.

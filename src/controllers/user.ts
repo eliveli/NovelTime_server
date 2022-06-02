@@ -157,14 +157,16 @@ export const refreshTokenController: RequestHandler = (req, res) => {
 export const checkUserNameController: RequestHandler = (req, res) => {
   const { newUserName } = req.body;
   // check for duplicate username
-  checkUserName(newUserName).then((data) => {
-    console.log("data:", data);
-
-    // if the user name exists or not
-    // check again later as using this api in front end! //
-    if (!data[0]) {
-      return res.json("you can use this name");
-    }
-    return res.json("you can't use this name");
-  });
+  checkUserName(newUserName as string)
+    .then((data) => {
+      // if the user name exists or not
+      // check again later as using this api in front end! //
+      if (!data[0]) {
+        return res.json("you can use this name");
+      }
+      return res.json("you can't use this name");
+    })
+    .catch((err) => {
+      console.log(err);
+    });
 };
