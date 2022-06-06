@@ -79,7 +79,10 @@ function getUserInfoDB(userId: string): Promise<any> {
       .getConnection()
       .then((connection) => {
         connection
-          .query("SELECT userName, userImg FROM user WHERE userId = (?) ", userId)
+          .query(
+            "SELECT userName, userImgSrc, userImgPosition, userBGSrc, userBGPosition FROM user WHERE userId = (?) ",
+            userId,
+          )
           .then((data) => {
             connection.release();
             resolve(data);
@@ -118,17 +121,27 @@ export const setRefreshTokenDB = async (userId: string, refreshToken: string) =>
 type UserInfo = {
   userId: string;
   userName: string;
-  userImg: string;
+  userImg: {
+    src: string;
+    position: string;
+  };
+  userBG: {
+    src: string;
+    position: string;
+  };
 };
 export const setNewUserDB = async (userInfo: UserInfo) => {
   await pool
     .getConnection()
     .then((connection) => {
       connection
-        .query("INSERT INTO user values (?,?,?,?)", [
+        .query("INSERT INTO user values (?,?,?,?,?,?,?)", [
           userInfo.userId,
           userInfo.userName,
-          userInfo.userImg,
+          userInfo.userImg.src,
+          userInfo.userImg.position,
+          userInfo.userBG.src,
+          userInfo.userBG.position,
           "", // for refresh token
         ])
         .then(() => {
@@ -203,7 +216,11 @@ export async function loginKakao(code: string) {
   const userInfo = {
     userId: userInfoKakao.kakao_account.email as string,
     userName: userInfoKakao.properties.nickname as string,
-    userImg: userInfoKakao.properties.profile_image as string,
+    userImg: {
+      src: userInfoKakao.properties.profile_image as string,
+      position: "",
+    },
+    userBG: { src: "", position: "" },
   };
 
   // login user or signup user //
@@ -220,7 +237,18 @@ export async function loginKakao(code: string) {
   return getUserInfoDB(userInfo.userId).then((data) => {
     // user who is in DB
     if (data[0]?.userName) {
-      return { userId: userInfo.userId, userName: data[0].userName, userImg: data[0].userImg };
+      return {
+        userId: userInfo.userId,
+        userName: data[0].userName,
+        userImg: {
+          src: data[0].userImgSrc,
+          position: data[0].userImgPosition,
+        },
+        userBG: {
+          src: data[0].userBGSrc,
+          position: data[0].userBGPosition,
+        },
+      };
     }
     // new user
     setNewUserDB(userInfo);

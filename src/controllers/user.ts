@@ -18,7 +18,7 @@ const privateKey = process.env.JWT_PRIVATE_KEY;
 export const loginKakaoController: RequestHandler = (req, res) => {
   loginKakao(req.query.code as string)
     .then(async (userInfo) => {
-      console.log(userInfo);
+      console.log("before generateToken in loginKakaoController:", userInfo);
 
       try {
         const { accessToken, refreshToken } = generateToken({ userInfo });
@@ -45,12 +45,14 @@ export const loginKakaoController: RequestHandler = (req, res) => {
     .catch((err) => console.log("in controller : ", err));
 };
 
-interface UserInfo {
+type ChangedUserInfo = {
   userId: string;
   userName: string;
-  userImg: string;
-}
-
+  userImgSrc: string;
+  userImgPosition: string;
+  userBGSrc: string;
+  userBGPosition: string;
+};
 // access token의 유효성 검사
 export const authenticateAccessTokenMiddleware: RequestHandler = (req, res, next) => {
   const authHeader = req.headers.authorization;
@@ -63,7 +65,7 @@ export const authenticateAccessTokenMiddleware: RequestHandler = (req, res, next
     return res.status(400);
   }
   try {
-    const payload = jwt.verify(token, privateKey as string) as UserInfo;
+    const payload = jwt.verify(token, privateKey as string) as ChangedUserInfo;
 
     req.userId = payload.userId;
 
@@ -106,13 +108,13 @@ export const refreshTokenController: RequestHandler = (req, res) => {
   // user didn't login before
   if (!refreshToken) return res.status(401).json({ message: "non login user" });
 
-  let payload: UserInfo;
+  let payload: ChangedUserInfo;
   try {
     // Parse the JWT string and store the result in `payload`.
     // Note that we are passing the key in this method as well. This method will throw an error
     // if the token is invalid (if it has expired according to the expiry time we set on sign in),
     // or if the signature does not match
-    payload = jwt.verify(refreshToken as string, privateKey as string) as UserInfo;
+    payload = jwt.verify(refreshToken as string, privateKey as string) as ChangedUserInfo;
     console.log("payload refresh token info: ", payload);
   } catch (e) {
     if (e instanceof jwt.JsonWebTokenError) {
@@ -139,12 +141,32 @@ export const refreshTokenController: RequestHandler = (req, res) => {
       if (!isUsersToken) {
         throw new Error("access token is different from one in DB");
       }
-      const accessToken = generateAccessToken({
-        userInfo: { userId: payload.userId, userImg: payload.userImg, userName: payload.userName },
-      });
+
+      const userInfoToClient = {
+        userId: payload.userId,
+        userName: payload.userName,
+        userImg: {
+          src: payload.userImgSrc,
+          position: payload.userImgPosition,
+        },
+        userBG: {
+          src: payload.userBGSrc,
+          position: payload.userBGPosition,
+        },
+      };
+      const userInfoParams = {
+        userId: payload.userId,
+        userName: payload.userName,
+        userImgSrc: payload.userImgSrc,
+        userImgPosition: payload.userImgPosition,
+        userBGSrc: payload.userBGSrc,
+        userBGPosition: payload.userBGPosition,
+      };
+
+      const accessToken = generateAccessToken(userInfoParams);
 
       console.log("new access token: ", accessToken);
-      return res.json({ accessToken, userInfo: payload });
+      return res.json({ accessToken, userInfo: userInfoToClient });
     })
     .catch((err) => {
       console.log(err);
