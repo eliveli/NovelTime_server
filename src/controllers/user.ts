@@ -197,8 +197,10 @@ type ChangedImg = {
   src: string;
   position: string;
 };
-export const saveChangedInfoController: RequestHandler = (req, res) => {
-  const { changedUserName, changedUserImg, changedUserBG } = req.body;
+export const saveChangedInfoController: RequestHandler = (req) => {
+  const {
+    changedUserInfo: { changedUserName, changedUserImg, changedUserBG },
+  } = req.body;
   // save changed user info
   saveUserInfo(
     req.userId as string,
@@ -206,7 +208,7 @@ export const saveChangedInfoController: RequestHandler = (req, res) => {
     changedUserImg as ChangedImg,
     changedUserBG as ChangedImg,
   )
-    .then(() => res.json("succeed to changing user info"))
+    .then(() => console.log("succeed to changing user info"))
     .catch((err) => {
       console.log(err);
     });
