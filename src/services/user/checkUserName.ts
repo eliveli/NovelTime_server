@@ -4,11 +4,10 @@ const query = {
   checkForDuplicate: " SELECT * FROM user WHERE userName = (?) ",
 };
 
-// eslint-disable-next-line import/prefer-default-export
-export const checkUserName = (newUserName: string) =>
+export default function checkUserName(newUserName: string) {
   // default return type is unknown. it makes error so I changed it as any
-  new Promise<any>(async (resolve) => {
-    await pool
+  return new Promise<any>((resolve) => {
+    pool
       .getConnection()
       .then((connection) => {
         connection
@@ -28,3 +27,4 @@ export const checkUserName = (newUserName: string) =>
         console.log(`not connected due to error: ${err}`);
       });
   });
+}

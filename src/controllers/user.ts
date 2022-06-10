@@ -9,7 +9,8 @@ import {
   deleteRefreshTokenDB,
 } from "../services/oauth/oauthKakao";
 import { generateToken, generateAccessToken } from "../services/auth/generateToken";
-import { checkUserName } from "../services/user/checkUserName";
+import checkUserName from "../services/user/checkUserName";
+import saveUserInfo from "../services/user/saveUserInfo";
 
 dotenv.config();
 
@@ -182,12 +183,30 @@ export const checkUserNameController: RequestHandler = (req, res) => {
   checkUserName(newUserName as string)
     .then((data) => {
       // if the user name exists or not
-      // check again later as using this api in front end! //
       if (!data[0]) {
         return res.json("you can use this name");
       }
       return res.json("you can't use this name");
     })
+    .catch((err) => {
+      console.log(err);
+    });
+};
+
+type ChangedImg = {
+  src: string;
+  position: string;
+};
+export const saveChangedInfoController: RequestHandler = (req, res) => {
+  const { changedUserName, changedUserImg, changedUserBG } = req.body;
+  // save changed user info
+  saveUserInfo(
+    req.userId as string,
+    changedUserName as string,
+    changedUserImg as ChangedImg,
+    changedUserBG as ChangedImg,
+  )
+    .then(() => res.json("succeed to changing user info"))
     .catch((err) => {
       console.log(err);
     });
