@@ -6,6 +6,7 @@ import {
   refreshTokenController,
   authenticateAccessTokenMiddleware,
   checkUserNameController,
+  saveChangedInfoController,
 } from "../controllers/user";
 
 const router = express.Router();
@@ -17,5 +18,7 @@ router.get("/logout", authenticateAccessTokenMiddleware, logoutController);
 router.get("/refreshToken", refreshTokenController);
 
 router.post("/checkUserName", authenticateAccessTokenMiddleware, checkUserNameController);
+
+router.post("/saveChangedInfo", authenticateAccessTokenMiddleware, saveChangedInfoController);
 
 export default router;
