@@ -197,7 +197,7 @@ type ChangedImg = {
   src: string;
   position: string;
 };
-export const saveChangedInfoController: RequestHandler = (req) => {
+export const saveChangedInfoController: RequestHandler = (req, res) => {
   const {
     changedUserInfo: { changedUserName, changedUserImg, changedUserBG },
   } = req.body;
@@ -208,7 +208,13 @@ export const saveChangedInfoController: RequestHandler = (req) => {
     changedUserImg as ChangedImg,
     changedUserBG as ChangedImg,
   )
-    .then(() => console.log("succeed to changing user info"))
+    .then(() => {
+      console.log("succeed to changing user info");
+      // when I didn't return any data to front end process was waiting on and never finished.
+      // so I return this
+      // in front end process works well though the response data type I put is undefined
+      return res.json("succeed to changing user info");
+    })
     .catch((err) => {
       console.log(err);
     });
