@@ -201,21 +201,49 @@ export const saveChangedInfoController: RequestHandler = (req, res) => {
   const {
     changedUserInfo: { changedUserName, changedUserImg, changedUserBG },
   } = req.body;
-  // save changed user info
+
+  const userInfo = {
+    userId: req.userId as string,
+    userName: changedUserName as string,
+    userImg: changedUserImg as ChangedImg,
+    userBG: changedUserBG as ChangedImg,
+  };
+
+  // save changed user info in DB
   saveUserInfo(
     req.userId as string,
     changedUserName as string,
     changedUserImg as ChangedImg,
     changedUserBG as ChangedImg,
   )
-    .then(() => {
-      console.log("succeed to changing user info");
-      // when I didn't return any data to front end process was waiting on and never finished.
-      // so I return this
-      // in front end process works well though the response data type I put is undefined
-      return res.json("succeed to changing user info");
+    .then(async () => {
+      const { accessToken, refreshToken } = generateToken({ userInfo });
+
+      await setRefreshTokenDB(userInfo.userId, refreshToken);
+
+      res.cookie("refreshToken", refreshToken, {
+        path: "/user/refreshToken",
+        expires: new Date(Date.now() + 2 * 30 * 24 * 60 * 60 * 1000), // 2 months
+        httpOnly: true, // You can't access these tokens in the client's javascript
+        secure: process.env.NODE_ENV === "production", // Forces to use https in production
+        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax", // set to none for cross-request
+        // to set "sameSite:none", "secure:true" must be set
+      });
+
+      return res.json({ accessToken, userInfo });
     })
-    .catch((err) => {
-      console.log(err);
+    .catch((e) => {
+      if (e instanceof jwt.JsonWebTokenError) {
+        console.log("failed to generate token, jsonWebtokenError : ", e);
+      }
+      console.log("error : ", e);
+      return res.status(500).json("failed to save user info");
     });
+
+  // .then(
+  // () => res.json("succeed to changing user info"),
+  // when I didn't return any data to front end process was waiting on and never finished.
+  // so I return this and process works well in front end
+  // though the response data type I put in front code is undefined
+  // )
 };
