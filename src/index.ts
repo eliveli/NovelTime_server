@@ -10,7 +10,7 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: "http://domainfordev:3000",
+    origin: "http://domainfordev.com:3000",
     allowedHeaders: ["my-custom-header"],
     credentials: true,
     methods: ["GET", "POST"],
@@ -18,7 +18,7 @@ const io = new Server(server, {
 });
 
 const corsOptions = {
-  origin: "http://domainfordev:3000",
+  origin: "http://domainfordev.com:3000",
   allowedHeaders: ["Content-Type", "Authorization", "x-csrf-token"],
   exposedHeaders: ["*", "Authorization"],
   credentials: true,
