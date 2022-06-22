@@ -7,6 +7,7 @@ import {
   setRefreshTokenDB,
   getRefreshTokenDB,
   deleteRefreshTokenDB,
+  loginGoogle,
 } from "../services/oauth/oauthKakao";
 import { generateToken, generateAccessToken } from "../services/auth/generateToken";
 import checkUserName from "../services/user/checkUserName";
@@ -44,6 +45,35 @@ export const loginKakaoController: RequestHandler = (req, res) => {
       }
     })
     .catch((err) => console.log("in controller : ", err));
+};
+export const loginGoogleController: RequestHandler = (req, res) => {
+  loginGoogle(req.query.token as string);
+  // .then(async (userInfo) => {
+  //   console.log("before generateToken in loginKakaoController:", userInfo);
+
+  //   try {
+  //     const { accessToken, refreshToken } = generateToken({ userInfo });
+
+  //     await setRefreshTokenDB(userInfo.userId, refreshToken);
+
+  //     res.cookie("refreshToken", refreshToken, {
+  //       path: "/user/refreshToken",
+  //       expires: new Date(Date.now() + 2 * 30 * 24 * 60 * 60 * 1000), // 2 months
+  //       httpOnly: true, // You can't access these tokens in the client's javascript
+  //       secure: process.env.NODE_ENV === "production", // Forces to use https in production
+  //       sameSite: process.env.NODE_ENV === "production" ? "none" : "lax", // set to none for cross-request
+  //       // to set "sameSite:none", "secure:true" must be set
+  //     });
+
+  //     return res.json({ accessToken, userInfo });
+  //   } catch (e) {
+  //     if (e instanceof jwt.JsonWebTokenError) {
+  //       console.log("failed to generate token, jsonWebtokenError : ", e);
+  //     }
+  //     console.log("failed to generate token or set cookie : ", e);
+  //   }
+  // })
+  // .catch((err) => console.log("in controller : ", err));
 };
 
 type ChangedUserInfo = {

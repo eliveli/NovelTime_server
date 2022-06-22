@@ -2,6 +2,7 @@ import express from "express";
 
 import {
   loginKakaoController,
+  loginGoogleController,
   logoutController,
   refreshTokenController,
   authenticateAccessTokenMiddleware,
@@ -12,6 +13,8 @@ import {
 const router = express.Router();
 
 router.get("/login/kakao", loginKakaoController);
+
+router.get("/login/google", loginGoogleController);
 
 router.get("/logout", authenticateAccessTokenMiddleware, logoutController);
 
