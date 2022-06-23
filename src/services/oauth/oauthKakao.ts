@@ -276,57 +276,36 @@ export async function loginKakao(code: string) {
   });
 }
 export async function loginGoogle(accessToken: string) {
-  const userInfoGoogle = await getUserInfoGoogle(accessToken);
+  const userInfoByGoogle = await getUserInfoGoogle(accessToken);
 
-  console.log("userInfoGoogle:", userInfoGoogle);
+  const userInfo = {
+    userId: userInfoByGoogle.id as string,
+    userName: userInfoByGoogle.name as string,
+    userImg: {
+      src: userInfoByGoogle.picture as string,
+      position: "",
+    },
+    userBG: { src: "", position: "" },
+  };
 
-  // const token = {
-  //   accessToken: tokenKakao.access_token as string,
-  //   // accessTokenExpireAt: expireAt(tokenKakao.expires_in as number),
-  //   // refreshToken: tokenKakao.refresh_token as string,
-  //   // refreshTokenExpireAt: expireAt(tokenKakao.refresh_token_expires_in as number),
-  // };
-
-  // const userInfoKakao = await getUserInfoKakao(token.accessToken);
-  // const userInfo = {
-  //   userId: userInfoKakao.kakao_account.email as string,
-  //   userName: userInfoKakao.properties.nickname as string,
-  //   userImg: {
-  //     src: userInfoKakao.properties.profile_image as string,
-  //     position: "",
-  //   },
-  //   userBG: { src: "", position: "" },
-  // };
-
-  // // login user or signup user //
-  // // - if user exists in DB, set new refresh token
-  // //   (because user can login in other computer, refresh token must be reset in DB.
-  // //   - one situation. there is two computer A, B
-  // //     at first user loin in computer A, second login in computer B,
-  // //     last login in computer A again.
-  // //     there are access token and refresh token in computer A,
-  // //     but refresh token is different from one in DB,
-  // //     access token can't be reissue.
-  // //     in this case, user must login again and get new tokens.
-  // // - if user is new(signup user), set new user info in DB
-  // return getUserInfoDB(userInfo.userId).then((data) => {
-  //   // user who is in DB
-  //   if (data[0]?.userName) {
-  //     return {
-  //       userId: userInfo.userId,
-  //       userName: data[0].userName,
-  //       userImg: {
-  //         src: data[0].userImgSrc,
-  //         position: data[0].userImgPosition,
-  //       },
-  //       userBG: {
-  //         src: data[0].userBGSrc,
-  //         position: data[0].userBGPosition,
-  //       },
-  //     };
-  //   }
-  //   // new user
-  //   setNewUserDB(userInfo);
-  //   return userInfo;
-  // });
+  return getUserInfoDB(userInfo.userId).then((data) => {
+    // user who is in DB
+    if (data[0]?.userName) {
+      return {
+        userId: userInfo.userId,
+        userName: data[0].userName,
+        userImg: {
+          src: data[0].userImgSrc,
+          position: data[0].userImgPosition,
+        },
+        userBG: {
+          src: data[0].userBGSrc,
+          position: data[0].userBGPosition,
+        },
+      };
+    }
+    // new user
+    setNewUserDB(userInfo);
+    return userInfo;
+  });
 }
