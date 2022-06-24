@@ -8,7 +8,7 @@ router.get("/search/:title", searchByTitle);
 
 // router.get("/category/:category", searchByTitle);
 
-router.get("/detail/:novel_id", getNovelById);
+router.get("/detail/:novelId", getNovelById);
 
 // Book.find()
 // .then((books) => res.json(books))

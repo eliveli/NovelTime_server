@@ -1,20 +1,17 @@
 import express from "express";
 
 import {
-  loginKakaoController,
-  loginGoogleController,
   logoutController,
   refreshTokenController,
   authenticateAccessTokenMiddleware,
   checkUserNameController,
   saveChangedInfoController,
+  loginController,
 } from "../controllers/user";
 
 const router = express.Router();
 
-router.get("/login/kakao", loginKakaoController);
-
-router.get("/login/google", loginGoogleController);
+router.get("/login/:oauthServer", loginController);
 
 router.get("/logout", authenticateAccessTokenMiddleware, logoutController);
 

@@ -14,7 +14,9 @@ dotenv.config();
 async function getTokenKakao(code: string) {
   // 개발 환경에 따라 달라짐. NODE_ENV 환경변수 미리 설정
   const REDIRECT_URI =
-    process.env.NODE_ENV === "production" ? "" : "http://domainfordev:3000/oauth/callback/kakao";
+    process.env.NODE_ENV === "production"
+      ? ""
+      : "http://domainfordev.com:3000/oauth/callback/kakao";
 
   type BodyDataType = {
     grant_type: string;
@@ -223,7 +225,8 @@ export async function getRefreshTokenDB(userId: string): Promise<any> {
 //   const timestampSecond = +new Date() / 1000; // current time stamp seconds
 //   return timestampSecond + expireIn;
 // }
-export async function loginKakao(code: string) {
+
+async function loginKakao(code: string) {
   const tokenKakao = await getTokenKakao(code);
   const token = {
     accessToken: tokenKakao.access_token as string,
@@ -275,7 +278,7 @@ export async function loginKakao(code: string) {
     return userInfo;
   });
 }
-export async function loginGoogle(accessToken: string) {
+async function loginGoogle(accessToken: string) {
   const userInfoByGoogle = await getUserInfoGoogle(accessToken);
 
   const userInfo = {
@@ -308,4 +311,13 @@ export async function loginGoogle(accessToken: string) {
     setNewUserDB(userInfo);
     return userInfo;
   });
+}
+
+export async function loginOauthServer(oauthServer: string, oauthData: string) {
+  if (oauthServer === "kakao") {
+    return loginKakao(oauthData);
+  }
+  if (oauthServer === "google") {
+    return loginGoogle(oauthData);
+  }
 }
