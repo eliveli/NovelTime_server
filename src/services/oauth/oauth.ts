@@ -281,7 +281,7 @@ async function loginKakao(code: string) {
 
   const userInfoKakao = await getUserInfoKakao(token.accessToken);
   const userInfo = {
-    userId: userInfoKakao.kakao_account.email as string,
+    userId: `kakao ${userInfoKakao.kakao_account.email as string}`,
     userName: userInfoKakao.properties.nickname as string,
     userImg: {
       src: userInfoKakao.properties.profile_image as string,
@@ -328,54 +328,54 @@ async function loginNaver(code: string) {
 
   const userInfoNaver = await getUserInfoNaver(tokenNaver.access_token as string);
   console.log("userInfoNaver:", userInfoNaver);
-  // const userInfo = {
-  //   userId: userInfoNaver.kakao_account.email as string,
-  //   userName: userInfoNaver.properties.nickname as string,
-  //   userImg: {
-  //     src: userInfoNaver.properties.profile_image as string,
-  //     position: "",
-  //   },
-  //   userBG: { src: "", position: "" },
-  // };
+  const userInfo = {
+    userId: `naver ${userInfoNaver.response.email as string}`,
+    userName: userInfoNaver.response.nickname as string,
+    userImg: {
+      src: userInfoNaver.response.profile_image as string,
+      position: "",
+    },
+    userBG: { src: "", position: "" },
+  };
 
-  // // login user or signup user //
-  // // - if user exists in DB, set new refresh token
-  // //   (because user can login in other computer, refresh token must be reset in DB.
-  // //   - one situation. there is two computer A, B
-  // //     at first user loin in computer A, second login in computer B,
-  // //     last login in computer A again.
-  // //     there are access token and refresh token in computer A,
-  // //     but refresh token is different from one in DB,
-  // //     access token can't be reissue.
-  // //     in this case, user must login again and get new tokens.
-  // // - if user is new(signup user), set new user info in DB
-  // return getUserInfoDB(userInfo.userId).then((data) => {
-  //   // user who is in DB
-  //   if (data[0]?.userName) {
-  //     return {
-  //       userId: userInfo.userId,
-  //       userName: data[0].userName,
-  //       userImg: {
-  //         src: data[0].userImgSrc,
-  //         position: data[0].userImgPosition,
-  //       },
-  //       userBG: {
-  //         src: data[0].userBGSrc,
-  //         position: data[0].userBGPosition,
-  //       },
-  //     };
-  //   }
-  //   // new user
-  //   setNewUserDB(userInfo);
-  //   return userInfo;
-  // });
+  // login user or signup user //
+  // - if user exists in DB, set new refresh token
+  //   (because user can login in other computer, refresh token must be reset in DB.
+  //   - one situation. there is two computer A, B
+  //     at first user loin in computer A, second login in computer B,
+  //     last login in computer A again.
+  //     there are access token and refresh token in computer A,
+  //     but refresh token is different from one in DB,
+  //     access token can't be reissue.
+  //     in this case, user must login again and get new tokens.
+  // - if user is new(signup user), set new user info in DB
+  return getUserInfoDB(userInfo.userId).then((data) => {
+    // user who is in DB
+    if (data[0]?.userName) {
+      return {
+        userId: userInfo.userId,
+        userName: data[0].userName,
+        userImg: {
+          src: data[0].userImgSrc,
+          position: data[0].userImgPosition,
+        },
+        userBG: {
+          src: data[0].userBGSrc,
+          position: data[0].userBGPosition,
+        },
+      };
+    }
+    // new user
+    setNewUserDB(userInfo);
+    return userInfo;
+  });
 }
 
 async function loginGoogle(accessToken: string) {
   const userInfoByGoogle = await getUserInfoGoogle(accessToken);
 
   const userInfo = {
-    userId: userInfoByGoogle.id as string,
+    userId: `google ${userInfoByGoogle.id as string}`,
     userName: userInfoByGoogle.name as string,
     userImg: {
       src: userInfoByGoogle.picture as string,
