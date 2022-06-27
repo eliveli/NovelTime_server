@@ -99,6 +99,26 @@ async function getUserInfoKakao(accessToken: string) {
   }
 }
 
+async function getUserInfoNaver(accessToken: string) {
+  try {
+    return await fetch("https://openapi.naver.com/v1/nid/me", {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    })
+      .then((res) => {
+        console.log("user info : ", res);
+        return res.json();
+      })
+      .catch((err) => {
+        console.log("in service : fail when getting user info : ", err);
+      });
+  } catch (error) {
+    console.log("in service, getUserInfoNaver error: ", error);
+  }
+}
+
 async function getUserInfoGoogle(accessToken: string) {
   try {
     return await fetch("https://www.googleapis.com/oauth2/v2/userinfo", {
@@ -305,14 +325,14 @@ async function loginKakao(code: string) {
 
 async function loginNaver(code: string) {
   const tokenNaver = await getTokenNaver(code);
-  const { access_token } = tokenNaver;
 
-  // const userInfoKakao = await getUserInfoNaver(token.accessToken);
+  const userInfoNaver = await getUserInfoNaver(tokenNaver.access_token as string);
+  console.log("userInfoNaver:", userInfoNaver);
   // const userInfo = {
-  //   userId: userInfoKakao.kakao_account.email as string,
-  //   userName: userInfoKakao.properties.nickname as string,
+  //   userId: userInfoNaver.kakao_account.email as string,
+  //   userName: userInfoNaver.properties.nickname as string,
   //   userImg: {
-  //     src: userInfoKakao.properties.profile_image as string,
+  //     src: userInfoNaver.properties.profile_image as string,
   //     position: "",
   //   },
   //   userBG: { src: "", position: "" },
