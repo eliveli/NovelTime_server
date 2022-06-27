@@ -7,7 +7,7 @@ import {
   getRefreshTokenDB,
   deleteRefreshTokenDB,
   loginOauthServer,
-} from "../services/oauth/oauthKakao";
+} from "../services/oauth/oauth";
 import { generateToken, generateAccessToken } from "../services/auth/generateToken";
 import checkUserName from "../services/user/checkUserName";
 import saveUserInfo from "../services/user/saveUserInfo";

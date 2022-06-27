@@ -55,45 +55,26 @@ async function getTokenKakao(code: string) {
 }
 
 async function getTokenNaver(code: string) {
-  type BodyDataType = {
-    grant_type: string;
-    client_id: string;
-    client_secret: string;
-    code: string;
-    state: string;
-  };
-
   const BEFORE_ENCODED_URI_NAVER = process.env.NAVER_STATE as string;
   const NAVER_STATE = encodeURI(BEFORE_ENCODED_URI_NAVER);
 
-  const bodyData: BodyDataType = {
-    grant_type: "authorization_code",
-    client_id: process.env.NAVER_CLIENT_ID as string,
-    client_secret: process.env.NAVER_CLIENT_SECRET as string,
-    code,
-    state: NAVER_STATE,
-  };
-  const queryStringBody = Object.keys(bodyData)
-    .map((k) => `${encodeURIComponent(k)}=${encodeURI(bodyData[k as keyof BodyDataType])}`)
-    .join("&");
-
   try {
-    return await fetch("https://nid.naver.com/oauth2.0/token", {
-      method: "POST",
-      // headers: {
-      //   "Content-type": "application/x-www-form-urlencoded;charset=utf-8",
-      // },
-      body: queryStringBody,
-    })
+    return await fetch(
+      `https://nid.naver.com/oauth2.0/token?grant_type=authorization_code&client_id=${
+        process.env.NAVER_CLIENT_ID as string
+      }&client_secret=${
+        process.env.NAVER_CLIENT_SECRET as string
+      }&code=${code}&state=${NAVER_STATE}`,
+    )
       .then((res) => {
-        console.log("token from server : ", res);
+        console.log("token info from server : ", res);
         return res.json();
       })
       .catch((err) => {
         console.log("in service : fail when getting token : ", err);
       });
   } catch (error) {
-    console.log("in service, getAccessToken error: ", error);
+    console.log("in service, getToken error: ", error);
   }
 }
 
@@ -324,9 +305,7 @@ async function loginKakao(code: string) {
 
 async function loginNaver(code: string) {
   const tokenNaver = await getTokenNaver(code);
-  // const token = {
-  //   accessToken: tokenNaver.access_token as string,
-  // };
+  const { access_token } = tokenNaver;
 
   // const userInfoKakao = await getUserInfoNaver(token.accessToken);
   // const userInfo = {
