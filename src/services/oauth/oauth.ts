@@ -54,6 +54,49 @@ async function getTokenKakao(code: string) {
   }
 }
 
+async function getTokenNaver(code: string) {
+  type BodyDataType = {
+    grant_type: string;
+    client_id: string;
+    client_secret: string;
+    code: string;
+    state: string;
+  };
+
+  const BEFORE_ENCODED_URI_NAVER = process.env.NAVER_STATE as string;
+  const NAVER_STATE = encodeURI(BEFORE_ENCODED_URI_NAVER);
+
+  const bodyData: BodyDataType = {
+    grant_type: "authorization_code",
+    client_id: process.env.NAVER_CLIENT_ID as string,
+    client_secret: process.env.NAVER_CLIENT_SECRET as string,
+    code,
+    state: NAVER_STATE,
+  };
+  const queryStringBody = Object.keys(bodyData)
+    .map((k) => `${encodeURIComponent(k)}=${encodeURI(bodyData[k as keyof BodyDataType])}`)
+    .join("&");
+
+  try {
+    return await fetch("https://nid.naver.com/oauth2.0/token", {
+      method: "POST",
+      // headers: {
+      //   "Content-type": "application/x-www-form-urlencoded;charset=utf-8",
+      // },
+      body: queryStringBody,
+    })
+      .then((res) => {
+        console.log("token from server : ", res);
+        return res.json();
+      })
+      .catch((err) => {
+        console.log("in service : fail when getting token : ", err);
+      });
+  } catch (error) {
+    console.log("in service, getAccessToken error: ", error);
+  }
+}
+
 async function getUserInfoKakao(accessToken: string) {
   try {
     return await fetch("https://kapi.kakao.com/v2/user/me", {
@@ -278,6 +321,57 @@ async function loginKakao(code: string) {
     return userInfo;
   });
 }
+
+async function loginNaver(code: string) {
+  const tokenNaver = await getTokenNaver(code);
+  // const token = {
+  //   accessToken: tokenNaver.access_token as string,
+  // };
+
+  // const userInfoKakao = await getUserInfoNaver(token.accessToken);
+  // const userInfo = {
+  //   userId: userInfoKakao.kakao_account.email as string,
+  //   userName: userInfoKakao.properties.nickname as string,
+  //   userImg: {
+  //     src: userInfoKakao.properties.profile_image as string,
+  //     position: "",
+  //   },
+  //   userBG: { src: "", position: "" },
+  // };
+
+  // // login user or signup user //
+  // // - if user exists in DB, set new refresh token
+  // //   (because user can login in other computer, refresh token must be reset in DB.
+  // //   - one situation. there is two computer A, B
+  // //     at first user loin in computer A, second login in computer B,
+  // //     last login in computer A again.
+  // //     there are access token and refresh token in computer A,
+  // //     but refresh token is different from one in DB,
+  // //     access token can't be reissue.
+  // //     in this case, user must login again and get new tokens.
+  // // - if user is new(signup user), set new user info in DB
+  // return getUserInfoDB(userInfo.userId).then((data) => {
+  //   // user who is in DB
+  //   if (data[0]?.userName) {
+  //     return {
+  //       userId: userInfo.userId,
+  //       userName: data[0].userName,
+  //       userImg: {
+  //         src: data[0].userImgSrc,
+  //         position: data[0].userImgPosition,
+  //       },
+  //       userBG: {
+  //         src: data[0].userBGSrc,
+  //         position: data[0].userBGPosition,
+  //       },
+  //     };
+  //   }
+  //   // new user
+  //   setNewUserDB(userInfo);
+  //   return userInfo;
+  // });
+}
+
 async function loginGoogle(accessToken: string) {
   const userInfoByGoogle = await getUserInfoGoogle(accessToken);
 
@@ -316,6 +410,9 @@ async function loginGoogle(accessToken: string) {
 export async function loginOauthServer(oauthServer: string, oauthData: string) {
   if (oauthServer === "kakao") {
     return loginKakao(oauthData);
+  }
+  if (oauthServer === "naver") {
+    return loginNaver(oauthData);
   }
   if (oauthServer === "google") {
     return loginGoogle(oauthData);
