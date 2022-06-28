@@ -139,51 +139,6 @@ async function getUserInfoGoogle(accessToken: string) {
   }
 }
 
-function getUserInfoDB(userId: string): Promise<any> {
-  return new Promise(async (resolve) => {
-    await pool
-      .getConnection()
-      .then((connection) => {
-        connection
-          .query(
-            "SELECT userName, userImgSrc, userImgPosition, userBGSrc, userBGPosition FROM user WHERE userId = (?) ",
-            userId,
-          )
-          .then((data) => {
-            connection.release();
-            resolve(data);
-          })
-          .catch((err) => {
-            console.log(err);
-            connection.release();
-          });
-      })
-      .catch((err) => {
-        console.log(`not connected due to error: ${err}`);
-      });
-  });
-}
-
-export const setRefreshTokenDB = async (userId: string, refreshToken: string) =>
-  pool
-    .getConnection()
-    .then((connection) => {
-      connection
-        .query("UPDATE user SET refreshToken = (?) WHERE userId = (?)", [refreshToken, userId])
-        .then(() => {
-          // When done with the connection, release it.
-          connection.release();
-        })
-
-        .catch((err) => {
-          console.log(err);
-          connection.release();
-        });
-    })
-    .catch((err) => {
-      console.log(`not connected due to error: ${err}`);
-    });
-
 type UserInfo = {
   userId: string;
   userName: string;
@@ -224,6 +179,86 @@ export const setNewUserDB = async (userInfo: UserInfo) => {
       console.log(`not connected due to error: ${err}`);
     });
 };
+
+function getUserInfoDB(userId: string): Promise<any> {
+  return new Promise(async (resolve) => {
+    await pool
+      .getConnection()
+      .then((connection) => {
+        connection
+          .query(
+            "SELECT userName, userImgSrc, userImgPosition, userBGSrc, userBGPosition FROM user WHERE userId = (?) ",
+            userId,
+          )
+          .then((data) => {
+            connection.release();
+            resolve(data);
+          })
+          .catch((err) => {
+            console.log(err);
+            connection.release();
+          });
+      })
+      .catch((err) => {
+        console.log(`not connected due to error: ${err}`);
+      });
+  });
+}
+
+function getUserInfo({ userInfo }: { userInfo: UserInfo }) {
+  // login user or signup user //
+  // - if user exists in DB, set new refresh token
+  //   (because user can login in other computer, refresh token must be reset in DB.
+  //   - one situation. there is two computer A, B
+  //     at first user loin in computer A, second login in computer B,
+  //     last login in computer A again.
+  //     there are access token and refresh token in computer A,
+  //     but refresh token is different from one in DB,
+  //     access token can't be reissue.
+  //     in this case, user must login again and get new tokens.
+  // - if user is new(signup user), set new user info in DB
+
+  return getUserInfoDB(userInfo.userId).then((data) => {
+    // user who is in DB
+    if (data[0]?.userName) {
+      return {
+        userId: userInfo.userId,
+        userName: data[0].userName,
+        userImg: {
+          src: data[0].userImgSrc,
+          position: data[0].userImgPosition,
+        },
+        userBG: {
+          src: data[0].userBGSrc,
+          position: data[0].userBGPosition,
+        },
+      };
+    }
+    // new user
+    setNewUserDB(userInfo);
+    return userInfo;
+  });
+}
+
+export const setRefreshTokenDB = async (userId: string, refreshToken: string) =>
+  pool
+    .getConnection()
+    .then((connection) => {
+      connection
+        .query("UPDATE user SET refreshToken = (?) WHERE userId = (?)", [refreshToken, userId])
+        .then(() => {
+          // When done with the connection, release it.
+          connection.release();
+        })
+
+        .catch((err) => {
+          console.log(err);
+          connection.release();
+        });
+    })
+    .catch((err) => {
+      console.log(`not connected due to error: ${err}`);
+    });
 
 export function deleteRefreshTokenDB(userId: string) {
   pool
@@ -290,37 +325,7 @@ async function loginKakao(code: string) {
     userBG: { src: "", position: "" },
   };
 
-  // login user or signup user //
-  // - if user exists in DB, set new refresh token
-  //   (because user can login in other computer, refresh token must be reset in DB.
-  //   - one situation. there is two computer A, B
-  //     at first user loin in computer A, second login in computer B,
-  //     last login in computer A again.
-  //     there are access token and refresh token in computer A,
-  //     but refresh token is different from one in DB,
-  //     access token can't be reissue.
-  //     in this case, user must login again and get new tokens.
-  // - if user is new(signup user), set new user info in DB
-  return getUserInfoDB(userInfo.userId).then((data) => {
-    // user who is in DB
-    if (data[0]?.userName) {
-      return {
-        userId: userInfo.userId,
-        userName: data[0].userName,
-        userImg: {
-          src: data[0].userImgSrc,
-          position: data[0].userImgPosition,
-        },
-        userBG: {
-          src: data[0].userBGSrc,
-          position: data[0].userBGPosition,
-        },
-      };
-    }
-    // new user
-    setNewUserDB(userInfo);
-    return userInfo;
-  });
+  return getUserInfo({ userInfo });
 }
 
 async function loginNaver(code: string) {
@@ -338,37 +343,7 @@ async function loginNaver(code: string) {
     userBG: { src: "", position: "" },
   };
 
-  // login user or signup user //
-  // - if user exists in DB, set new refresh token
-  //   (because user can login in other computer, refresh token must be reset in DB.
-  //   - one situation. there is two computer A, B
-  //     at first user loin in computer A, second login in computer B,
-  //     last login in computer A again.
-  //     there are access token and refresh token in computer A,
-  //     but refresh token is different from one in DB,
-  //     access token can't be reissue.
-  //     in this case, user must login again and get new tokens.
-  // - if user is new(signup user), set new user info in DB
-  return getUserInfoDB(userInfo.userId).then((data) => {
-    // user who is in DB
-    if (data[0]?.userName) {
-      return {
-        userId: userInfo.userId,
-        userName: data[0].userName,
-        userImg: {
-          src: data[0].userImgSrc,
-          position: data[0].userImgPosition,
-        },
-        userBG: {
-          src: data[0].userBGSrc,
-          position: data[0].userBGPosition,
-        },
-      };
-    }
-    // new user
-    setNewUserDB(userInfo);
-    return userInfo;
-  });
+  return getUserInfo({ userInfo });
 }
 
 async function loginGoogle(accessToken: string) {
@@ -384,26 +359,7 @@ async function loginGoogle(accessToken: string) {
     userBG: { src: "", position: "" },
   };
 
-  return getUserInfoDB(userInfo.userId).then((data) => {
-    // user who is in DB
-    if (data[0]?.userName) {
-      return {
-        userId: userInfo.userId,
-        userName: data[0].userName,
-        userImg: {
-          src: data[0].userImgSrc,
-          position: data[0].userImgPosition,
-        },
-        userBG: {
-          src: data[0].userBGSrc,
-          position: data[0].userBGPosition,
-        },
-      };
-    }
-    // new user
-    setNewUserDB(userInfo);
-    return userInfo;
-  });
+  return getUserInfo({ userInfo });
 }
 
 export async function loginOauthServer(oauthServer: string, oauthData: string) {
