@@ -8,7 +8,7 @@
 import dotenv from "dotenv";
 import fetch from "node-fetch";
 import pool from "../../configs/db";
-import getTextLength from "../../utils/getTextLength";
+import { getTextLength, markDuplicates } from "./oauth.utils";
 import checkUserName from "../user/checkUserName";
 
 dotenv.config();
@@ -237,31 +237,41 @@ function getUserInfo({ userInfo }: { userInfo: UserInfo }) {
       };
     }
     // new user //
-
-    // 유저 네임 중복도 체크하고 길이도 체크해야 함.
-
     const currentUserName = userInfo.userName;
     const userNameAsBytes = getTextLength(currentUserName);
     let newUserName = currentUserName;
-    // Cut the user name : that is limited in 12 bytes
+    // - cut the user name : that is limited in 12 bytes
     if (userNameAsBytes[0] > 12) {
       newUserName = currentUserName.substring(0, userNameAsBytes[1] + 1);
     }
 
-    // // - check for duplicate username
-    // checkUserName(userInfo.userName)
-    //   .then((data) => {
-    //     // if the user name doesn't exist in DB
-    //     if (!data[0]) {
-    //     }
-    //     // if the user name already exists in DB
-    //   })
+    // - check for duplicate username
+    checkUserName(newUserName)
+      .then((data) => {
+        if (data[0]) {
+          // if the user name already exists in DB
+          // : set the user name except its last character and check for duplicates
+          newUserName = newUserName.substring(0, newUserName.length - 1);
 
-    //   .catch((err) => {
-    //     console.log(err);
-    //   });
-    // setNewUserDB(userInfo);
-    // return userInfo;
+          for (let i = 0; i < markDuplicates.length; i += 1) {
+            checkUserName(newUserName).then((data) => {
+              if (data[0]) {
+                // if the user name already exists in DB
+                // add an character into the user name to avoid duplicates
+                newUserName += markDuplicates[i];
+              } else {
+                break;
+              }
+            });
+          }
+        }
+      })
+
+      .catch((err) => {
+        console.log(err);
+      });
+    setNewUserDB({ ...userInfo, userName: newUserName });
+    return { ...userInfo, userName: newUserName };
   });
 }
 
