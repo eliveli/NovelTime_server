@@ -19,7 +19,7 @@ const privateKey = process.env.JWT_PRIVATE_KEY;
 export const loginController: RequestHandler = (req, res) => {
   loginOauthServer(req.params.oauthServer, req.query.data as string)
     .then(async (userInfo) => {
-      console.log("before generateToken in loginKakaoController:", userInfo);
+      console.log("before generateToken in loginController:", userInfo);
 
       try {
         if (!userInfo) throw new Error("no oauth server");

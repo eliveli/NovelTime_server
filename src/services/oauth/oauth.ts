@@ -8,6 +8,8 @@
 import dotenv from "dotenv";
 import fetch from "node-fetch";
 import pool from "../../configs/db";
+import getTextLength from "../../utils/getTextLength";
+import checkUserName from "../user/checkUserName";
 
 dotenv.config();
 
@@ -234,9 +236,32 @@ function getUserInfo({ userInfo }: { userInfo: UserInfo }) {
         },
       };
     }
-    // new user
-    setNewUserDB(userInfo);
-    return userInfo;
+    // new user //
+
+    // 유저 네임 중복도 체크하고 길이도 체크해야 함.
+
+    const currentUserName = userInfo.userName;
+    const userNameAsBytes = getTextLength(currentUserName);
+    let newUserName = currentUserName;
+    // Cut the user name : that is limited in 12 bytes
+    if (userNameAsBytes[0] > 12) {
+      newUserName = currentUserName.substring(0, userNameAsBytes[1] + 1);
+    }
+
+    // // - check for duplicate username
+    // checkUserName(userInfo.userName)
+    //   .then((data) => {
+    //     // if the user name doesn't exist in DB
+    //     if (!data[0]) {
+    //     }
+    //     // if the user name already exists in DB
+    //   })
+
+    //   .catch((err) => {
+    //     console.log(err);
+    //   });
+    // setNewUserDB(userInfo);
+    // return userInfo;
   });
 }
 
