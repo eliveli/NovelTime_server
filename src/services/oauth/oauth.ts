@@ -221,7 +221,7 @@ function getUserInfo({ userInfo }: { userInfo: UserInfo }) {
   // - if user is new(signup user), set new user info in DB
 
   return getUserInfoDB(userInfo.userId).then((data) => {
-    // user who is in DB
+    // 1. user who is in DB //
     if (data[0]?.userName) {
       return {
         userId: userInfo.userId,
@@ -236,7 +236,7 @@ function getUserInfo({ userInfo }: { userInfo: UserInfo }) {
         },
       };
     }
-    // new user //
+    // 2. new user //
     const currentUserName = userInfo.userName;
     const userNameAsBytes = getTextLength(currentUserName);
     let newUserName = currentUserName;
@@ -245,33 +245,48 @@ function getUserInfo({ userInfo }: { userInfo: UserInfo }) {
       newUserName = currentUserName.substring(0, userNameAsBytes[1] + 1);
     }
 
-    // - check for duplicate username
-    checkUserName(newUserName)
-      .then((data) => {
-        if (data[0]) {
-          // if the user name already exists in DB
-          // : set the user name except its last character and check for duplicates
-          newUserName = newUserName.substring(0, newUserName.length - 1);
+    return (
+      // - check for duplicate username
+      checkUserName(newUserName)
+        .then((data) => {
+          if (data[0]) {
+            // if the user name already exists in DB
+            // : set the user name except its last character and check for duplicates
+            newUserName = newUserName.substring(0, newUserName.length - 1);
+            console.log("checkUsername - newUserName:", newUserName);
 
-          for (let i = 0; i < markDuplicates.length; i += 1) {
-            checkUserName(newUserName).then((data) => {
-              if (data[0]) {
+            let breakLoop = false;
+            for (let i = 0; i < markDuplicates.length; i += 1) {
+              checkUserName(newUserName).then((data) => {
                 // if the user name already exists in DB
+                // 즁복 방지를 위해 직전 회차에 넣었던 마지막 문자 제거
+                if (data[0] && i > 0) {
+                  newUserName = newUserName.substring(0, newUserName.length - 1);
+                  console.log("checkUsername again - newUserName:", newUserName);
+                }
                 // add an character into the user name to avoid duplicates
-                newUserName += markDuplicates[i];
-              } else {
-                break;
-              }
-            });
+                if (data[0]) {
+                  newUserName += markDuplicates[i];
+                } else {
+                  breakLoop = true;
+                }
+              });
+              if (breakLoop) break;
+            }
           }
-        }
-      })
 
-      .catch((err) => {
-        console.log(err);
-      });
-    setNewUserDB({ ...userInfo, userName: newUserName });
-    return { ...userInfo, userName: newUserName };
+          const newUserInfo = { ...userInfo, userName: newUserName };
+
+          console.log("newUserName:", newUserName);
+          console.log("newUserInfo:", newUserInfo);
+          setNewUserDB(newUserInfo);
+          return newUserInfo;
+        })
+
+        .catch((err) => {
+          console.log(err);
+        })
+    );
   });
 }
 
