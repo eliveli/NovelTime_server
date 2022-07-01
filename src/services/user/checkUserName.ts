@@ -1,4 +1,5 @@
 import pool from "../../configs/db";
+import { markDuplicates } from "../oauth/oauth.utils";
 
 const query = {
   checkForDuplicate: " SELECT * FROM user WHERE userName = (?) ",
@@ -26,5 +27,34 @@ export default function checkUserName(newUserName: string) {
       .catch((err) => {
         console.log(`not connected due to error: ${err}`);
       });
+  });
+}
+export function loopForCheckingUserName(userName: string) {
+  // default return type is unknown. it makes error so I changed it as any
+  return new Promise<any>((resolve) => {
+    let newUserName = userName;
+    let breakLoop = false;
+    for (let i = 0; i < markDuplicates.length; i += 1) {
+      checkUserName(userName).then((data2) => {
+        console.log("data2[0]:", data2[0]);
+        // if the user name already exists in DB
+        // 즁복 방지를 위해 직전 회차에 넣었던 마지막 문자 제거
+        if (data2[0] && i > 0) {
+          newUserName = newUserName.substring(0, newUserName.length - 1);
+          console.log("if (data2[0] && i > 0): checkUsername again - newUserName:", newUserName);
+        }
+        // add an character into the user name to avoid duplicates
+        if (data2[0]) {
+          newUserName += markDuplicates[i];
+          console.log("if (data2[0]) : checkUsername again - newUserName:", newUserName);
+        }
+        // break loop to get the user name
+        else {
+          breakLoop = true;
+        }
+      });
+      if (breakLoop) break;
+    }
+    resolve(newUserName);
   });
 }

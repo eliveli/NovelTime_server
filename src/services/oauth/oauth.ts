@@ -9,7 +9,7 @@ import dotenv from "dotenv";
 import fetch from "node-fetch";
 import pool from "../../configs/db";
 import { getTextLength, markDuplicates } from "./oauth.utils";
-import checkUserName from "../user/checkUserName";
+import checkUserName, { loopForCheckingUserName } from "../user/checkUserName";
 
 dotenv.config();
 
@@ -248,36 +248,22 @@ function getUserInfo({ userInfo }: { userInfo: UserInfo }) {
     return (
       // - check for duplicate username
       checkUserName(newUserName)
-        .then((data) => {
-          if (data[0]) {
+        .then((data1) => {
+          if (data1[0]) {
             // if the user name already exists in DB
             // : set the user name except its last character and check for duplicates
             newUserName = newUserName.substring(0, newUserName.length - 1);
             console.log("checkUsername - newUserName:", newUserName);
-
-            let breakLoop = false;
-            for (let i = 0; i < markDuplicates.length; i += 1) {
-              checkUserName(newUserName).then((data) => {
-                // if the user name already exists in DB
-                // 즁복 방지를 위해 직전 회차에 넣었던 마지막 문자 제거
-                if (data[0] && i > 0) {
-                  newUserName = newUserName.substring(0, newUserName.length - 1);
-                  console.log("checkUsername again - newUserName:", newUserName);
-                }
-                // add an character into the user name to avoid duplicates
-                if (data[0]) {
-                  newUserName += markDuplicates[i];
-                } else {
-                  breakLoop = true;
-                }
-              });
-              if (breakLoop) break;
-            }
           }
+          return newUserName;
+        })
+        .then((userName) => {
+          loopForCheckingUserName(userName);
+        })
+        .then((changedUserName) => {
+          const newUserInfo = { ...userInfo, userName: changedUserName };
 
-          const newUserInfo = { ...userInfo, userName: newUserName };
-
-          console.log("newUserName:", newUserName);
+          console.log("changedUserName:", changedUserName);
           console.log("newUserInfo:", newUserInfo);
           setNewUserDB(newUserInfo);
           return newUserInfo;
