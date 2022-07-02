@@ -30,33 +30,31 @@ export default function checkUserName(newUserName: string) {
       });
   });
 }
-export function loopForCheckingUserName(userName: string) {
-  // default return type is unknown. it makes error so I changed it as any
-  // return new Promise<string>((resolve) => {
+export async function loopForCheckingUserName(userName: string) {
   let newUserName = userName;
-  let breakLoop = false;
-  for (let i = 0; i < markDuplicates.length; i += 1) {
-    console.log("loopForCheckingUserName - i:", i, " markDuplicates[i]:", markDuplicates[i]);
+  // const breakLoop = false;
 
-    checkUserName(newUserName).then((data2) => {
+  for (const mark of markDuplicates) {
+    console.log("loopForCheckingUserName - mark:", mark);
+    console.log("newUserName:", newUserName);
+
+    await checkUserName(newUserName).then((data2) => {
       // if the user name already exists in DB
       // 즁복 방지를 위해 직전 회차에 넣었던 마지막 문자 제거
-      if (data2[0] && i > 0) {
+      if (data2[0] && mark !== "0") {
         newUserName = newUserName.substring(0, newUserName.length - 1);
-        // console.log("if (data2[0] && i > 0): checkUsername again - newUserName:", newUserName);
       }
       // add an character into the user name to avoid duplicates
       if (data2[0]) {
-        newUserName += markDuplicates[i];
-        // console.log("if (data2[0]) : checkUsername again - newUserName:", newUserName);
+        newUserName += mark;
       }
       // break loop to get the user name
-      else {
-        breakLoop = true;
-      }
+      // else {
+      //   breakLoop = true;
+      // }
     });
-    if (breakLoop) break;
+    // if (breakLoop) break;
   }
+
   return newUserName;
-  // });
 }
