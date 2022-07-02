@@ -32,7 +32,7 @@ export default function checkUserName(newUserName: string) {
 }
 export async function loopForCheckingUserName(userName: string) {
   let newUserName = userName;
-  // const breakLoop = false;
+  let breakLoop = false;
 
   for (const mark of markDuplicates) {
     console.log("loopForCheckingUserName - mark:", mark);
@@ -48,12 +48,12 @@ export async function loopForCheckingUserName(userName: string) {
       if (data2[0]) {
         newUserName += mark;
       }
-      // break loop to get the user name
-      // else {
-      //   breakLoop = true;
-      // }
+      // break loop to get the user name that doesn't exist in DB
+      else {
+        breakLoop = true;
+      }
     });
-    // if (breakLoop) break;
+    if (breakLoop) break;
   }
 
   return newUserName;
