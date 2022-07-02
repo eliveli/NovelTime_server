@@ -257,9 +257,7 @@ function getUserInfo({ userInfo }: { userInfo: UserInfo }) {
           }
           return newUserName;
         })
-        .then((userName) => {
-          loopForCheckingUserName(userName);
-        })
+        .then((userName) => loopForCheckingUserName(userName))
         .then((changedUserName) => {
           const newUserInfo = { ...userInfo, userName: changedUserName };
 
