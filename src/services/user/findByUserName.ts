@@ -5,7 +5,7 @@ const query = {
   checkForDuplicate: " SELECT * FROM user WHERE userName = (?) ",
 };
 
-export default function checkUserName(newUserName: string) {
+export default function findByUserName(newUserName: string) {
   // default return type is unknown. it makes error so I changed it as any
   return new Promise<any>((resolve) => {
     pool
@@ -15,7 +15,7 @@ export default function checkUserName(newUserName: string) {
           .query(query.checkForDuplicate, [newUserName])
           .then((data) => {
             resolve(data);
-            console.log("checkUserName data[0]:", data[0]);
+            console.log("findByUserName data[0]:", data[0]);
             // When done with the connection, release it.
             connection.release();
           })
@@ -38,7 +38,7 @@ export async function loopForCheckingUserName(userName: string) {
     console.log("loopForCheckingUserName - mark:", mark);
     console.log("newUserName:", newUserName);
 
-    await checkUserName(newUserName).then((data2) => {
+    await findByUserName(newUserName).then((data2) => {
       // if the user name already exists in DB
       // 즁복 방지를 위해 직전 회차에 넣었던 마지막 문자 제거
       if (data2[0] && mark !== "0") {

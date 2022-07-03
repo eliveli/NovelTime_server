@@ -9,7 +9,7 @@ import {
   loginOauthServer,
 } from "../services/oauth/oauth";
 import { generateToken, generateAccessToken } from "../services/auth/generateToken";
-import checkUserName from "../services/user/checkUserName";
+import findByUserName from "../services/user/findByUserName";
 import saveUserInfo from "../services/user/saveUserInfo";
 
 dotenv.config();
@@ -183,7 +183,7 @@ export const refreshTokenController: RequestHandler = (req, res) => {
 export const checkUserNameController: RequestHandler = (req, res) => {
   const { newUserName } = req.body;
   // check for duplicate username
-  checkUserName(newUserName as string)
+  findByUserName(newUserName as string)
     .then((data) => {
       // if the user name exists or not
       if (!data[0]) {

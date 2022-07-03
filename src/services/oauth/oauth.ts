@@ -9,7 +9,7 @@ import dotenv from "dotenv";
 import fetch from "node-fetch";
 import pool from "../../configs/db";
 import { getTextLength, markDuplicates } from "./oauth.utils";
-import checkUserName, { loopForCheckingUserName } from "../user/checkUserName";
+import findByUserName, { loopForCheckingUserName } from "../user/findByUserName";
 
 dotenv.config();
 
@@ -247,7 +247,7 @@ function getUserInfo({ userInfo }: { userInfo: UserInfo }) {
 
     return (
       // - check for duplicate username
-      checkUserName(newUserName)
+      findByUserName(newUserName)
         .then((data1) => {
           if (data1[0]) {
             // if the user name already exists in DB
