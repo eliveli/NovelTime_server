@@ -250,3 +250,23 @@ export const saveChangedInfoController: RequestHandler = (req, res) => {
   // though the response data type I put in front code is undefined
   // )
 };
+export const getUserInfoController: RequestHandler = (req, res) => {
+  const { userName } = req.params;
+  // get user info from DB
+  findByUserName(userName)
+    .then(async (data) => {
+      if (data[0]) {
+        const userInfo = {
+          userName,
+          userImg: { src: data[0].userImgSrc, position: data[0].userImgPosition },
+          userBG: { src: data[0].userBGSrc, position: data[0].userBGPosition },
+        };
+        return res.json(userInfo);
+      }
+      return res.status(400).json("this user doesn't exist in DB");
+    })
+    .catch((e) => {
+      console.log("error : ", e);
+      return res.status(500).json("failed to get user info");
+    });
+};
