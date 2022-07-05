@@ -9,7 +9,7 @@ dotenv.config();
 
 export const userPageHomeController: RequestHandler = async (req, res) => {
   const { userName } = req.params;
-  const userId = await getUserId(userName).then((data) => data[0].userId);
-  const writings = await getWritings(userId as string).then((data) => data.slice(0, data.length));
+  const userId = await getUserId(userName);
+  const writings = await getWritings(userId);
   console.log("writings:", writings);
 };

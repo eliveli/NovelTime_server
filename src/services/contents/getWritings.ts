@@ -9,8 +9,8 @@ export default function getWritings(userId: string) {
         connection
           .query(query.getWritings, userId)
           .then((data) => {
-            resolve(data);
-
+            const writings = data.slice(0, data.length);
+            resolve(writings);
             // When done with the connection, release it.
             connection.release();
           })
