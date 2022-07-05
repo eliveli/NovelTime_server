@@ -2,7 +2,7 @@
 import pool from "../../configs/db";
 import { query } from "./contents.utils";
 
-type Writings = {
+type Writing = {
   writingId: string;
   userId: string;
   createDate: string;
@@ -14,7 +14,7 @@ type Writings = {
   commentNO: number;
   talkOrRecommend: "T" | "R";
 };
-function divideWritings(writings: Writings[], number: number, order = 1) {
+function divideWritings(writings: Writing[], number: number, order = 1) {
   const talks = [];
   const recommends = [];
   for (const writing of writings) {
