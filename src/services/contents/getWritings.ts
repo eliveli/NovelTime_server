@@ -14,6 +14,72 @@ type Writing = {
   commentNO: number;
   talkOrRecommend: "T" | "R";
 };
+function getNovelTitleAndImg(novelId: string) {
+  return new Promise<any>(async (resolve) => {
+    await pool
+      .getConnection()
+      .then((connection) => {
+        connection
+          .query(query.getNovelTitleAndImg, novelId)
+          .then((data) => {
+            const titleAndImg = data.slice(0, data.length);
+            resolve(titleAndImg);
+
+            // When done with the connection, release it.
+            connection.release();
+          })
+
+          .catch((err) => {
+            console.log(err);
+            connection.release();
+          });
+      })
+      .catch((err) => {
+        console.log(`not connected due to error: ${err}`);
+      });
+  });
+}
+async function setWritingInfo(writing: Writing) {
+  const {
+    writingId,
+    userId,
+    createDate,
+    writingTitle,
+    writingImg,
+    writingDesc,
+    novelId,
+    likeNO,
+    commentNO,
+    talkOrRecommend,
+  } = writing;
+  const dataForNovelTitleAndImg = await getNovelTitleAndImg(novelId);
+  const { novelTitle, novelImg } = dataForNovelTitleAndImg[0];
+
+  if (talkOrRecommend === "T") {
+    const talkId = writingId;
+    const talkTitle = writingTitle;
+    return {
+      talkId,
+      talkTitle,
+      createDate,
+      likeNO,
+      commentNO,
+      novelTitle,
+      novelImg,
+    };
+  }
+
+  const recommendId = writingId;
+  const recommendTitle = writingTitle;
+  return {
+    recommendId,
+    recommendTitle,
+    createDate,
+    likeNO,
+    novelTitle,
+    novelImg,
+  };
+}
 function divideWritings(writings: Writing[], number: number, order = 1) {
   const talks = [];
   const recommends = [];
@@ -34,10 +100,10 @@ function divideWritings(writings: Writing[], number: number, order = 1) {
   }
 
   // set the lists as requested after setting the arrays of talks and recommends
-  const newTalks = talks.slice(number * (order - 1), number * order);
-  const newRecommends = recommends.slice(number * (order - 1), number * order);
+  const dividedTalks = talks.slice(number * (order - 1), number * order);
+  const dividedRecommends = recommends.slice(number * (order - 1), number * order);
 
-  return [newTalks, newRecommends];
+  return { dividedTalks, dividedRecommends };
 }
 
 export default function getWritings(userId: string) {
@@ -47,10 +113,22 @@ export default function getWritings(userId: string) {
       .then((connection) => {
         connection
           .query(query.getWritings, userId)
-          .then((data) => {
+          .then(async (data) => {
             const writings = data.slice(0, data.length);
-            const dividedWritings = divideWritings(writings, 4);
-            resolve(dividedWritings);
+            const { dividedTalks, dividedRecommends } = divideWritings(writings, 4);
+
+            const talksSet = [];
+            const recommendsSet = [];
+            for (const talk of dividedTalks) {
+              const talkSet = await setWritingInfo(talk);
+              talksSet.push(talkSet);
+            }
+            for (const recommend of dividedRecommends) {
+              const recommendSet = await setWritingInfo(recommend);
+              recommendsSet.push(recommendSet);
+            }
+
+            resolve({ talksSet, recommendsSet });
 
             // When done with the connection, release it.
             connection.release();
