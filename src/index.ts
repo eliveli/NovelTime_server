@@ -5,6 +5,7 @@ import cors from "cors";
 import cookieParser from "cookie-parser";
 import novels from "./routes/novels";
 import user from "./routes/user";
+import contents from "./routes/contents";
 
 const app = express();
 const server = http.createServer(app);
@@ -38,6 +39,7 @@ app.get("/", (req, res) => {
 // use Routes
 app.use("/novels", novels);
 app.use("/user", user);
+app.use("/contents", contents);
 
 // socket io server // configure private message
 // -- it is required
