@@ -1,3 +1,4 @@
+/* eslint-disable no-await-in-loop */
 /* eslint-disable no-restricted-syntax */
 import pool from "../../configs/db";
 import { query } from "./contents.utils";
@@ -80,7 +81,16 @@ async function setWritingInfo(writing: Writing) {
     novelImg,
   };
 }
-function divideWritings(writings: Writing[], number: number, order = 1) {
+async function setWritings(writings: Writing[]) {
+  const writingsSet = [];
+  for (const writing of writings) {
+    const writingSet = await setWritingInfo(writing);
+    writingsSet.push(writingSet);
+  }
+  return writingsSet;
+}
+
+function divideWritings(writings: Writing[], requiredNumber: number, order = 1) {
   const talks = [];
   const recommends = [];
   for (const writing of writings) {
@@ -94,16 +104,25 @@ function divideWritings(writings: Writing[], number: number, order = 1) {
     // when requesting writings from userPageHome page, "order" is always 1
     // otherwise requesting from userPageWritings page, "order" will be 1 or bigger one
     //   because if an user clicks the "more" button writings in next order will be required
-    if (talks.length >= number * order && recommends.length >= number * order) {
+    if (talks.length >= requiredNumber * order && recommends.length >= requiredNumber * order) {
       break;
     }
   }
 
   // set the lists as requested after setting the arrays of talks and recommends
-  const dividedTalks = talks.slice(number * (order - 1), number * order);
-  const dividedRecommends = recommends.slice(number * (order - 1), number * order);
+  const dividedTalks = talks.slice(requiredNumber * (order - 1), requiredNumber * order);
+  const dividedRecommends = recommends.slice(requiredNumber * (order - 1), requiredNumber * order);
 
   return { dividedTalks, dividedRecommends };
+}
+
+async function getWritingsSet(writings: Writing[], requiredNumber: number) {
+  const { dividedTalks, dividedRecommends } = divideWritings(writings, requiredNumber);
+
+  const talksSet = await setWritings(dividedTalks);
+  const recommendsSet = await setWritings(dividedRecommends);
+
+  return { talksSet, recommendsSet };
 }
 
 export default function getWritings(userId: string) {
@@ -115,20 +134,10 @@ export default function getWritings(userId: string) {
           .query(query.getWritings, userId)
           .then(async (data) => {
             const writings = data.slice(0, data.length);
-            const { dividedTalks, dividedRecommends } = divideWritings(writings, 4);
 
-            const talksSet = [];
-            const recommendsSet = [];
-            for (const talk of dividedTalks) {
-              const talkSet = await setWritingInfo(talk);
-              talksSet.push(talkSet);
-            }
-            for (const recommend of dividedRecommends) {
-              const recommendSet = await setWritingInfo(recommend);
-              recommendsSet.push(recommendSet);
-            }
+            const writingsSet = await getWritingsSet(writings, 4);
 
-            resolve({ talksSet, recommendsSet });
+            resolve(writingsSet);
 
             // When done with the connection, release it.
             connection.release();
