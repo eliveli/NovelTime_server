@@ -126,7 +126,7 @@ async function getWritingsSet(writings: Writing[], requiredNumber: number) {
 }
 
 async function getWritingByWritingId(writingId: string) {
-  return new Promise<any>(async (resolve) => {
+  return new Promise<Writing>(async (resolve) => {
     await pool
       .getConnection()
       .then((connection) => {
@@ -134,7 +134,46 @@ async function getWritingByWritingId(writingId: string) {
           .query(query.getWritingByWritingId, writingId)
           .then(async (data) => {
             const writing = data[0];
-            resolve(writing);
+            resolve(writing as Writing);
+
+            // When done with the connection, release it.
+            connection.release();
+          })
+
+          .catch((err) => {
+            console.log(err);
+            connection.release();
+          });
+      })
+      .catch((err) => {
+        console.log(`not connected due to error: ${err}`);
+      });
+  });
+}
+
+async function getWritingsByWritingIDs(writingIDs: string[]) {
+  const writings: Writing[] = [];
+  for (const writingId of writingIDs) {
+    const writing = await getWritingByWritingId(writingId);
+    writings.push(writing);
+  }
+  return writings;
+}
+async function getWritingIDsByUserId(userId: string) {
+  return new Promise<any>(async (resolve) => {
+    await pool
+      .getConnection()
+      .then((connection) => {
+        connection
+          .query(query.getWritingIDsByUserId, userId)
+          .then(async (data) => {
+            const dataForWritingIDs = data.slice(0, data.length);
+            const writingIDs: string[] = [];
+            for (const dataForWritingId of dataForWritingIDs) {
+              const { writingId } = dataForWritingId;
+              writingIDs.push(writingId);
+            }
+            resolve(writingIDs);
 
             // When done with the connection, release it.
             connection.release();
@@ -180,43 +219,13 @@ export function getWritingsUserCreated(userId: string) {
 }
 export function getWritingsUserLikes(userId: string) {
   return new Promise<any>(async (resolve) => {
-    await pool
-      .getConnection()
-      .then((connection) => {
-        connection
-          // userId로 writingLike 테이블 검색, writingId 리스트 만들기
-          .query(query.getWritingIDsByUserId, userId)
-          .then(async (data) => {
-            const dataForWritingIDs = data.slice(0, data.length);
-            const writingIDs = [];
-            for (const dataForWritingId of dataForWritingIDs) {
-              const { writingId } = dataForWritingId;
-              writingIDs.push(writingId);
-            }
+    const writingIDs = await getWritingIDsByUserId(userId);
 
-            //  찾은 writingId 로 writing 테이블 검색, writing 리스트 만들기
-            const writings = [];
-            for (const writingId of writingIDs) {
-              const writing = await getWritingByWritingId(writingId);
-              writings.push(writing);
-            }
+    const writings = await getWritingsByWritingIDs(writingIDs);
 
-            // set writing info
-            const writingsSet = await getWritingsSet(writings, 4);
+    // set writing info
+    const writingsSet = await getWritingsSet(writings, 4);
 
-            resolve(writingsSet);
-
-            // When done with the connection, release it.
-            connection.release();
-          })
-
-          .catch((err) => {
-            console.log(err);
-            connection.release();
-          });
-      })
-      .catch((err) => {
-        console.log(`not connected due to error: ${err}`);
-      });
+    resolve(writingsSet);
   });
 }
