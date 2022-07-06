@@ -91,7 +91,11 @@ async function setWritings(writings: Writing[]) {
   return writingsSet;
 }
 
-function divideWritings(writings: Writing[], requiredNumber: number, order = 1) {
+function divideWritings(writings: Writing[], isHome: boolean, order = 1) {
+  // for UserPageHome page get the 4 writings
+  // for UserPageWriting page get the 8 writings
+  const requiredNumber = isHome ? 4 : 8;
+
   const talks = [];
   const recommends = [];
   for (const writing of writings) {
@@ -117,8 +121,8 @@ function divideWritings(writings: Writing[], requiredNumber: number, order = 1) 
   return { dividedTalks, dividedRecommends };
 }
 
-async function getWritingsSet(writings: Writing[], requiredNumber: number) {
-  const { dividedTalks, dividedRecommends } = divideWritings(writings, requiredNumber);
+async function getWritingsSet(writings: Writing[], isHome = true) {
+  const { dividedTalks, dividedRecommends } = divideWritings(writings, isHome);
 
   const talksSet = await setWritings(dividedTalks);
   const recommendsSet = await setWritings(dividedRecommends);
@@ -225,7 +229,7 @@ export function getWritingsUserLikesForUserPageHome(userId: string) {
     const writings = await getWritingsByWritingIDs(writingIDs as string[]);
 
     // set writing info
-    const writingsSet = await getWritingsSet(writings, 4);
+    const writingsSet = await getWritingsSet(writings);
 
     resolve(writingsSet);
   });
