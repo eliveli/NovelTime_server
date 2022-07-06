@@ -1,5 +1,7 @@
+/* eslint-disable import/prefer-default-export */
 export const query = {
   geUserId: " SELECT userId FROM user WHERE userName = (?) ",
+  getUserNameByUserId: " SELECT userName FROM user WHERE userId = (?) ",
   getWritings: " SELECT * FROM writing WHERE userId = (?) ",
   getWritingIDsByUserId: " SELECT writingId FROM writingLike WHERE userId = (?) ",
 

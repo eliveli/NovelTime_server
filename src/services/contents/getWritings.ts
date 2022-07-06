@@ -16,16 +16,42 @@ type Writing = {
   commentNO: number;
   talkOrRecommend: "T" | "R";
 };
+type Recommend = {
+  recommendId: string;
+  recommendTitle: string;
+  createDate: string;
+  likeNO: number;
+  novelTitle: string;
+  novelImg: string;
+  userName?: string;
+};
+type Talk = {
+  talkId: string;
+  talkTitle: string;
+  createDate: string;
+  likeNO: number;
+  commentNO: number;
+  novelTitle: string;
+  novelImg: string;
+  userName?: string;
+};
+type NovelTitleAndImg = {
+  novelTitle: string;
+  novelImg: string;
+};
+
 function getNovelTitleAndImg(novelId: string) {
-  return new Promise<any>(async (resolve) => {
+  return new Promise<NovelTitleAndImg>(async (resolve) => {
     await pool
       .getConnection()
       .then((connection) => {
         connection
           .query(query.getNovelTitleAndImg, novelId)
           .then((data) => {
-            const titleAndImg = data.slice(0, data.length);
-            resolve(titleAndImg);
+            const titleAndImg = data[0] as NovelTitleAndImg;
+            const { novelTitle, novelImg } = titleAndImg;
+
+            resolve({ novelTitle, novelImg });
 
             // When done with the connection, release it.
             connection.release();
@@ -41,7 +67,33 @@ function getNovelTitleAndImg(novelId: string) {
       });
   });
 }
-async function setWritingInfo(writing: Writing) {
+async function getUserNameByUserId(userId: string) {
+  return new Promise<string>(async (resolve) => {
+    await pool
+      .getConnection()
+      .then((connection) => {
+        connection
+          .query(query.getUserNameByUserId, userId)
+          .then((data) => {
+            const { userName } = data[0];
+
+            resolve(userName as string);
+
+            // When done with the connection, release it.
+            connection.release();
+          })
+
+          .catch((err) => {
+            console.log(err);
+            connection.release();
+          });
+      })
+      .catch((err) => {
+        console.log(`not connected due to error: ${err}`);
+      });
+  });
+}
+async function setWritingInfo(writing: Writing, isOnesUserCreated: boolean) {
   const {
     writingId,
     userId,
@@ -54,47 +106,58 @@ async function setWritingInfo(writing: Writing) {
     commentNO,
     talkOrRecommend,
   } = writing;
-  const dataForNovelTitleAndImg = await getNovelTitleAndImg(novelId);
-  const { novelTitle, novelImg } = dataForNovelTitleAndImg[0];
+  const { novelTitle, novelImg } = await getNovelTitleAndImg(novelId);
+
+  let userName = "";
+  // this is for writings an user likes not an user created
+  // get the user name who created this writing that an user likes
+  if (!isOnesUserCreated) {
+    console.log("userId:", userId);
+    userName = await getUserNameByUserId(userId);
+  }
 
   if (talkOrRecommend === "T") {
-    const talkId = writingId;
-    const talkTitle = writingTitle;
-    return {
-      talkId,
-      talkTitle,
+    const talk: Talk = {
+      talkId: writingId,
+      talkTitle: writingTitle,
       createDate,
       likeNO,
       commentNO,
       novelTitle,
       novelImg,
     };
+    if (!isOnesUserCreated) {
+      talk.userName = userName;
+    }
+    return talk;
   }
 
-  const recommendId = writingId;
-  const recommendTitle = writingTitle;
-  return {
-    recommendId,
-    recommendTitle,
+  const recommend: Recommend = {
+    recommendId: writingId,
+    recommendTitle: writingTitle,
     createDate,
     likeNO,
     novelTitle,
     novelImg,
   };
+  if (!isOnesUserCreated) {
+    recommend.userName = userName;
+  }
+  return recommend;
 }
-async function setWritings(writings: Writing[]) {
+async function setWritings(writings: Writing[], isOnesUserCreated: boolean) {
   const writingsSet = [];
   for (const writing of writings) {
-    const writingSet = await setWritingInfo(writing);
+    const writingSet = await setWritingInfo(writing, isOnesUserCreated);
     writingsSet.push(writingSet);
   }
   return writingsSet;
 }
 
-function divideWritings(writings: Writing[], isHome: boolean, order = 1) {
+function divideWritings(writings: Writing[], isForHome: boolean, order = 1) {
   // for UserPageHome page get the 4 writings
   // for UserPageWriting page get the 8 writings
-  const requiredNumber = isHome ? 4 : 8;
+  const requiredNumber = isForHome ? 4 : 8;
 
   const talks = [];
   const recommends = [];
@@ -121,11 +184,11 @@ function divideWritings(writings: Writing[], isHome: boolean, order = 1) {
   return { dividedTalks, dividedRecommends };
 }
 
-async function getWritingsSet(writings: Writing[], isHome = true) {
-  const { dividedTalks, dividedRecommends } = divideWritings(writings, isHome);
+async function getWritingsSet(writings: Writing[], isForHome: boolean, isOnesUserCreated: boolean) {
+  const { dividedTalks, dividedRecommends } = divideWritings(writings, isForHome);
 
-  const talksSet = await setWritings(dividedTalks);
-  const recommendsSet = await setWritings(dividedRecommends);
+  const talksSet = await setWritings(dividedTalks, isOnesUserCreated);
+  const recommendsSet = await setWritings(dividedRecommends, isOnesUserCreated);
 
   return { talksSet, recommendsSet };
 }
@@ -165,7 +228,7 @@ async function getWritingsByWritingIDs(writingIDs: string[]) {
   return writings;
 }
 async function getWritingIDsByUserId(userId: string) {
-  return new Promise<any>(async (resolve) => {
+  return new Promise<string[]>(async (resolve) => {
     await pool
       .getConnection()
       .then((connection) => {
@@ -194,8 +257,8 @@ async function getWritingIDsByUserId(userId: string) {
       });
   });
 }
-export function getWritingsUserCreatedForUserPageHome(userId: string) {
-  return new Promise<any>(async (resolve) => {
+export function getWritingsByUserId(userId: string) {
+  return new Promise<Writing[]>(async (resolve) => {
     await pool
       .getConnection()
       .then((connection) => {
@@ -204,9 +267,7 @@ export function getWritingsUserCreatedForUserPageHome(userId: string) {
           .then(async (data) => {
             const writings = data.slice(0, data.length);
 
-            const writingsSet = await getWritingsSet(writings as Writing[]);
-
-            resolve(writingsSet);
+            resolve(writings as Writing[]);
 
             // When done with the connection, release it.
             connection.release();
@@ -222,14 +283,19 @@ export function getWritingsUserCreatedForUserPageHome(userId: string) {
       });
   });
 }
+export function getWritingsUserCreatedForUserPageHome(userId: string) {
+  return new Promise<any>(async (resolve) => {
+    const writings = await getWritingsByUserId(userId);
+    const writingsSet = await getWritingsSet(writings, true, true);
+
+    resolve(writingsSet);
+  });
+}
 export function getWritingsUserLikesForUserPageHome(userId: string) {
   return new Promise<any>(async (resolve) => {
     const writingIDs = await getWritingIDsByUserId(userId);
-
-    const writings = await getWritingsByWritingIDs(writingIDs as string[]);
-
-    // set writing info
-    const writingsSet = await getWritingsSet(writings);
+    const writings = await getWritingsByWritingIDs(writingIDs);
+    const writingsSet = await getWritingsSet(writings, true, false);
 
     resolve(writingsSet);
   });
