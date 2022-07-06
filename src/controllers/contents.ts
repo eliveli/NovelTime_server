@@ -25,6 +25,7 @@ export const userPageHomeController: RequestHandler = async (req, res) => {
   const novelListsUserCreated = await getNovelListsUserCreatedForUserPageHome(userId);
   const novelListsUserLikes = await getNovelListsUserLikesForUserPageHome(userId);
 
+  console.log("userId:", userId);
   console.log("writingsUserCreated:", writingsUserCreated);
   console.log("writingsUserLikes:", writingsUserLikes);
   console.log("comments:", comments);

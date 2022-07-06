@@ -116,6 +116,6 @@ export default function getCommentsForUserPageHome(userId: string) {
 
     const commentsSet = await getCommentsSet(selectedComments);
 
-    resolve({ commentsSet });
+    resolve(commentsSet);
   });
 }
