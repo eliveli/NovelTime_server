@@ -15,21 +15,18 @@ type Novel = {
   novelId: string;
   novelImg: string;
   novelTitle: string;
-  novelDesc: string;
   novelAuthor: string;
-  novelAge: string;
   novelGenre: string;
   novelIsEnd: boolean;
-  novelPlatform: string;
-  novelPlatform2: string;
-  novelPlatform3: string;
-  novelUrl: string;
-  novelUrl2: string;
-  novelUrl3: string;
-  isRecommendation: number;
-  isFreeTalk: number;
 };
 
+type NovelList = {
+  novels: Novel[];
+  novelListId: string;
+  userId: string;
+  novelListTitle: string;
+  novelIDs: string;
+};
 async function getNovelListInfoListByUserId(userId: string) {
   return new Promise<NovelListInfo[]>(async (resolve) => {
     await pool
@@ -85,40 +82,57 @@ async function getNovelInfoByNovelId(novelId: string) {
 async function getNovelLists(novelListInfoList: NovelListInfo[]) {
   const novelLists = [];
   for (const novelListInfo of novelListInfoList) {
+    // get novel IDs per novel list
     const dataForNovelIDs = novelListInfo.novelIDs;
     const novelIDs = dataForNovelIDs.split(" ");
 
-    // get novels by novel id per the novel list
     const novels: Novel[] = [];
 
+    // get novels by novel IDs
     for (const novelId of novelIDs) {
       const novel = await getNovelInfoByNovelId(novelId);
       console.log("novel:", novel);
       novels.push(novel);
     }
 
+    // add novels into list
     const novelList = { ...novelListInfo, novels };
     novelLists.push(novelList);
   }
   return novelLists;
 }
+
+function getNovelListsSet(novelLists: NovelList[]) {
+  const novelListsSet = [];
+  for (const novelList of novelLists) {
+    const novelListSet = {
+      listId: novelList.novelListId,
+      listTitle: novelList.novelListTitle,
+      novel: novelList.novels,
+    };
+    novelListsSet.push(novelListSet);
+  }
+  return novelListsSet;
+}
+
 export function getNovelListsUserCreated(userId: string) {
   return new Promise<any>(async (resolve) => {
     const novelListInfoList = await getNovelListInfoListByUserId(userId);
 
     const novelLists = await getNovelLists(novelListInfoList);
 
-    // const novelListsSet = await getNovelListsSet(novelLists);
+    const novelListsSet = getNovelListsSet(novelLists);
 
-    resolve(novelLists);
+    resolve(novelListsSet);
   });
 }
+
 export function getNovelListsUserLikes(userId: string) {
   return new Promise<any>(async (resolve) => {
-    // const writingIDs = await getWritingIDsByUserId(userId);
-    // const writings = await getWritingsByWritingIDs(writingIDs);
-    // // set writing info
-    // const writingsSet = await getWritingsSet(writings, 4);
-    // resolve(writingsSet);
+    // const novelListInfoList = await getNovelListInfoListByUserId(userId);
+    // const novelLists = await getNovelLists(novelListInfoList);
+    // add info of user name and user img //
+    // const novelListsSet = getNovelListsSet(novelLists);
+    // resolve(novelListsSet);
   });
 }

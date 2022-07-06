@@ -3,7 +3,8 @@ export const query = {
   getWritings: " SELECT * FROM writing WHERE userId = (?) ",
   getWritingIDsByUserId: " SELECT writingId FROM writingLike WHERE userId = (?) ",
   getNovelListInfoListByUserId: " SELECT * FROM novelList WHERE userId = (?) ",
-  getNovelInfoByNovelId: " SELECT * FROM novelInfo WHERE novelId = (?) ",
+  getNovelInfoByNovelId:
+    " SELECT novelId, novelImg, novelTitle, novelAuthor, novelGenre, novelIsEnd FROM novelInfo WHERE novelId = (?) ",
   getWritingByWritingId: " SELECT * FROM writing WHERE writingId = (?) ",
   getNovelTitleAndImg: " SELECT novelTitle, novelImg FROM novelInfo WHERE novelId = (?) ",
   getTalkTitle: " SELECT writingTitle FROM writing WHERE writingId = (?) ",
