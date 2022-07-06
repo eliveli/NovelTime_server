@@ -85,17 +85,23 @@ async function getNovelInfoByNovelId(novelId: string) {
       });
   });
 }
-async function getNovelLists(novelListInfoList: NovelListInfo[]) {
+async function getNovelLists(novelListInfoList: NovelListInfo[], listOrder = 1) {
   const novelLists = [];
   for (const novelListInfo of novelListInfoList) {
     // get novel IDs per novel list
     const dataForNovelIDs = novelListInfo.novelIDs;
     const novelIDs = dataForNovelIDs.split(" ");
 
+    // extract novel ids as requested
+    // for UserPageNovelList page listOrder is the requested order
+    // for UserPageHome page listOrder is 1 as default
+    const novelNO = 8;
+    const novelIDsRequired = novelIDs.slice(novelNO * (listOrder - 1), novelNO * listOrder);
+
     const novels: Novel[] = [];
 
     // get novels by novel IDs
-    for (const novelId of novelIDs) {
+    for (const novelId of novelIDsRequired) {
       const novel = await getNovelInfoByNovelId(novelId);
       console.log("novel:", novel);
       novels.push(novel);

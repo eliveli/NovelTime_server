@@ -200,7 +200,7 @@ export function getWritingsUserCreatedForUserPageHome(userId: string) {
           .then(async (data) => {
             const writings = data.slice(0, data.length);
 
-            const writingsSet = await getWritingsSet(writings, 4);
+            const writingsSet = await getWritingsSet(writings as Writing[], 4);
 
             resolve(writingsSet);
 
@@ -222,7 +222,7 @@ export function getWritingsUserLikesForUserPageHome(userId: string) {
   return new Promise<any>(async (resolve) => {
     const writingIDs = await getWritingIDsByUserId(userId);
 
-    const writings = await getWritingsByWritingIDs(writingIDs);
+    const writings = await getWritingsByWritingIDs(writingIDs as string[]);
 
     // set writing info
     const writingsSet = await getWritingsSet(writings, 4);
