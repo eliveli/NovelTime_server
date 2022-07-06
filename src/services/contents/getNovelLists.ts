@@ -27,13 +27,19 @@ type NovelList = {
   novelListTitle: string;
   novelIDs: string;
 };
-async function getNovelListInfoListByUserId(userId: string) {
+async function getNovelListInfoListByUserId(userId: string, allOrNot = false) {
+  // for userPageHome page get the two novel list
+  // for userPageNovelList page get all novel list
+  const queryForLimitedNumber = allOrNot
+    ? query.getNovelListInfoListByUserId
+    : query.getTwoOfNovelListInfoListByUserId;
+
   return new Promise<NovelListInfo[]>(async (resolve) => {
     await pool
       .getConnection()
       .then((connection) => {
         connection
-          .query(query.getNovelListInfoListByUserId, userId)
+          .query(queryForLimitedNumber, userId)
           .then(async (data) => {
             const novelListInfoList = data.slice(0, data.length);
 
@@ -115,7 +121,7 @@ function getNovelListsSet(novelLists: NovelList[]) {
   return novelListsSet;
 }
 
-export function getNovelListsUserCreated(userId: string) {
+export function getNovelListsUserCreatedForUserPageHome(userId: string) {
   return new Promise<any>(async (resolve) => {
     const novelListInfoList = await getNovelListInfoListByUserId(userId);
 
@@ -127,7 +133,7 @@ export function getNovelListsUserCreated(userId: string) {
   });
 }
 
-export function getNovelListsUserLikes(userId: string) {
+export function getNovelListsUserLikesForUserPageHome(userId: string) {
   return new Promise<any>(async (resolve) => {
     // const novelListInfoList = await getNovelListInfoListByUserId(userId);
     // const novelLists = await getNovelLists(novelListInfoList);
