@@ -72,7 +72,7 @@ function extractComments(comments: Comment[], number: number, order = 1) {
   return extractedComments;
 }
 
-export default function getComments(userId: string) {
+export default function getCommentsForUserPageHome(userId: string) {
   return new Promise<any>(async (resolve) => {
     await pool
       .getConnection()

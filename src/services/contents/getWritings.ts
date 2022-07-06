@@ -190,7 +190,7 @@ async function getWritingIDsByUserId(userId: string) {
       });
   });
 }
-export function getWritingsUserCreated(userId: string) {
+export function getWritingsUserCreatedForUserPageHome(userId: string) {
   return new Promise<any>(async (resolve) => {
     await pool
       .getConnection()
@@ -218,7 +218,7 @@ export function getWritingsUserCreated(userId: string) {
       });
   });
 }
-export function getWritingsUserLikes(userId: string) {
+export function getWritingsUserLikesForUserPageHome(userId: string) {
   return new Promise<any>(async (resolve) => {
     const writingIDs = await getWritingIDsByUserId(userId);
 
