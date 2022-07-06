@@ -125,7 +125,32 @@ async function getWritingsSet(writings: Writing[], requiredNumber: number) {
   return { talksSet, recommendsSet };
 }
 
-export default function getWritings(userId: string) {
+async function getWritingByWritingId(writingId: string) {
+  return new Promise<any>(async (resolve) => {
+    await pool
+      .getConnection()
+      .then((connection) => {
+        connection
+          .query(query.getWritingByWritingId, writingId)
+          .then(async (data) => {
+            const writing = data[0];
+            resolve(writing);
+
+            // When done with the connection, release it.
+            connection.release();
+          })
+
+          .catch((err) => {
+            console.log(err);
+            connection.release();
+          });
+      })
+      .catch((err) => {
+        console.log(`not connected due to error: ${err}`);
+      });
+  });
+}
+export function getWritingsUserCreated(userId: string) {
   return new Promise<any>(async (resolve) => {
     await pool
       .getConnection()
@@ -135,6 +160,48 @@ export default function getWritings(userId: string) {
           .then(async (data) => {
             const writings = data.slice(0, data.length);
 
+            const writingsSet = await getWritingsSet(writings, 4);
+
+            resolve(writingsSet);
+
+            // When done with the connection, release it.
+            connection.release();
+          })
+
+          .catch((err) => {
+            console.log(err);
+            connection.release();
+          });
+      })
+      .catch((err) => {
+        console.log(`not connected due to error: ${err}`);
+      });
+  });
+}
+export function getWritingsUserLikes(userId: string) {
+  return new Promise<any>(async (resolve) => {
+    await pool
+      .getConnection()
+      .then((connection) => {
+        connection
+          // userId로 writingLike 테이블 검색, writingId 리스트 만들기
+          .query(query.getWritingIDsByUserId, userId)
+          .then(async (data) => {
+            const dataForWritingIDs = data.slice(0, data.length);
+            const writingIDs = [];
+            for (const dataForWritingId of dataForWritingIDs) {
+              const { writingId } = dataForWritingId;
+              writingIDs.push(writingId);
+            }
+
+            //  찾은 writingId 로 writing 테이블 검색, writing 리스트 만들기
+            const writings = [];
+            for (const writingId of writingIDs) {
+              const writing = await getWritingByWritingId(writingId);
+              writings.push(writing);
+            }
+
+            // set writing info
             const writingsSet = await getWritingsSet(writings, 4);
 
             resolve(writingsSet);
