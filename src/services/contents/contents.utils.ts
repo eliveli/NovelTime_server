@@ -3,11 +3,16 @@ export const query = {
   getWritings: " SELECT * FROM writing WHERE userId = (?) ",
   getWritingIDsByUserId: " SELECT writingId FROM writingLike WHERE userId = (?) ",
 
+  getUserNameAndImgByUserId:
+    " SELECT userName, userImgSrc, userImgPosition FROM user WHERE userId = (?) ",
+
   getTwoOfNovelListInfoListByUserId: " SELECT * FROM novelList WHERE userId = (?) limit 2",
-  getNovelListInfoListByUserId: " SELECT * FROM novelList WHERE userId = (?) ",
+  getAllOfNovelListInfoListByUserId: " SELECT * FROM novelList WHERE userId = (?) ",
 
   getTwoOfNovelListIDsByUserId: " SELECT novelListId FROM novelListLike WHERE userId = (?) limit 2",
-  getNovelListIDsByUserId: " SELECT novelListId FROM novelListLike WHERE userId = (?) ",
+  getAllOfNovelListIDsByUserId: " SELECT novelListId FROM novelListLike WHERE userId = (?) ",
+
+  getNovelListInfoByListId: " SELECT * FROM novelList WHERE novelListId = (?) ",
 
   getNovelInfoByNovelId:
     " SELECT novelId, novelImg, novelTitle, novelAuthor, novelGenre, novelIsEnd FROM novelInfo WHERE novelId = (?) ",

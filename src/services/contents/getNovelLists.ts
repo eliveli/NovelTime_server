@@ -4,6 +4,11 @@
 import pool from "../../configs/db";
 import { query } from "./contents.utils";
 
+type UserInfo = {
+  userName: string;
+  userImgSrc: string;
+  userImgPosition: string;
+};
 type NovelListInfo = {
   novelListId: string;
   userId: string;
@@ -30,15 +35,15 @@ type NovelList = {
 async function getNovelListInfoListByUserId(userId: string, isHome = true) {
   // for userPageHome page get the two novel list
   // for userPageNovelList page get all novel list
-  const queryForLimitedNumber = isHome
+  const queryForLimitedOrNot = isHome
     ? query.getTwoOfNovelListInfoListByUserId
-    : query.getNovelListInfoListByUserId;
+    : query.getAllOfNovelListInfoListByUserId;
   return new Promise<NovelListInfo[]>(async (resolve) => {
     await pool
       .getConnection()
       .then((connection) => {
         connection
-          .query(queryForLimitedNumber, userId)
+          .query(queryForLimitedOrNot, userId)
           .then(async (data) => {
             const novelListInfoList = data.slice(0, data.length);
 
@@ -58,12 +63,47 @@ async function getNovelListInfoListByUserId(userId: string, isHome = true) {
       });
   });
 }
+async function getNovelListInfoByListId(novelListId: string) {
+  return new Promise<NovelListInfo>(async (resolve) => {
+    await pool
+      .getConnection()
+      .then((connection) => {
+        connection
+          .query(query.getNovelListInfoByListId, novelListId)
+          .then(async (data) => {
+            const novelListInfo = data[0];
+
+            resolve(novelListInfo as NovelListInfo);
+
+            // When done with the connection, release it.
+            connection.release();
+          })
+
+          .catch((err) => {
+            console.log(err);
+            connection.release();
+          });
+      })
+      .catch((err) => {
+        console.log(`not connected due to error: ${err}`);
+      });
+  });
+}
+async function getNovelListInfoListByListIDs(novelListIDs: string[]) {
+  const novelListInfoList: NovelListInfo[] = [];
+  for (const novelListID of novelListIDs) {
+    const novelListInfo = await getNovelListInfoByListId(novelListID);
+    novelListInfoList.push(novelListInfo);
+  }
+
+  return novelListInfoList;
+}
 async function getNovelListIDsByUserId(userId: string, isHome = true) {
   // for userPageHome page get the two novel list IDs
   // for userPageNovelList page get all novel list IDs
   const queryForLimitedNumber = isHome
     ? query.getTwoOfNovelListIDsByUserId
-    : query.getNovelListIDsByUserId;
+    : query.getAllOfNovelListIDsByUserId;
 
   return new Promise<string[]>(async (resolve) => {
     await pool
@@ -121,6 +161,32 @@ async function getNovelInfoByNovelId(novelId: string) {
       });
   });
 }
+async function getUserNameAndImgByUserId(userId: string) {
+  return new Promise<UserInfo>(async (resolve) => {
+    await pool
+      .getConnection()
+      .then((connection) => {
+        connection
+          .query(query.getUserNameAndImgByUserId, userId)
+          .then(async (data) => {
+            const userInfo = data[0];
+
+            resolve(userInfo as UserInfo);
+
+            // When done with the connection, release it.
+            connection.release();
+          })
+
+          .catch((err) => {
+            console.log(err);
+            connection.release();
+          });
+      })
+      .catch((err) => {
+        console.log(`not connected due to error: ${err}`);
+      });
+  });
+}
 async function getNovelLists(novelListInfoList: NovelListInfo[], listOrder = 1) {
   const novelLists = [];
   for (const novelListInfo of novelListInfoList) {
@@ -149,13 +215,28 @@ async function getNovelLists(novelListInfoList: NovelListInfo[], listOrder = 1) 
   return novelLists;
 }
 
-function getNovelListsSet(novelLists: NovelList[]) {
+function getNovelListsSetUserCreated(novelLists: NovelList[]) {
   const novelListsSet = [];
   for (const novelList of novelLists) {
     const novelListSet = {
       listId: novelList.novelListId,
       listTitle: novelList.novelListTitle,
       novel: novelList.novels,
+    };
+    novelListsSet.push(novelListSet);
+  }
+  return novelListsSet;
+}
+async function getNovelListsSetUserLikes(novelLists: NovelList[]) {
+  const novelListsSet = [];
+  for (const novelList of novelLists) {
+    const userInfo = await getUserNameAndImgByUserId(novelList.userId);
+    const novelListSet = {
+      listId: novelList.novelListId,
+      listTitle: novelList.novelListTitle,
+      novel: novelList.novels,
+      userName: userInfo.userName,
+      userImg: { src: userInfo.userImgSrc, position: userInfo.userImgPosition },
     };
     novelListsSet.push(novelListSet);
   }
@@ -168,7 +249,7 @@ export function getNovelListsUserCreatedForUserPageHome(userId: string) {
 
     const novelLists = await getNovelLists(novelListInfoList);
 
-    const novelListsSet = getNovelListsSet(novelLists);
+    const novelListsSet = getNovelListsSetUserCreated(novelLists);
 
     resolve(novelListsSet);
   });
@@ -177,10 +258,9 @@ export function getNovelListsUserCreatedForUserPageHome(userId: string) {
 export function getNovelListsUserLikesForUserPageHome(userId: string) {
   return new Promise<any>(async (resolve) => {
     const novelListIDs = await getNovelListIDsByUserId(userId);
-    // const novelListInfoList = await getNovelListInfoListByListIDs(novelListIDs);
-    // const novelLists = await getNovelLists(novelListInfoList);
-    // add info of user name and user img //
-    // const novelListsSet = getNovelListsSet(novelLists);
-    resolve(novelListIDs);
+    const novelListInfoList = await getNovelListInfoListByListIDs(novelListIDs);
+    const novelLists = await getNovelLists(novelListInfoList);
+    const novelListsSet = await getNovelListsSetUserLikes(novelLists);
+    resolve(novelListsSet);
   });
 }
