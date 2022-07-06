@@ -204,7 +204,7 @@ export function getWritingsUserCreatedForUserPageHome(userId: string) {
           .then(async (data) => {
             const writings = data.slice(0, data.length);
 
-            const writingsSet = await getWritingsSet(writings as Writing[], 4);
+            const writingsSet = await getWritingsSet(writings as Writing[]);
 
             resolve(writingsSet);
 

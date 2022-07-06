@@ -62,18 +62,28 @@ async function setCommentInfo(comment: Comment) {
   };
 }
 
-// for userPageHome page : extractComments(comments, 4)
-// then return the four comments
-// for userPageWriting page : extractComments(comments, 8, order)
-// then return the eight comments as Nth order as requested
-function extractComments(comments: Comment[], number: number, order = 1) {
-  const extractedComments = comments.slice(number * (order - 1), number * order);
+function extractComments(comments: Comment[], isHome = true, order = 1) {
+  // for UserPageHome page get the 4 comments
+  // for UserPageWriting(Comment) page get the 8 comments as requested order
+  const requiredNumber = isHome ? 4 : 8;
+
+  const extractedComments = comments.slice(requiredNumber * (order - 1), requiredNumber * order);
 
   return extractedComments;
 }
 
-export default function getCommentsForUserPageHome(userId: string) {
-  return new Promise<any>(async (resolve) => {
+async function getCommentsSet(selectedComments: Comment[]) {
+  const commentsSet = [];
+
+  for (const comment of selectedComments) {
+    const commentSet = await setCommentInfo(comment);
+    commentsSet.push(commentSet);
+  }
+  return commentsSet;
+}
+
+function getCommentsByUserId(userId: string) {
+  return new Promise<Comment[]>(async (resolve) => {
     await pool
       .getConnection()
       .then((connection) => {
@@ -81,16 +91,8 @@ export default function getCommentsForUserPageHome(userId: string) {
           .query(query.getComments, userId)
           .then(async (data) => {
             const comments = data.slice(0, data.length);
-            const selectedComments = extractComments(comments, 4);
 
-            const commentsSet = [];
-
-            for (const comment of selectedComments) {
-              const commentSet = await setCommentInfo(comment);
-              commentsSet.push(commentSet);
-            }
-
-            resolve({ commentsSet });
+            resolve(comments as Comment[]);
 
             // When done with the connection, release it.
             connection.release();
@@ -104,5 +106,16 @@ export default function getCommentsForUserPageHome(userId: string) {
       .catch((err) => {
         console.log(`not connected due to error: ${err}`);
       });
+  });
+}
+export default function getCommentsForUserPageHome(userId: string) {
+  return new Promise<any>(async (resolve) => {
+    const comments = await getCommentsByUserId(userId);
+
+    const selectedComments = extractComments(comments);
+
+    const commentsSet = await getCommentsSet(selectedComments);
+
+    resolve({ commentsSet });
   });
 }
