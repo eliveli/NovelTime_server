@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-misused-promises */
 /* eslint-disable no-await-in-loop */
 /* eslint-disable no-restricted-syntax */
 import pool from "../../configs/db";
@@ -171,7 +172,7 @@ async function getWritingIDsByUserId(userId: string) {
             const writingIDs: string[] = [];
             for (const dataForWritingId of dataForWritingIDs) {
               const { writingId } = dataForWritingId;
-              writingIDs.push(writingId);
+              writingIDs.push(writingId as string);
             }
             resolve(writingIDs);
 
