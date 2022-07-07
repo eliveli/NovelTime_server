@@ -245,22 +245,30 @@ async function getNovelListsSetUserLikes(novelLists: NovelList[]) {
 
 export function getNovelListsUserCreatedForUserPageHome(userId: string) {
   return new Promise<any>(async (resolve) => {
-    const novelListInfoList = await getNovelListInfoListByUserId(userId);
+    try {
+      const novelListInfoList = await getNovelListInfoListByUserId(userId);
 
-    const novelLists = await getNovelLists(novelListInfoList);
+      const novelLists = await getNovelLists(novelListInfoList);
 
-    const novelListsSet = getNovelListsSetUserCreated(novelLists);
+      const novelListsSet = getNovelListsSetUserCreated(novelLists);
 
-    resolve(novelListsSet);
+      resolve(novelListsSet);
+    } catch (error) {
+      console.log("error occurred in getNovelListsUserCreatedForUserPageHome:", error);
+    }
   });
 }
 
 export function getNovelListsUserLikesForUserPageHome(userId: string) {
   return new Promise<any>(async (resolve) => {
-    const novelListIDs = await getNovelListIDsByUserId(userId);
-    const novelListInfoList = await getNovelListInfoListByListIDs(novelListIDs);
-    const novelLists = await getNovelLists(novelListInfoList);
-    const novelListsSet = await getNovelListsSetUserLikes(novelLists);
-    resolve(novelListsSet);
+    try {
+      const novelListIDs = await getNovelListIDsByUserId(userId);
+      const novelListInfoList = await getNovelListInfoListByListIDs(novelListIDs);
+      const novelLists = await getNovelLists(novelListInfoList);
+      const novelListsSet = await getNovelListsSetUserLikes(novelLists);
+      resolve(novelListsSet);
+    } catch (error) {
+      console.log("error occurred in getNovelListsUserLikesForUserPageHome:", error);
+    }
   });
 }

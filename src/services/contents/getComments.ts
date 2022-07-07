@@ -110,12 +110,16 @@ function getCommentsByUserId(userId: string) {
 }
 export default function getCommentsForUserPageHome(userId: string) {
   return new Promise<any>(async (resolve) => {
-    const comments = await getCommentsByUserId(userId);
+    try {
+      const comments = await getCommentsByUserId(userId);
 
-    const selectedComments = extractComments(comments);
+      const selectedComments = extractComments(comments);
 
-    const commentsSet = await getCommentsSet(selectedComments);
+      const commentsSet = await getCommentsSet(selectedComments);
 
-    resolve(commentsSet);
+      resolve(commentsSet);
+    } catch (error) {
+      console.log("error occurred in getCommentsForUserPageHome:", error);
+    }
   });
 }

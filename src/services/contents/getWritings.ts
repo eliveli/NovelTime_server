@@ -112,7 +112,6 @@ async function setWritingInfo(writing: Writing, isOnesUserCreated: boolean) {
   // this is for writings an user likes not an user created
   // get the user name who created this writing that an user likes
   if (!isOnesUserCreated) {
-    console.log("userId:", userId);
     userName = await getUserNameByUserId(userId);
   }
 
@@ -190,7 +189,17 @@ async function getWritingsSet(writings: Writing[], isForHome: boolean, isOnesUse
   const talksSet = await setWritings(dividedTalks, isOnesUserCreated);
   const recommendsSet = await setWritings(dividedRecommends, isOnesUserCreated);
 
-  return { talksSet, recommendsSet };
+  if (isOnesUserCreated) {
+    return {
+      talksUserCreated: talksSet,
+      recommendsUserCreated: recommendsSet,
+    };
+  }
+
+  return {
+    talksUserLikes: talksSet,
+    recommendsUserLikes: recommendsSet,
+  };
 }
 
 async function getWritingByWritingId(writingId: string) {
@@ -285,18 +294,30 @@ export function getWritingsByUserId(userId: string) {
 }
 export function getWritingsUserCreatedForUserPageHome(userId: string) {
   return new Promise<any>(async (resolve) => {
-    const writings = await getWritingsByUserId(userId);
-    const writingsSet = await getWritingsSet(writings, true, true);
+    try {
+      const writings = await getWritingsByUserId(userId);
+      const { talksUserCreated, recommendsUserCreated } = await getWritingsSet(
+        writings,
+        true,
+        true,
+      );
 
-    resolve(writingsSet);
+      resolve({ talksUserCreated, recommendsUserCreated });
+    } catch (error) {
+      console.log("error occurred in getWritingsUserCreatedForUserPageHome:", error);
+    }
   });
 }
 export function getWritingsUserLikesForUserPageHome(userId: string) {
   return new Promise<any>(async (resolve) => {
-    const writingIDs = await getWritingIDsByUserId(userId);
-    const writings = await getWritingsByWritingIDs(writingIDs);
-    const writingsSet = await getWritingsSet(writings, true, false);
+    try {
+      const writingIDs = await getWritingIDsByUserId(userId);
+      const writings = await getWritingsByWritingIDs(writingIDs);
+      const { talksUserLikes, recommendsUserLikes } = await getWritingsSet(writings, true, false);
 
-    resolve(writingsSet);
+      resolve({ talksUserLikes, recommendsUserLikes });
+    } catch (error) {
+      console.log("error occurred in getWritingsUserLikesForUserPageHome:", error);
+    }
   });
 }

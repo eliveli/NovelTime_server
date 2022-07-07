@@ -17,26 +17,32 @@ import {
 dotenv.config();
 
 export const userPageHomeController: RequestHandler = async (req, res) => {
-  const { userName } = req.params;
-  const userId = await getUserId(userName);
-  const writingsUserCreated = await getWritingsUserCreatedForUserPageHome(userId);
-  const writingsUserLikes = await getWritingsUserLikesForUserPageHome(userId);
-  const comments = await getCommentsForUserPageHome(userId);
-  const novelListsUserCreated = await getNovelListsUserCreatedForUserPageHome(userId);
-  const novelListsUserLikes = await getNovelListsUserLikesForUserPageHome(userId);
+  try {
+    const { userName } = req.params;
+    const userId = await getUserId(userName);
+    const { talksUserCreated, recommendsUserCreated } = await getWritingsUserCreatedForUserPageHome(
+      userId,
+    );
+    const { talksUserLikes, recommendsUserLikes } = await getWritingsUserLikesForUserPageHome(
+      userId,
+    );
+    const commentsUserCreated = await getCommentsForUserPageHome(userId);
+    const listsUserCreated = await getNovelListsUserCreatedForUserPageHome(userId);
+    const listsUserLikes = await getNovelListsUserLikesForUserPageHome(userId);
 
-  console.log("userId:", userId);
-  console.log("writingsUserCreated:", writingsUserCreated);
-  console.log("writingsUserLikes:", writingsUserLikes);
-  console.log("comments:", comments);
-  console.log("novelListsUserCreated:", novelListsUserCreated);
-  console.log("novelListsUserLikes:", novelListsUserLikes);
-
-  //   .then(async (userInfo) => {
-  //       return res.json({ accessToken, userInfo });
-  //     } catch (e) {
-  //       console.log("failed to generate token or set cookie : ", e);
-  //     }
-  //   })
-  // .catch((err) => console.log("in controller : ", err));
+    res.json({
+      talksUserCreated,
+      recommendsUserCreated,
+      talksUserLikes,
+      recommendsUserLikes,
+      commentsUserCreated,
+      novelLists: {
+        listsUserCreated,
+        listsUserLikes,
+      },
+    });
+  } catch (error) {
+    console.log("failed to get user's contents in userPageHomeController :", error);
+    res.status(500).end();
+  }
 };
