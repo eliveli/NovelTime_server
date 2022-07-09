@@ -3,6 +3,8 @@ export const query = {
   geUserId: " SELECT userId FROM user WHERE userName = (?) ",
   getUserNameByUserId: " SELECT userName FROM user WHERE userId = (?) ",
   getWritings: " SELECT * FROM writing WHERE userId = (?) ",
+  getTalksOrRecommendsByUserId:
+    " SELECT * FROM writing WHERE userId = (?) and talkOrRecommend = (?) ",
   getWritingIDsByUserId: " SELECT writingId FROM writingLike WHERE userId = (?) ",
 
   getUserNameAndImgByUserId:

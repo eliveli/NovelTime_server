@@ -183,6 +183,14 @@ function divideWritings(writings: Writing[], isForHome: boolean, order = 1) {
   return { dividedTalks, dividedRecommends };
 }
 
+function getTalksOrRecommendsAsOrder(talksOrRecommends: Writing[], order: number) {
+  const requiredNumber = 8;
+  const talksOrRecommendsAsOrder = talksOrRecommends.slice(
+    requiredNumber * (order - 1),
+    requiredNumber * order,
+  );
+  return talksOrRecommendsAsOrder;
+}
 async function getWritingsSet(writings: Writing[], isForHome: boolean, isOnesUserCreated: boolean) {
   const { dividedTalks, dividedRecommends } = divideWritings(writings, isForHome);
 
@@ -266,7 +274,7 @@ async function getWritingIDsByUserId(userId: string) {
       });
   });
 }
-export function getWritingsByUserId(userId: string) {
+function getWritingsByUserId(userId: string) {
   return new Promise<Writing[]>(async (resolve) => {
     await pool
       .getConnection()
@@ -292,6 +300,33 @@ export function getWritingsByUserId(userId: string) {
       });
   });
 }
+function getTalksOrRecommendsByUserId(userId: string, talksOrRecommends: "T" | "R") {
+  return new Promise<Writing[]>(async (resolve) => {
+    await pool
+      .getConnection()
+      .then((connection) => {
+        connection
+          .query(query.getTalksOrRecommendsByUserId, [userId, talksOrRecommends])
+          .then(async (data) => {
+            const writings = data.slice(0, data.length);
+
+            resolve(writings as Writing[]);
+
+            // When done with the connection, release it.
+            connection.release();
+          })
+
+          .catch((err) => {
+            console.log(err);
+            connection.release();
+          });
+      })
+      .catch((err) => {
+        console.log(`not connected due to error: ${err}`);
+      });
+  });
+}
+
 export function getWritingsUserCreatedForUserPageHome(userId: string) {
   return new Promise<any>(async (resolve) => {
     try {
@@ -318,6 +353,24 @@ export function getWritingsUserLikesForUserPageHome(userId: string) {
       resolve({ talksUserLikes, recommendsUserLikes });
     } catch (error) {
       console.log("error occurred in getWritingsUserLikesForUserPageHome:", error);
+    }
+  });
+}
+
+export function getTalksOrRecommendsUserCreated(
+  userId: string,
+  contentsType: "T" | "R",
+  order: number,
+) {
+  return new Promise<any>(async (resolve) => {
+    try {
+      const talksOrRecommends = await getTalksOrRecommendsByUserId(userId, contentsType);
+      const talksOrRecommendsAsOrder = getTalksOrRecommendsAsOrder(talksOrRecommends, order);
+      const talksOrRecommendsSet = await setWritings(talksOrRecommendsAsOrder, true);
+
+      resolve(talksOrRecommendsSet);
+    } catch (error) {
+      console.log("error occurred in getTalksOrRecommendsUserCreated:", error);
     }
   });
 }

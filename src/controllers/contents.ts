@@ -5,6 +5,7 @@ import { RequestHandler } from "express";
 import dotenv from "dotenv";
 import getUserId from "../services/contents/getUserId";
 import {
+  getTalksOrRecommendsUserCreated,
   getWritingsUserCreatedForUserPageHome,
   getWritingsUserLikesForUserPageHome,
 } from "../services/contents/getWritings";
@@ -43,6 +44,24 @@ export const userPageHomeController: RequestHandler = async (req, res) => {
     });
   } catch (error) {
     console.log("failed to get user's contents in userPageHomeController :", error);
+    res.status(500).end();
+  }
+};
+
+export const userPageMyWritingController: RequestHandler = async (req, res) => {
+  try {
+    const { userName, contentsType, order } = req.params;
+    const userId = await getUserId(userName);
+    if (contentsType === "T" || contentsType === "R") {
+      const writingsUserCreated = await getTalksOrRecommendsUserCreated(
+        userId,
+        contentsType,
+        Number(order),
+      );
+      res.json(writingsUserCreated);
+    }
+  } catch (error) {
+    console.log("failed to get user's contents in userPageMyWritingController :", error);
     res.status(500).end();
   }
 };
