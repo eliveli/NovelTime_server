@@ -53,12 +53,12 @@ export const userPageMyWritingController: RequestHandler = async (req, res) => {
     const { userName, contentsType, order } = req.params;
     const userId = await getUserId(userName);
     if (contentsType === "T" || contentsType === "R") {
-      const writingsUserCreated = await getTalksOrRecommendsUserCreated(
+      const { talksOrRecommendsSet, isNextOrder } = await getTalksOrRecommendsUserCreated(
         userId,
         contentsType,
         Number(order),
       );
-      res.json(writingsUserCreated);
+      res.json({ writingsUserCreated: talksOrRecommendsSet, isNextOrder });
     }
   } catch (error) {
     console.log("failed to get user's contents in userPageMyWritingController :", error);

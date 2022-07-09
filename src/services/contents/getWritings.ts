@@ -189,7 +189,9 @@ function getTalksOrRecommendsAsOrder(talksOrRecommends: Writing[], order: number
     requiredNumber * (order - 1),
     requiredNumber * order,
   );
-  return talksOrRecommendsAsOrder;
+  const firstIndexOfNextOrder = requiredNumber * order;
+  const isNextOrder = !!talksOrRecommends[firstIndexOfNextOrder];
+  return { talksOrRecommendsAsOrder, isNextOrder };
 }
 async function getWritingsSet(writings: Writing[], isForHome: boolean, isOnesUserCreated: boolean) {
   const { dividedTalks, dividedRecommends } = divideWritings(writings, isForHome);
@@ -365,10 +367,13 @@ export function getTalksOrRecommendsUserCreated(
   return new Promise<any>(async (resolve) => {
     try {
       const talksOrRecommends = await getTalksOrRecommendsByUserId(userId, contentsType);
-      const talksOrRecommendsAsOrder = getTalksOrRecommendsAsOrder(talksOrRecommends, order);
+      const { talksOrRecommendsAsOrder, isNextOrder } = getTalksOrRecommendsAsOrder(
+        talksOrRecommends,
+        order,
+      );
       const talksOrRecommendsSet = await setWritings(talksOrRecommendsAsOrder, true);
 
-      resolve(talksOrRecommendsSet);
+      resolve({ talksOrRecommendsSet, isNextOrder });
     } catch (error) {
       console.log("error occurred in getTalksOrRecommendsUserCreated:", error);
     }
