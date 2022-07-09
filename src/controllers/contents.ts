@@ -5,11 +5,14 @@ import { RequestHandler } from "express";
 import dotenv from "dotenv";
 import getUserId from "../services/contents/getUserId";
 import {
-  getTalksOrRecommendsUserCreated,
+  getWritingsUserCreatedForMyWriting,
   getWritingsUserCreatedForUserPageHome,
   getWritingsUserLikesForUserPageHome,
 } from "../services/contents/getWritings";
-import getCommentsForUserPageHome from "../services/contents/getComments";
+import {
+  getCommentsForMyWriting,
+  getCommentsForUserPageHome,
+} from "../services/contents/getComments";
 import {
   getNovelListsUserCreatedForUserPageHome,
   getNovelListsUserLikesForUserPageHome,
@@ -53,12 +56,20 @@ export const userPageMyWritingController: RequestHandler = async (req, res) => {
     const { userName, contentsType, order } = req.params;
     const userId = await getUserId(userName);
     if (contentsType === "T" || contentsType === "R") {
-      const { talksOrRecommendsSet, isNextOrder } = await getTalksOrRecommendsUserCreated(
+      const { talksOrRecommendsSet, isNextOrder } = await getWritingsUserCreatedForMyWriting(
         userId,
         contentsType,
         Number(order),
       );
       res.json({ writingsUserCreated: talksOrRecommendsSet, isNextOrder });
+    }
+
+    if (contentsType === "C") {
+      const { commentsSet, isNextOrder } = await getCommentsForMyWriting(userId, Number(order));
+      res.json({
+        commentsUserCreated: commentsSet,
+        isNextOrder,
+      });
     }
   } catch (error) {
     console.log("failed to get user's contents in userPageMyWritingController :", error);

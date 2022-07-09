@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-misused-promises */
 /* eslint-disable no-restricted-syntax */
 import pool from "../../configs/db";
 import { query } from "./contents.utils";
@@ -21,7 +22,7 @@ function getTalkTitle(talkId: string) {
           .query(query.getTalkTitle, talkId)
           .then((data) => {
             const { writingTitle } = data[0];
-            resolve(writingTitle);
+            resolve(writingTitle as string);
 
             // When done with the connection, release it.
             connection.release();
@@ -69,6 +70,13 @@ function extractComments(comments: Comment[], isHome = true, order = 1) {
 
   const extractedComments = comments.slice(requiredNumber * (order - 1), requiredNumber * order);
 
+  // for UserPageWriting
+  if (!isHome) {
+    const firstIndexOfNextOrder = requiredNumber * order;
+    const isNextOrder = !!comments[firstIndexOfNextOrder];
+    return { extractedComments, isNextOrder };
+  }
+
   return extractedComments;
 }
 
@@ -108,18 +116,36 @@ function getCommentsByUserId(userId: string) {
       });
   });
 }
-export default function getCommentsForUserPageHome(userId: string) {
+export function getCommentsForUserPageHome(userId: string) {
   return new Promise<any>(async (resolve) => {
     try {
       const comments = await getCommentsByUserId(userId);
 
       const selectedComments = extractComments(comments);
 
-      const commentsSet = await getCommentsSet(selectedComments);
+      const commentsSet = await getCommentsSet(selectedComments as Comment[]);
 
       resolve(commentsSet);
     } catch (error) {
       console.log("error occurred in getCommentsForUserPageHome:", error);
+    }
+  });
+}
+export function getCommentsForMyWriting(userId: string, order: number) {
+  return new Promise<any>(async (resolve) => {
+    try {
+      const comments = await getCommentsByUserId(userId);
+
+      const { extractedComments, isNextOrder } = extractComments(comments, false, order) as {
+        extractedComments: Comment[];
+        isNextOrder: boolean;
+      };
+
+      const commentsSet = await getCommentsSet(extractedComments);
+
+      resolve({ commentsSet, isNextOrder });
+    } catch (error) {
+      console.log("error occurred in getCommentsForMyWriting:", error);
     }
   });
 }

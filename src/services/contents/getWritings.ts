@@ -359,7 +359,7 @@ export function getWritingsUserLikesForUserPageHome(userId: string) {
   });
 }
 
-export function getTalksOrRecommendsUserCreated(
+export function getWritingsUserCreatedForMyWriting(
   userId: string,
   contentsType: "T" | "R",
   order: number,
