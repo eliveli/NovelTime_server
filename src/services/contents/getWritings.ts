@@ -153,10 +153,10 @@ async function setWritings(writings: Writing[], isOnesUserCreated: boolean) {
   return writingsSet;
 }
 
-function divideWritings(writings: Writing[], isForHome: boolean, order = 1) {
+function divideWritings(writings: Writing[]) {
   // for UserPageHome page get the 4 writings
-  // for UserPageWriting page get the 8 writings
-  const requiredNumber = isForHome ? 4 : 8;
+  const requiredNumber = 4;
+  const order = 1; // only needed 1 as order number in UserPageHome
 
   const talks = [];
   const recommends = [];
@@ -169,8 +169,6 @@ function divideWritings(writings: Writing[], isForHome: boolean, order = 1) {
     }
 
     // when requesting writings from userPageHome page, "order" is always 1
-    // otherwise requesting from userPageWritings page, "order" will be 1 or bigger one
-    //   because if an user clicks the "more" button writings in next order will be required
     if (talks.length >= requiredNumber * order && recommends.length >= requiredNumber * order) {
       break;
     }
@@ -193,8 +191,8 @@ function getTalksOrRecommendsAsOrder(talksOrRecommends: Writing[], order: number
   const isNextOrder = !!talksOrRecommends[firstIndexOfNextOrder];
   return { talksOrRecommendsAsOrder, isNextOrder };
 }
-async function getWritingsSet(writings: Writing[], isForHome: boolean, isOnesUserCreated: boolean) {
-  const { dividedTalks, dividedRecommends } = divideWritings(writings, isForHome);
+async function getWritingsSet(writings: Writing[], isOnesUserCreated: boolean) {
+  const { dividedTalks, dividedRecommends } = divideWritings(writings);
 
   const talksSet = await setWritings(dividedTalks, isOnesUserCreated);
   const recommendsSet = await setWritings(dividedRecommends, isOnesUserCreated);
@@ -344,11 +342,7 @@ export function getWritingsUserCreatedForUserPageHome(userId: string) {
   return new Promise<any>(async (resolve) => {
     try {
       const writings = await getWritingsByUserId(userId);
-      const { talksUserCreated, recommendsUserCreated } = await getWritingsSet(
-        writings,
-        true,
-        true,
-      );
+      const { talksUserCreated, recommendsUserCreated } = await getWritingsSet(writings, true);
 
       resolve({ talksUserCreated, recommendsUserCreated });
     } catch (error) {
@@ -361,7 +355,7 @@ export function getWritingsUserLikesForUserPageHome(userId: string) {
     try {
       const writingIDs = await getWritingIDsByUserId(userId);
       const writings = await getWritingsByWritingIDs(writingIDs);
-      const { talksUserLikes, recommendsUserLikes } = await getWritingsSet(writings, true, false);
+      const { talksUserLikes, recommendsUserLikes } = await getWritingsSet(writings, false);
 
       resolve({ talksUserLikes, recommendsUserLikes });
     } catch (error) {
