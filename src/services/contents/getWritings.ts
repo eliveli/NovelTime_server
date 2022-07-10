@@ -212,16 +212,22 @@ async function getWritingsSet(writings: Writing[], isForHome: boolean, isOnesUse
   };
 }
 
-async function getWritingByWritingId(writingId: string) {
+async function getWritingByWritingId(writingId: string, contentsType?: "T" | "R") {
+  // for othersWriting in UserPage divide as contents type
+  // for UserPageHome page get all writings
+  const queryForDividingWritings = contentsType
+    ? query.getTalksOrRecommendsByWritingId
+    : query.getWritingByWritingId;
+  const paramsForDividingWritings = contentsType ? [writingId, contentsType] : writingId;
   return new Promise<Writing>(async (resolve) => {
     await pool
       .getConnection()
       .then((connection) => {
         connection
-          .query(query.getWritingByWritingId, writingId)
+          .query(queryForDividingWritings, paramsForDividingWritings)
           .then(async (data) => {
-            const writing = data[0];
-            resolve(writing as Writing);
+            const writing = data[0] as Writing;
+            resolve(writing);
 
             // When done with the connection, release it.
             connection.release();
@@ -238,10 +244,14 @@ async function getWritingByWritingId(writingId: string) {
   });
 }
 
-async function getWritingsByWritingIDs(writingIDs: string[]) {
+async function getWritingsByWritingIDs(writingIDs: string[], contentsType?: "T" | "R") {
   const writings: Writing[] = [];
   for (const writingId of writingIDs) {
-    const writing = await getWritingByWritingId(writingId);
+    const writing = await getWritingByWritingId(writingId, contentsType);
+    // writing can be undefined if its contents type is different from the param's one
+    // if so don't push that into the writings array
+    if (!writing) continue;
+
     writings.push(writing);
   }
   return writings;
@@ -276,6 +286,7 @@ async function getWritingIDsByUserId(userId: string) {
       });
   });
 }
+
 function getWritingsByUserId(userId: string) {
   return new Promise<Writing[]>(async (resolve) => {
     await pool
@@ -376,6 +387,27 @@ export function getWritingsUserCreatedForMyWriting(
       resolve({ talksOrRecommendsSet, isNextOrder });
     } catch (error) {
       console.log("error occurred in getTalksOrRecommendsUserCreated:", error);
+    }
+  });
+}
+export function getWritingsUserLikesForOthersWriting(
+  userId: string,
+  contentsType: "T" | "R",
+  order: number,
+) {
+  return new Promise<any>(async (resolve) => {
+    try {
+      const writingIDs = await getWritingIDsByUserId(userId);
+      const talksOrRecommends = await getWritingsByWritingIDs(writingIDs, contentsType);
+      const { talksOrRecommendsAsOrder, isNextOrder } = getTalksOrRecommendsAsOrder(
+        talksOrRecommends,
+        order,
+      );
+      const talksOrRecommendsSet = await setWritings(talksOrRecommendsAsOrder, false);
+
+      resolve({ talksOrRecommendsSet, isNextOrder });
+    } catch (error) {
+      console.log("error occurred in getWritingsUserLikesForOthersWriting:", error);
     }
   });
 }

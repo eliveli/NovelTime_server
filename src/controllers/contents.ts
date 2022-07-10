@@ -7,6 +7,7 @@ import getUserId from "../services/contents/getUserId";
 import {
   getWritingsUserCreatedForMyWriting,
   getWritingsUserCreatedForUserPageHome,
+  getWritingsUserLikesForOthersWriting,
   getWritingsUserLikesForUserPageHome,
 } from "../services/contents/getWritings";
 import {
@@ -71,6 +72,21 @@ export const userPageMyWritingController: RequestHandler = async (req, res) => {
         isNextOrder,
       });
     }
+  } catch (error) {
+    console.log("failed to get user's contents in userPageMyWritingController :", error);
+    res.status(500).end();
+  }
+};
+export const userPageOthersWritingController: RequestHandler = async (req, res) => {
+  try {
+    const { userName, contentsType, order } = req.params;
+    const userId = await getUserId(userName);
+    const { talksOrRecommendsSet, isNextOrder } = await getWritingsUserLikesForOthersWriting(
+      userId,
+      contentsType as "T" | "R",
+      Number(order),
+    );
+    res.json({ writingsUserLikes: talksOrRecommendsSet, isNextOrder });
   } catch (error) {
     console.log("failed to get user's contents in userPageMyWritingController :", error);
     res.status(500).end();

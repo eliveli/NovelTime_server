@@ -21,6 +21,8 @@ export const query = {
   getNovelInfoByNovelId:
     " SELECT novelId, novelImg, novelTitle, novelAuthor, novelGenre, novelIsEnd FROM novelInfo WHERE novelId = (?) ",
   getWritingByWritingId: " SELECT * FROM writing WHERE writingId = (?) ",
+  getTalksOrRecommendsByWritingId:
+    " SELECT * FROM writing WHERE writingId = (?) and talkOrRecommend = (?)",
   getNovelTitleAndImg: " SELECT novelTitle, novelImg FROM novelInfo WHERE novelId = (?) ",
   getTalkTitle: " SELECT writingTitle FROM writing WHERE writingId = (?) ",
   getComments: " SELECT * FROM comment WHERE userId = (?) ",
