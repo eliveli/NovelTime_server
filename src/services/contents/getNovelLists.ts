@@ -89,6 +89,7 @@ async function getNovelListInfoByListId(novelListId: string) {
       });
   });
 }
+
 async function getNovelListInfoListByListIDs(novelListIDs: string[]) {
   const novelListInfoList: NovelListInfo[] = [];
   for (const novelListID of novelListIDs) {
@@ -187,26 +188,43 @@ async function getUserNameAndImgByUserId(userId: string) {
       });
   });
 }
-async function getNovelLists(novelListInfoList: NovelListInfo[], listOrder = 1) {
+async function getNovelsByNovelListInfo(
+  novelListInfo: NovelListInfo,
+  isUserPageHome: boolean,
+  listOrder = 1,
+) {
+  // set novel IDs array
+  const dataForNovelIDs = novelListInfo.novelIDs;
+  const novelIDs = dataForNovelIDs.split(" ");
+
+  // extract novel ids as requested
+  // for UserPageNoveList(myList or othersList) page listOrder is the requested order
+  // for UserPageHome page listOrder is 1 as default
+  const novelNO = 8;
+  const novelIDsRequired = novelIDs.slice(novelNO * (listOrder - 1), novelNO * listOrder);
+
+  const novels: Novel[] = [];
+
+  // get novels by novel IDs
+  for (const novelId of novelIDsRequired) {
+    const novel = await getNovelInfoByNovelId(novelId);
+    novels.push(novel);
+  }
+
+  if (!isUserPageHome) {
+    // for myList or othersList page
+    const firstIndexOfNextOrder = novelNO * listOrder;
+    const isNextOrder = !!novelIDs[firstIndexOfNextOrder];
+    return { novels, isNextOrder };
+  }
+  // for UserPageHome page
+  return novels;
+}
+
+async function getNovelLists(novelListInfoList: NovelListInfo[]) {
   const novelLists = [];
   for (const novelListInfo of novelListInfoList) {
-    // get novel IDs per novel list
-    const dataForNovelIDs = novelListInfo.novelIDs;
-    const novelIDs = dataForNovelIDs.split(" ");
-
-    // extract novel ids as requested
-    // for UserPageNovelList page listOrder is the requested order
-    // for UserPageHome page listOrder is 1 as default
-    const novelNO = 8;
-    const novelIDsRequired = novelIDs.slice(novelNO * (listOrder - 1), novelNO * listOrder);
-
-    const novels: Novel[] = [];
-
-    // get novels by novel IDs
-    for (const novelId of novelIDsRequired) {
-      const novel = await getNovelInfoByNovelId(novelId);
-      novels.push(novel);
-    }
+    const novels = (await getNovelsByNovelListInfo(novelListInfo, true)) as Novel[];
 
     // add novels into list
     const novelList = { ...novelListInfo, novels };
@@ -215,21 +233,33 @@ async function getNovelLists(novelListInfoList: NovelListInfo[], listOrder = 1) 
   return novelLists;
 }
 
+async function getNovelsAndInfoByListId(novelListId: string, order: number) {
+  const novelListInfo = await getNovelListInfoByListId(novelListId);
+  const { novels, isNextOrder } = (await getNovelsByNovelListInfo(novelListInfo, false, order)) as {
+    novels: Novel[];
+    isNextOrder: boolean;
+  };
+  return { novelListInfo, novels, isNextOrder };
+}
 async function getNovelListsSimpleInfos(
   novelListInfoList: NovelListInfo[],
-  userId: string,
   isMyList: boolean,
+  novelListId: string,
 ) {
   const novelListsSimpleInfos = [];
   for (const novelListInfo of novelListInfoList) {
-    // userInfo is required for myList page not for othersList page
+    // userInfo is required for othersList page not for myList page
     let userName;
     let userImg;
-    if (isMyList) {
-      const userInfo = await getUserNameAndImgByUserId(userId);
+    if (!isMyList) {
+      const userInfo = await getUserNameAndImgByUserId(novelListInfo.userId);
       userName = userInfo.userName;
       userImg = { src: userInfo.userImgSrc, position: userInfo.userImgPosition };
     }
+
+    // except the list info that was requested by user
+    if (novelListId === novelListInfo.novelListId) continue;
+
     const simpleInfo = {
       listId: novelListInfo.novelListId,
       listTitle: novelListInfo.novelListTitle,
@@ -290,15 +320,27 @@ export function getNovelListsUserCreatedForMyList(userId: string, listId: string
       const novelListInfoList = await getNovelListInfoListByUserId(userId, false);
 
       // its property name is "otherList" in returned data.
-      // it means the lists except the one getting by listedId
-      const novelListsSimpleInfos = await getNovelListsSimpleInfos(novelListInfoList, userId, true);
+      // it means the lists except the one getting by listId
+      const novelListsSimpleInfosUserCreated = await getNovelListsSimpleInfos(
+        novelListInfoList,
+        true,
+        listId,
+      );
 
-      console.log("novelListsSimpleInfos:", novelListsSimpleInfos);
+      const { novelListInfo, novels, isNextOrder } = await getNovelsAndInfoByListId(listId, order);
+
+      console.log(
+        "novelListsSimpleInfosUserCreated,  novelListInfo, novels, isNextOrder :",
+        novelListsSimpleInfosUserCreated,
+        novelListInfo,
+        novels,
+        isNextOrder,
+      );
       // const novelLists = await getNovelLists(novelListInfoList);
 
       // const novelListsSet = getNovelListsSetUserCreated(novelLists);
 
-      resolve(novelListsSimpleInfos);
+      resolve(novelListsSimpleInfosUserCreated);
     } catch (error) {
       console.log("error occurred in getNovelListsUserCreatedForUserPageHome:", error);
     }
