@@ -15,6 +15,7 @@ import {
   getCommentsForUserPageHome,
 } from "../services/contents/getComments";
 import {
+  getNovelListsUserCreatedForMyList,
   getNovelListsUserCreatedForUserPageHome,
   getNovelListsUserLikesForUserPageHome,
 } from "../services/contents/getNovelLists";
@@ -89,6 +90,21 @@ export const userPageOthersWritingController: RequestHandler = async (req, res) 
     res.json({ writingsUserLikes: talksOrRecommendsSet, isNextOrder });
   } catch (error) {
     console.log("failed to get user's contents in userPageMyWritingController :", error);
+    res.status(500).end();
+  }
+};
+export const userPageMyListController: RequestHandler = async (req, res) => {
+  try {
+    const { userName, listId, order } = req.params;
+    const userId = await getUserId(userName);
+    const { listsUserCreated, isNextOrder } = await getNovelListsUserCreatedForMyList(
+      userId,
+      listId,
+      Number(order),
+    );
+    res.json({ listsUserCreated, isNextOrder });
+  } catch (error) {
+    console.log("failed to get user's contents in userPageMyListController :", error);
     res.status(500).end();
   }
 };

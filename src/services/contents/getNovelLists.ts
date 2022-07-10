@@ -215,6 +215,32 @@ async function getNovelLists(novelListInfoList: NovelListInfo[], listOrder = 1) 
   return novelLists;
 }
 
+async function getNovelListsSimpleInfos(
+  novelListInfoList: NovelListInfo[],
+  userId: string,
+  isMyList: boolean,
+) {
+  const novelListsSimpleInfos = [];
+  for (const novelListInfo of novelListInfoList) {
+    // userInfo is required for myList page not for othersList page
+    let userName;
+    let userImg;
+    if (isMyList) {
+      const userInfo = await getUserNameAndImgByUserId(userId);
+      userName = userInfo.userName;
+      userImg = { src: userInfo.userImgSrc, position: userInfo.userImgPosition };
+    }
+    const simpleInfo = {
+      listId: novelListInfo.novelListId,
+      listTitle: novelListInfo.novelListTitle,
+      userName,
+      userImg,
+    };
+    novelListsSimpleInfos.push(simpleInfo);
+  }
+  return novelListsSimpleInfos;
+}
+
 function getNovelListsSetUserCreated(novelLists: NovelList[]) {
   const novelListsSet = [];
   for (const novelList of novelLists) {
@@ -253,6 +279,26 @@ export function getNovelListsUserCreatedForUserPageHome(userId: string) {
       const novelListsSet = getNovelListsSetUserCreated(novelLists);
 
       resolve(novelListsSet);
+    } catch (error) {
+      console.log("error occurred in getNovelListsUserCreatedForUserPageHome:", error);
+    }
+  });
+}
+export function getNovelListsUserCreatedForMyList(userId: string, listId: string, order: number) {
+  return new Promise<any>(async (resolve) => {
+    try {
+      const novelListInfoList = await getNovelListInfoListByUserId(userId, false);
+
+      // its property name is "otherList" in returned data.
+      // it means the lists except the one getting by listedId
+      const novelListsSimpleInfos = await getNovelListsSimpleInfos(novelListInfoList, userId, true);
+
+      console.log("novelListsSimpleInfos:", novelListsSimpleInfos);
+      // const novelLists = await getNovelLists(novelListInfoList);
+
+      // const novelListsSet = getNovelListsSetUserCreated(novelLists);
+
+      resolve(novelListsSimpleInfos);
     } catch (error) {
       console.log("error occurred in getNovelListsUserCreatedForUserPageHome:", error);
     }
