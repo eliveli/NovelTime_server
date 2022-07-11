@@ -249,9 +249,9 @@ async function getIsTheListLoginUserLikes(loginUserId: string, novelListId: stri
         connection
           .query(query.getIsTheListLoginUserLikes, [loginUserId, novelListId])
           .then(async (data) => {
-            const LoginUserLikes = !!data[0];
+            const isTheListLoginUserLikes = !!data[0];
 
-            resolve(LoginUserLikes);
+            resolve(isTheListLoginUserLikes);
 
             // When done with the connection, release it.
             connection.release();
@@ -360,7 +360,15 @@ export function getNovelListsUserCreatedForMyList(
 
       const { novelListInfo, novels, isNextOrder } = await getNovelsAndInfoByListId(listId, order);
 
-      const isTheListLoginUserLikes = await getIsTheListLoginUserLikes(loginUserId, listId);
+      // if it is the request by non login user (1)
+      // or it is the login user's novel list that he/she created (2),
+      // following value is always false
+      // (actually in second case, the value won't be used in user page)
+      let isTheListLoginUserLikes = false;
+      if (loginUserId && loginUserId !== userIdInUserPage) {
+        isTheListLoginUserLikes = await getIsTheListLoginUserLikes(loginUserId, listId);
+      }
+
       console.log(
         "novelListsSimpleInfosUserCreated,  novelListInfo, novels, isNextOrder :",
         novelListsSimpleInfosUserCreated,
