@@ -95,12 +95,13 @@ export const userPageOthersWritingController: RequestHandler = async (req, res) 
 };
 export const userPageMyListController: RequestHandler = async (req, res) => {
   try {
-    const { userName, listId, order } = req.params;
-    const userId = await getUserId(userName);
+    const { loginUserId, userNameInUserPage, listId, order } = req.params;
+    const userIdInUserPage = await getUserId(userNameInUserPage);
     const { listsUserCreated, isNextOrder } = await getNovelListsUserCreatedForMyList(
-      userId,
+      userIdInUserPage,
       listId,
       Number(order),
+      loginUserId,
     );
     res.json({ listsUserCreated, isNextOrder });
   } catch (error) {

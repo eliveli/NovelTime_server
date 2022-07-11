@@ -1,6 +1,6 @@
 /* eslint-disable import/prefer-default-export */
 export const query = {
-  geUserId: " SELECT userId FROM user WHERE userName = (?) ",
+  getUserId: " SELECT userId FROM user WHERE userName = (?) ",
   getUserNameByUserId: " SELECT userName FROM user WHERE userId = (?) ",
   getWritings: " SELECT * FROM writing WHERE userId = (?) ",
   getTalksOrRecommendsByUserId:
@@ -15,6 +15,9 @@ export const query = {
 
   getTwoOfNovelListIDsByUserId: " SELECT novelListId FROM novelListLike WHERE userId = (?) limit 2",
   getAllOfNovelListIDsByUserId: " SELECT novelListId FROM novelListLike WHERE userId = (?) ",
+
+  getIsTheListLoginUserLikes:
+    " SELECT novelListId FROM novelListLike WHERE userId = (?) and novelListId = (?) ",
 
   getNovelListInfoByListId: " SELECT * FROM novelList WHERE novelListId = (?) ",
 

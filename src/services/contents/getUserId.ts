@@ -7,7 +7,7 @@ export default function getUserId(userName: string) {
       .getConnection()
       .then((connection) => {
         connection
-          .query(query.geUserId, userName)
+          .query(query.getUserId, userName)
           .then((data) => {
             const { userId } = data[0];
             resolve(userId as string);

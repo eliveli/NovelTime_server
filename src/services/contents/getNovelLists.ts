@@ -241,6 +241,32 @@ async function getNovelsAndInfoByListId(novelListId: string, order: number) {
   };
   return { novelListInfo, novels, isNextOrder };
 }
+async function getIsTheListLoginUserLikes(loginUserId: string, novelListId: string) {
+  return new Promise<boolean>(async (resolve) => {
+    await pool
+      .getConnection()
+      .then((connection) => {
+        connection
+          .query(query.getIsTheListLoginUserLikes, [loginUserId, novelListId])
+          .then(async (data) => {
+            const LoginUserLikes = !!data[0];
+
+            resolve(LoginUserLikes);
+
+            // When done with the connection, release it.
+            connection.release();
+          })
+
+          .catch((err) => {
+            console.log(err);
+            connection.release();
+          });
+      })
+      .catch((err) => {
+        console.log(`not connected due to error: ${err}`);
+      });
+  });
+}
 async function getNovelListsSimpleInfos(
   novelListInfoList: NovelListInfo[],
   isMyList: boolean,
@@ -314,10 +340,15 @@ export function getNovelListsUserCreatedForUserPageHome(userId: string) {
     }
   });
 }
-export function getNovelListsUserCreatedForMyList(userId: string, listId: string, order: number) {
+export function getNovelListsUserCreatedForMyList(
+  userIdInUserPage: string,
+  listId: string,
+  order: number,
+  loginUserId: string,
+) {
   return new Promise<any>(async (resolve) => {
     try {
-      const novelListInfoList = await getNovelListInfoListByUserId(userId, false);
+      const novelListInfoList = await getNovelListInfoListByUserId(userIdInUserPage, false);
 
       // its property name is "otherList" in returned data.
       // it means the lists except the one getting by listId
@@ -329,6 +360,7 @@ export function getNovelListsUserCreatedForMyList(userId: string, listId: string
 
       const { novelListInfo, novels, isNextOrder } = await getNovelsAndInfoByListId(listId, order);
 
+      const isTheListLoginUserLikes = await getIsTheListLoginUserLikes(loginUserId, listId);
       console.log(
         "novelListsSimpleInfosUserCreated,  novelListInfo, novels, isNextOrder :",
         novelListsSimpleInfosUserCreated,
@@ -336,6 +368,7 @@ export function getNovelListsUserCreatedForMyList(userId: string, listId: string
         novels,
         isNextOrder,
       );
+      console.log("isTheListLoginUserLikes:", isTheListLoginUserLikes);
       // const novelLists = await getNovelLists(novelListInfoList);
 
       // const novelListsSet = getNovelListsSetUserCreated(novelLists);

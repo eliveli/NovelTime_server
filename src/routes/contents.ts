@@ -18,6 +18,9 @@ router.get(
   userPageOthersWritingController,
 );
 
-router.get("/userPageMyList/:userName/:listId/:order", userPageMyListController);
+router.get(
+  "/userPageMyList/:userNameInUserPage/:listId/:order/:loginUserId",
+  userPageMyListController,
+);
 
 export default router;
