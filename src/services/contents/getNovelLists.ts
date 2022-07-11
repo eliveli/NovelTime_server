@@ -32,6 +32,24 @@ type NovelList = {
   novelListTitle: string;
   novelIDs: string;
 };
+interface NovelListsSimpleInfos {
+  listId: string;
+  listTitle: string;
+  userName?: string;
+  userImg?: {
+    src: string;
+    position: string;
+  };
+}
+interface NovelListSetForMyOrOthersList {
+  listId: string;
+  listTitle: string;
+  isLike: boolean;
+  otherList: NovelListsSimpleInfos[];
+  novel: Novel[];
+  userName?: string;
+  userImg?: { src: string; position: string };
+}
 async function getNovelListInfoListByUserId(userId: string, isHome = true) {
   // for userPageHome page get the two novel list
   // for userPageNovelList page get all novel list
@@ -267,6 +285,22 @@ async function getIsTheListLoginUserLikes(loginUserId: string, novelListId: stri
       });
   });
 }
+
+function getNovelListSetForMyList(
+  novelListsSimpleInfosUserCreated: NovelListsSimpleInfos[],
+  novelListInfo: NovelListInfo,
+  novels: Novel[],
+  isTheListLoginUserLikes: boolean,
+) {
+  return {
+    listId: novelListInfo.novelListId,
+    listTitle: novelListInfo.novelListTitle,
+    isLike: isTheListLoginUserLikes,
+    otherList: novelListsSimpleInfosUserCreated,
+    novel: novels,
+  };
+}
+
 async function getNovelListsSimpleInfos(
   novelListInfoList: NovelListInfo[],
   isMyList: boolean,
@@ -340,6 +374,7 @@ export function getNovelListsUserCreatedForUserPageHome(userId: string) {
     }
   });
 }
+
 export function getNovelListsUserCreatedForMyList(
   userIdInUserPage: string,
   listId: string,
@@ -363,27 +398,22 @@ export function getNovelListsUserCreatedForMyList(
       // if it is the request by non login user (1)
       // or it is the login user's novel list that he/she created (2),
       // following value is always false
-      // (actually in second case, the value won't be used in user page)
+      // (actually in second case (2), the value won't be used in user page)
       let isTheListLoginUserLikes = false;
       if (loginUserId && loginUserId !== userIdInUserPage) {
         isTheListLoginUserLikes = await getIsTheListLoginUserLikes(loginUserId, listId);
       }
 
-      console.log(
-        "novelListsSimpleInfosUserCreated,  novelListInfo, novels, isNextOrder :",
+      const novelListSet = getNovelListSetForMyList(
         novelListsSimpleInfosUserCreated,
         novelListInfo,
         novels,
-        isNextOrder,
+        isTheListLoginUserLikes,
       );
-      console.log("isTheListLoginUserLikes:", isTheListLoginUserLikes);
-      // const novelLists = await getNovelLists(novelListInfoList);
 
-      // const novelListsSet = getNovelListsSetUserCreated(novelLists);
-
-      resolve(novelListsSimpleInfosUserCreated);
+      resolve({ novelList: novelListSet, isNextOrder });
     } catch (error) {
-      console.log("error occurred in getNovelListsUserCreatedForUserPageHome:", error);
+      console.log("error occurred in getNovelListsUserCreatedForMyList:", error);
     }
   });
 }

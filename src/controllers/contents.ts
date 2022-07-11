@@ -97,13 +97,13 @@ export const userPageMyListController: RequestHandler = async (req, res) => {
   try {
     const { loginUserId, userNameInUserPage, listId, order } = req.params;
     const userIdInUserPage = await getUserId(userNameInUserPage);
-    const { listsUserCreated, isNextOrder } = await getNovelListsUserCreatedForMyList(
+    const { novelList, isNextOrder } = await getNovelListsUserCreatedForMyList(
       userIdInUserPage,
       listId,
       Number(order),
       loginUserId,
     );
-    res.json({ listsUserCreated, isNextOrder });
+    res.json({ novelList, isNextOrder });
   } catch (error) {
     console.log("failed to get user's contents in userPageMyListController :", error);
     res.status(500).end();
