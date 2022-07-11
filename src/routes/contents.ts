@@ -7,6 +7,7 @@ import {
   userPageMyListController,
   userPageOthersListController,
 } from "../controllers/contents";
+import { getLoginUserIdByTokenForUserNovelListPage } from "../controllers/user";
 
 const router = express.Router();
 
@@ -20,12 +21,14 @@ router.get(
 );
 
 router.get(
-  "/userPageMyList/:userNameInUserPage/:listId/:order/:loginUserId",
+  "/userPageMyList/:userNameInUserPage/:listId/:order",
+  getLoginUserIdByTokenForUserNovelListPage,
   userPageMyListController,
 );
 
 router.get(
-  "/userPageOthersList/:userNameInUserPage/:listId/:order/:loginUserId",
+  "/userPageOthersList/:userNameInUserPage/:listId/:order",
+  getLoginUserIdByTokenForUserNovelListPage,
   userPageOthersListController,
 );
 

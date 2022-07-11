@@ -79,6 +79,21 @@ export const authenticateAccessTokenMiddleware: RequestHandler = (req, res, next
     return res.status(403);
   }
 };
+// for user novel list page - my list page or other's list page
+// I can't get the login user id by request parameter because of security issue
+export const getLoginUserIdByTokenForUserNovelListPage: RequestHandler = (req, res, next) => {
+  try {
+    const authHeader = req.headers.authorization;
+    const token = authHeader && authHeader.split(" ")[1];
+    if (token) {
+      const payload = jwt.verify(token, privateKey as string) as ChangedUserInfo;
+      req.userId = payload.userId;
+    }
+    next();
+  } catch (error) {
+    console.log(error);
+  }
+};
 
 export const logoutController: RequestHandler = (req, res) => {
   const { userId } = req;

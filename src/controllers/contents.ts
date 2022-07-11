@@ -96,7 +96,8 @@ export const userPageOthersWritingController: RequestHandler = async (req, res) 
 };
 export const userPageMyListController: RequestHandler = async (req, res) => {
   try {
-    const { loginUserId, userNameInUserPage, listId, order } = req.params;
+    const { userNameInUserPage, listId, order } = req.params;
+    const loginUserId = req.userId;
     const userIdInUserPage = await getUserId(userNameInUserPage);
     const { novelList, isNextOrder } = await getNovelListUserCreatedForMyList(
       userIdInUserPage,
@@ -112,7 +113,8 @@ export const userPageMyListController: RequestHandler = async (req, res) => {
 };
 export const userPageOthersListController: RequestHandler = async (req, res) => {
   try {
-    const { loginUserId, userNameInUserPage, listId, order } = req.params;
+    const { userNameInUserPage, listId, order } = req.params;
+    const loginUserId = req.userId;
     const userIdInUserPage = await getUserId(userNameInUserPage);
     const { novelList, isNextOrder } = await getNovelListUserLikesForOthersList(
       userIdInUserPage,

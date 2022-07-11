@@ -390,7 +390,7 @@ export function getNovelListUserCreatedForMyList(
   userIdInUserPage: string,
   listId: string,
   order: number,
-  loginUserId: string,
+  loginUserId?: string,
 ) {
   return new Promise<any>(async (resolve) => {
     try {
@@ -433,7 +433,7 @@ export function getNovelListUserLikesForOthersList(
   userIdInUserPage: string,
   listId: string,
   order: number,
-  loginUserId: string,
+  loginUserId?: string,
 ) {
   return new Promise<any>(async (resolve) => {
     try {
