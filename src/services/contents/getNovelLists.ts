@@ -289,19 +289,27 @@ async function getIsTheListLoginUserLikes(loginUserId: string, novelListId: stri
   });
 }
 
-function getNovelListSetForMyList(
-  novelListsSimpleInfosUserCreated: NovelListsSimpleInfos[],
+function getNovelListSetForMyOrOthersList(
+  novelListsSimpleInfos: NovelListsSimpleInfos[],
   novelListInfo: NovelListInfo,
   novels: Novel[],
   isTheListLoginUserLikes: boolean,
+  userName?: string,
+  userImgSrc?: string,
+  userImgPosition?: string,
 ) {
-  return {
+  const novelListSet: NovelListSetForMyOrOthersList = {
     listId: novelListInfo.novelListId,
     listTitle: novelListInfo.novelListTitle,
     isLike: isTheListLoginUserLikes,
-    otherList: novelListsSimpleInfosUserCreated,
+    otherList: novelListsSimpleInfos,
     novel: novels,
+    userName,
   };
+  if (userImgSrc) {
+    novelListSet.userImg = { src: userImgSrc, position: userImgPosition || "" };
+  }
+  return novelListSet;
 }
 
 async function getNovelListsSimpleInfos(
@@ -407,7 +415,7 @@ export function getNovelListUserCreatedForMyList(
         isTheListLoginUserLikes = await getIsTheListLoginUserLikes(loginUserId, listId);
       }
 
-      const novelListSet = getNovelListSetForMyList(
+      const novelListSet = getNovelListSetForMyOrOthersList(
         novelListsSimpleInfosUserCreated,
         novelListInfo,
         novels,
@@ -445,6 +453,25 @@ export function getNovelListUserLikesForOthersList(
       const { userName, userImgSrc, userImgPosition } = await getUserNameAndImgByUserId(
         novelListInfo.userId,
       );
+
+      // if it is the request by non login user
+      // following value is always false
+      let isTheListLoginUserLikes = false;
+      if (loginUserId) {
+        isTheListLoginUserLikes = await getIsTheListLoginUserLikes(loginUserId, listId);
+      }
+
+      const novelListSet = getNovelListSetForMyOrOthersList(
+        novelListsSimpleInfosUserLikes,
+        novelListInfo,
+        novels,
+        isTheListLoginUserLikes,
+        userName,
+        userImgSrc,
+        userImgPosition,
+      );
+
+      resolve({ novelList: novelListSet, isNextOrder });
     } catch (error) {
       console.log("error occurred in getNovelListsUserLikesForOthersList:", error);
     }
