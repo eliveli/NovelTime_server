@@ -15,8 +15,9 @@ import {
   getCommentsForUserPageHome,
 } from "../services/contents/getComments";
 import {
-  getNovelListsUserCreatedForMyList,
+  getNovelListUserCreatedForMyList,
   getNovelListsUserCreatedForUserPageHome,
+  getNovelListUserLikesForOthersList,
   getNovelListsUserLikesForUserPageHome,
 } from "../services/contents/getNovelLists";
 
@@ -97,7 +98,7 @@ export const userPageMyListController: RequestHandler = async (req, res) => {
   try {
     const { loginUserId, userNameInUserPage, listId, order } = req.params;
     const userIdInUserPage = await getUserId(userNameInUserPage);
-    const { novelList, isNextOrder } = await getNovelListsUserCreatedForMyList(
+    const { novelList, isNextOrder } = await getNovelListUserCreatedForMyList(
       userIdInUserPage,
       listId,
       Number(order),
@@ -106,6 +107,22 @@ export const userPageMyListController: RequestHandler = async (req, res) => {
     res.json({ novelList, isNextOrder });
   } catch (error) {
     console.log("failed to get user's contents in userPageMyListController :", error);
+    res.status(500).end();
+  }
+};
+export const userPageOthersListController: RequestHandler = async (req, res) => {
+  try {
+    const { loginUserId, userNameInUserPage, listId, order } = req.params;
+    const userIdInUserPage = await getUserId(userNameInUserPage);
+    const { novelList, isNextOrder } = await getNovelListUserLikesForOthersList(
+      userIdInUserPage,
+      listId,
+      Number(order),
+      loginUserId,
+    );
+    res.json({ novelList, isNextOrder });
+  } catch (error) {
+    console.log("failed to get user's contents in userPageOthersListController :", error);
     res.status(500).end();
   }
 };

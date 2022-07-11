@@ -10,8 +10,8 @@ type UserInfo = {
   userImgPosition: string;
 };
 type NovelListInfo = {
-  novelListId: string;
   userId: string;
+  novelListId: string;
   novelListTitle: string;
   novelIDs: string;
 };
@@ -108,9 +108,12 @@ async function getNovelListInfoByListId(novelListId: string) {
   });
 }
 
-async function getNovelListInfoListByListIDs(novelListIDs: string[]) {
+async function getNovelListInfoListByListIDs(novelListIDs: string[], listId?: string) {
+  // for other's list page except an listId that was requested by user
+  const newNovelListIDs = listId ? novelListIDs.filter((id) => id !== listId) : novelListIDs;
+
   const novelListInfoList: NovelListInfo[] = [];
-  for (const novelListID of novelListIDs) {
+  for (const novelListID of newNovelListIDs) {
     const novelListInfo = await getNovelListInfoByListId(novelListID);
     novelListInfoList.push(novelListInfo);
   }
@@ -304,7 +307,7 @@ function getNovelListSetForMyList(
 async function getNovelListsSimpleInfos(
   novelListInfoList: NovelListInfo[],
   isMyList: boolean,
-  novelListId: string,
+  novelListId?: string,
 ) {
   const novelListsSimpleInfos = [];
   for (const novelListInfo of novelListInfoList) {
@@ -317,7 +320,7 @@ async function getNovelListsSimpleInfos(
       userImg = { src: userInfo.userImgSrc, position: userInfo.userImgPosition };
     }
 
-    // except the list info that was requested by user
+    // for myList except the list info that was requested by user
     if (novelListId === novelListInfo.novelListId) continue;
 
     const simpleInfo = {
@@ -375,7 +378,7 @@ export function getNovelListsUserCreatedForUserPageHome(userId: string) {
   });
 }
 
-export function getNovelListsUserCreatedForMyList(
+export function getNovelListUserCreatedForMyList(
   userIdInUserPage: string,
   listId: string,
   order: number,
@@ -414,6 +417,31 @@ export function getNovelListsUserCreatedForMyList(
       resolve({ novelList: novelListSet, isNextOrder });
     } catch (error) {
       console.log("error occurred in getNovelListsUserCreatedForMyList:", error);
+    }
+  });
+}
+
+export function getNovelListUserLikesForOthersList(
+  userIdInUserPage: string,
+  listId: string,
+  order: number,
+  loginUserId: string,
+) {
+  return new Promise<any>(async (resolve) => {
+    try {
+      const novelListIDs = await getNovelListIDsByUserId(userIdInUserPage, false);
+
+      // otherList로 분류될 것임.
+      const novelListInfoList = await getNovelListInfoListByListIDs(novelListIDs, listId);
+
+      // otherList set
+      const novelListsSimpleInfosUserLikes = await getNovelListsSimpleInfos(
+        novelListInfoList,
+        false,
+      );
+      console.log("novelListsSimpleInfosUserLikes:", novelListsSimpleInfosUserLikes);
+    } catch (error) {
+      console.log("error occurred in getNovelListsUserLikesForOthersList:", error);
     }
   });
 }
