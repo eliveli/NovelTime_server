@@ -389,7 +389,7 @@ export function getNovelListUserCreatedForMyList(
       const novelListInfoList = await getNovelListInfoListByUserId(userIdInUserPage, false);
 
       // its property name is "otherList" in returned data.
-      // it means the lists except the one getting by listId
+      // it means the lists except the one got by listId
       const novelListsSimpleInfosUserCreated = await getNovelListsSimpleInfos(
         novelListInfoList,
         true,
@@ -431,15 +431,20 @@ export function getNovelListUserLikesForOthersList(
     try {
       const novelListIDs = await getNovelListIDsByUserId(userIdInUserPage, false);
 
-      // otherList로 분류될 것임.
       const novelListInfoList = await getNovelListInfoListByListIDs(novelListIDs, listId);
 
-      // otherList set
+      // its property name is "otherList" in returned data.
+      // it means the lists except the one got by listId
       const novelListsSimpleInfosUserLikes = await getNovelListsSimpleInfos(
         novelListInfoList,
         false,
       );
-      console.log("novelListsSimpleInfosUserLikes:", novelListsSimpleInfosUserLikes);
+
+      const { novelListInfo, novels, isNextOrder } = await getNovelsAndInfoByListId(listId, order);
+
+      const { userName, userImgSrc, userImgPosition } = await getUserNameAndImgByUserId(
+        novelListInfo.userId,
+      );
     } catch (error) {
       console.log("error occurred in getNovelListsUserLikesForOthersList:", error);
     }
