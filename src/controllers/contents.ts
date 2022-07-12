@@ -27,6 +27,8 @@ export const userPageHomeController: RequestHandler = async (req, res) => {
   try {
     const { userName } = req.params;
     const userId = await getUserId(userName);
+
+    if (!userId) throw new Error("유저 없음");
     const { talksUserCreated, recommendsUserCreated } = await getWritingsUserCreatedForUserPageHome(
       userId,
     );
@@ -48,7 +50,10 @@ export const userPageHomeController: RequestHandler = async (req, res) => {
         listsUserLikes,
       },
     });
-  } catch (error) {
+  } catch (error: any) {
+    if (error.message === "유저 없음") {
+      res.status(400).json("존재하지 않는 사용자입니다.");
+    }
     console.log("failed to get user's contents in userPageHomeController :", error);
     res.status(500).end();
   }
@@ -58,6 +63,7 @@ export const userPageMyWritingController: RequestHandler = async (req, res) => {
   try {
     const { userName, contentsType, order } = req.params;
     const userId = await getUserId(userName);
+    if (!userId) throw new Error("유저 없음");
     if (contentsType === "T" || contentsType === "R") {
       const { talksOrRecommendsSet, isNextOrder } = await getWritingsUserCreatedForMyWriting(
         userId,
@@ -74,7 +80,10 @@ export const userPageMyWritingController: RequestHandler = async (req, res) => {
         isNextOrder,
       });
     }
-  } catch (error) {
+  } catch (error: any) {
+    if (error.message === "유저 없음") {
+      res.status(400).json("존재하지 않는 사용자입니다.");
+    }
     console.log("failed to get user's contents in userPageMyWritingController :", error);
     res.status(500).end();
   }
@@ -83,13 +92,17 @@ export const userPageOthersWritingController: RequestHandler = async (req, res) 
   try {
     const { userName, contentsType, order } = req.params;
     const userId = await getUserId(userName);
+    if (!userId) throw new Error("유저 없음");
     const { talksOrRecommendsSet, isNextOrder } = await getWritingsUserLikesForOthersWriting(
       userId,
       contentsType as "T" | "R",
       Number(order),
     );
     res.json({ writingsUserLikes: talksOrRecommendsSet, isNextOrder });
-  } catch (error) {
+  } catch (error: any) {
+    if (error.message === "유저 없음") {
+      res.status(400).json("존재하지 않는 사용자입니다.");
+    }
     console.log("failed to get user's contents in userPageMyWritingController :", error);
     res.status(500).end();
   }
@@ -99,6 +112,7 @@ export const userPageMyListController: RequestHandler = async (req, res) => {
     const { userNameInUserPage, listId, order } = req.params;
     const loginUserId = req.userId;
     const userIdInUserPage = await getUserId(userNameInUserPage);
+    if (!userIdInUserPage) throw new Error("유저 없음");
     const { novelList, isNextOrder } = await getNovelListUserCreatedForMyList(
       userIdInUserPage,
       listId,
@@ -106,7 +120,10 @@ export const userPageMyListController: RequestHandler = async (req, res) => {
       loginUserId,
     );
     res.json({ novelList, isNextOrder });
-  } catch (error) {
+  } catch (error: any) {
+    if (error.message === "유저 없음") {
+      res.status(400).json("존재하지 않는 사용자입니다.");
+    }
     console.log("failed to get user's contents in userPageMyListController :", error);
     res.status(500).end();
   }
@@ -116,6 +133,7 @@ export const userPageOthersListController: RequestHandler = async (req, res) => 
     const { userNameInUserPage, listId, order } = req.params;
     const loginUserId = req.userId;
     const userIdInUserPage = await getUserId(userNameInUserPage);
+    if (!userIdInUserPage) throw new Error("유저 없음");
     const { novelList, isNextOrder } = await getNovelListUserLikesForOthersList(
       userIdInUserPage,
       listId,
@@ -123,7 +141,10 @@ export const userPageOthersListController: RequestHandler = async (req, res) => 
       loginUserId,
     );
     res.json({ novelList, isNextOrder });
-  } catch (error) {
+  } catch (error: any) {
+    if (error.message === "유저 없음") {
+      res.status(400).json("존재하지 않는 사용자입니다.");
+    }
     console.log("failed to get user's contents in userPageOthersListController :", error);
     res.status(500).end();
   }
