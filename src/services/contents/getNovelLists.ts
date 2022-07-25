@@ -108,12 +108,9 @@ async function getNovelListInfoByListId(novelListId: string) {
   });
 }
 
-async function getNovelListInfoListByListIDs(novelListIDs: string[], listId?: string) {
-  // for other's list page except an listId that was requested by user
-  const newNovelListIDs = listId ? novelListIDs.filter((id) => id !== listId) : novelListIDs;
-
+async function getNovelListInfoListByListIDs(novelListIDs: string[]) {
   const novelListInfoList: NovelListInfo[] = [];
-  for (const novelListID of newNovelListIDs) {
+  for (const novelListID of novelListIDs) {
     const novelListInfo = await getNovelListInfoByListId(novelListID);
     novelListInfoList.push(novelListInfo);
   }
@@ -315,10 +312,17 @@ function getNovelListSetForMyOrOthersList(
 async function getNovelListsSimpleInfos(
   novelListInfoList: NovelListInfo[],
   isMyList: boolean,
-  novelListId?: string,
+  novelListId: string,
 ) {
+  let isListIdSelected = false; // whether there is the listId selected by user or not
   const novelListsSimpleInfos = [];
   for (const novelListInfo of novelListInfoList) {
+    // except the list info that was requested by user
+    if (novelListId === novelListInfo.novelListId) {
+      isListIdSelected = true;
+      continue;
+    }
+
     // userInfo is required for othersList page not for myList page
     let userName;
     let userImg;
@@ -328,9 +332,6 @@ async function getNovelListsSimpleInfos(
       userImg = { src: userInfo.userImgSrc, position: userInfo.userImgPosition };
     }
 
-    // for myList except the list info that was requested by user
-    if (novelListId === novelListInfo.novelListId) continue;
-
     const simpleInfo = {
       listId: novelListInfo.novelListId,
       listTitle: novelListInfo.novelListTitle,
@@ -339,7 +340,7 @@ async function getNovelListsSimpleInfos(
     };
     novelListsSimpleInfos.push(simpleInfo);
   }
-  return novelListsSimpleInfos;
+  return { isListIdSelected, novelListsSimpleInfos };
 }
 
 function getNovelListsSetUserCreated(novelLists: NovelList[]) {
@@ -398,11 +399,19 @@ export function getNovelListUserCreatedForMyList(
 
       // its property name is "otherList" in returned data.
       // it means the lists except the one got by listId
-      const novelListsSimpleInfosUserCreated = await getNovelListsSimpleInfos(
+      const { isListIdSelected, novelListsSimpleInfos } = await getNovelListsSimpleInfos(
         novelListInfoList,
         true,
         listId,
       );
+
+      // there is no list that an user created in his/her user page that was selected by login user
+      if (!isListIdSelected) {
+        resolve({
+          novelList: {},
+          isNextOrder: false,
+        });
+      }
 
       const { novelListInfo, novels, isNextOrder } = await getNovelsAndInfoByListId(listId, order);
 
@@ -416,7 +425,7 @@ export function getNovelListUserCreatedForMyList(
       }
 
       const novelListSet = getNovelListSetForMyOrOthersList(
-        novelListsSimpleInfosUserCreated,
+        novelListsSimpleInfos,
         novelListInfo,
         novels,
         isTheListLoginUserLikes,
@@ -439,14 +448,23 @@ export function getNovelListUserLikesForOthersList(
     try {
       const novelListIDs = await getNovelListIDsByUserId(userIdInUserPage, false);
 
-      const novelListInfoList = await getNovelListInfoListByListIDs(novelListIDs, listId);
+      const novelListInfoList = await getNovelListInfoListByListIDs(novelListIDs);
 
       // its property name is "otherList" in returned data.
       // it means the lists except the one got by listId
-      const novelListsSimpleInfosUserLikes = await getNovelListsSimpleInfos(
+      const { isListIdSelected, novelListsSimpleInfos } = await getNovelListsSimpleInfos(
         novelListInfoList,
         false,
+        listId,
       );
+
+      // there is no list that an user likes in his/her user page that was selected by login user
+      if (!isListIdSelected) {
+        resolve({
+          novelList: {},
+          isNextOrder: false,
+        });
+      }
 
       const { novelListInfo, novels, isNextOrder } = await getNovelsAndInfoByListId(listId, order);
 
@@ -462,7 +480,7 @@ export function getNovelListUserLikesForOthersList(
       }
 
       const novelListSet = getNovelListSetForMyOrOthersList(
-        novelListsSimpleInfosUserLikes,
+        novelListsSimpleInfos,
         novelListInfo,
         novels,
         isTheListLoginUserLikes,
