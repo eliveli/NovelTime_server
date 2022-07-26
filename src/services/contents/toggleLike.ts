@@ -84,11 +84,12 @@ export default async function toggleLike(
   contentId: string,
   loginUserId: string,
 ) {
-  let isLike = false;
+  let isLike;
   try {
     const prevIsLike = await getContentLike(contentType, loginUserId, contentId);
     if (prevIsLike) {
       await setContentLike(contentType, loginUserId, contentId);
+      isLike = false;
     } else {
       await deleteContentLike(contentType, loginUserId, contentId);
       isLike = true;
@@ -96,5 +97,5 @@ export default async function toggleLike(
   } catch (error) {
     console.log("error occurred in toggleLike:", error);
   }
-  return { isLike }; // 에러 나면 false 말고 undefined로 보내야 하나? 그런데 디폴트는 false인데
+  return { isLike };
 }

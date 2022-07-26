@@ -160,6 +160,7 @@ export const toggleLikeController: RequestHandler = async (req, res) => {
       contentId,
       loginUserId as string,
     );
+    if (isLike === undefined) throw new Error("error occurred as toggling LIKE");
 
     res.json({ isLike });
   } catch (error: any) {
