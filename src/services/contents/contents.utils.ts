@@ -29,4 +29,12 @@ export const query = {
   getNovelTitleAndImg: " SELECT novelTitle, novelImg FROM novelInfo WHERE novelId = (?) ",
   getTalkTitle: " SELECT writingTitle FROM writing WHERE writingId = (?) ",
   getComments: " SELECT * FROM comment WHERE userId = (?) ",
+
+  getWritingLike: "SELECT * FROM writingLike WHERE userId = (?) and writingId = (?)",
+  setWritingLike: "INSERT INTO writingLike SET userId = (?), writingId = (?)",
+  deleteWritingLike: "DELETE FROM writingLike WHERE userId = (?) and writingId = (?)",
+
+  getNovelListLike: "SELECT * FROM novelListLike WHERE userId = (?) and novelListId = (?)",
+  setNovelListLike: "INSERT INTO novelListLike SET userId = (?), novelListId = (?)",
+  deleteNovelListLike: "DELETE FROM novelListLike WHERE userId = (?) and novelListId = (?)",
 };

@@ -6,8 +6,12 @@ import {
   userPageOthersWritingController,
   userPageMyListController,
   userPageOthersListController,
+  toggleLikeController,
 } from "../controllers/contents";
-import { getLoginUserIdByTokenForUserNovelListPage } from "../controllers/user";
+import {
+  authenticateAccessTokenMiddleware,
+  getLoginUserIdByTokenForUserNovelListPage,
+} from "../controllers/user";
 
 const router = express.Router();
 
@@ -30,6 +34,12 @@ router.get(
   "/userPageOthersList/:userNameInUserPage/:listId/:order",
   getLoginUserIdByTokenForUserNovelListPage,
   userPageOthersListController,
+);
+
+router.put(
+  "/toggleLike/:contentType/:contentId",
+  authenticateAccessTokenMiddleware,
+  toggleLikeController,
 );
 
 export default router;

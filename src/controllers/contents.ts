@@ -20,6 +20,7 @@ import {
   getNovelListUserLikesForOthersList,
   getNovelListsUserLikesForUserPageHome,
 } from "../services/contents/getNovelLists";
+import toggleLike from "../services/contents/toggleLike";
 
 dotenv.config();
 
@@ -146,6 +147,23 @@ export const userPageOthersListController: RequestHandler = async (req, res) => 
       res.status(400).json("존재하지 않는 사용자입니다.");
     }
     console.log("failed to get user's contents in userPageOthersListController :", error);
+    res.status(500).end();
+  }
+};
+export const toggleLikeController: RequestHandler = async (req, res) => {
+  try {
+    const { contentType, contentId } = req.params;
+    const loginUserId = req.userId;
+
+    const { isLike } = await toggleLike(
+      contentType as "writing" | "novelList",
+      contentId,
+      loginUserId as string,
+    );
+
+    res.json({ isLike });
+  } catch (error: any) {
+    console.log("failed to toggle Like in toggleLikeController :", error);
     res.status(500).end();
   }
 };
