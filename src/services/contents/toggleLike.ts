@@ -63,7 +63,7 @@ async function getContentLike(
 
       const data = await connection.query(querySelected, [userId, writingId]);
 
-      if (data) {
+      if (data[0]) {
         isLike = true;
       }
 
@@ -88,10 +88,10 @@ export default async function toggleLike(
   try {
     const prevIsLike = await getContentLike(contentType, loginUserId, contentId);
     if (prevIsLike) {
-      await setContentLike(contentType, loginUserId, contentId);
+      await deleteContentLike(contentType, loginUserId, contentId);
       isLike = false;
     } else {
-      await deleteContentLike(contentType, loginUserId, contentId);
+      await setContentLike(contentType, loginUserId, contentId);
       isLike = true;
     }
   } catch (error) {
