@@ -6,6 +6,7 @@ import {
   userPageOthersWritingController,
   userPageMyListController,
   userPageOthersListController,
+  userPageNovelListTitlesController,
   toggleLikeController,
 } from "../controllers/contents";
 import {
@@ -34,6 +35,11 @@ router.get(
   "/userPageOthersList/:userNameInUserPage/:listId/:order",
   getLoginUserIdByTokenForUserNovelListPage,
   userPageOthersListController,
+);
+
+router.get(
+  "/userPageNovelListTitles/:userNameInUserPage/:isMyList",
+  userPageNovelListTitlesController,
 );
 
 router.put(

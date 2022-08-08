@@ -19,6 +19,7 @@ import {
   getNovelListsUserCreatedForUserPageHome,
   getNovelListUserLikesForOthersList,
   getNovelListsUserLikesForUserPageHome,
+  getAllNovelListTitlesAtTheMoment,
 } from "../services/contents/getNovelLists";
 import toggleLike from "../services/contents/toggleLike";
 
@@ -147,6 +148,25 @@ export const userPageOthersListController: RequestHandler = async (req, res) => 
       res.status(400).json("존재하지 않는 사용자입니다.");
     }
     console.log("failed to get user's contents in userPageOthersListController :", error);
+    res.status(500).end();
+  }
+};
+export const userPageNovelListTitlesController: RequestHandler = async (req, res) => {
+  try {
+    const { userNameInUserPage, isMyList } = req.params;
+    const userIdInUserPage = await getUserId(userNameInUserPage);
+    if (!userIdInUserPage) throw new Error("유저 없음");
+
+    const allTitlesAndOtherInfo = await getAllNovelListTitlesAtTheMoment(
+      userIdInUserPage,
+      isMyList,
+    );
+    res.json({ allTitlesAndOtherInfo });
+  } catch (error: any) {
+    if (error.message === "유저 없음") {
+      res.status(400).json("존재하지 않는 사용자입니다.");
+    }
+    console.log("failed to get user's contents in userPageNovelListTitlesController :", error);
     res.status(500).end();
   }
 };

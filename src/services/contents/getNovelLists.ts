@@ -342,6 +342,30 @@ async function getNovelListsSimpleInfos(
   }
   return { isListIdSelected, novelListsSimpleInfos };
 }
+async function getSimpleInfosOfAllNovelListsOfUser(
+  novelListInfoList: NovelListInfo[],
+  isMyList: boolean,
+) {
+  const novelListsSimpleInfos = [];
+  for (const novelListInfo of novelListInfoList) {
+    let userName;
+    let userImg;
+    if (!isMyList) {
+      const userInfo = await getUserNameAndImgByUserId(novelListInfo.userId);
+      userName = userInfo.userName;
+      userImg = { src: userInfo.userImgSrc, position: userInfo.userImgPosition };
+    }
+
+    const simpleInfo = {
+      listId: novelListInfo.novelListId,
+      listTitle: novelListInfo.novelListTitle,
+      userName,
+      userImg,
+    };
+    novelListsSimpleInfos.push(simpleInfo);
+  }
+  return novelListsSimpleInfos;
+}
 
 function getNovelListsSetUserCreated(novelLists: NovelList[]) {
   const novelListsSet = [];
@@ -492,6 +516,31 @@ export function getNovelListUserLikesForOthersList(
       resolve({ novelList: novelListSet, isNextOrder });
     } catch (error) {
       console.log("error occurred in getNovelListsUserLikesForOthersList:", error);
+    }
+  });
+}
+
+export function getAllNovelListTitlesAtTheMoment(userIdInUserPage: string, isMyList: string) {
+  return new Promise<any>(async (resolve) => {
+    try {
+      let novelListInfoList: NovelListInfo[];
+      const isMyListAsBoolean = isMyList.toLowerCase() === "true";
+      if (isMyListAsBoolean) {
+        novelListInfoList = await getNovelListInfoListByUserId(userIdInUserPage, false);
+      } else {
+        const novelListIDs = await getNovelListIDsByUserId(userIdInUserPage, false);
+
+        novelListInfoList = await getNovelListInfoListByListIDs(novelListIDs);
+      }
+
+      const allNovelListsInfoOfUser = await getSimpleInfosOfAllNovelListsOfUser(
+        novelListInfoList,
+        isMyListAsBoolean,
+      );
+
+      resolve(allNovelListsInfoOfUser);
+    } catch (error) {
+      console.log("error occurred in getAllNovelListTitlesAtTheMoment:", error);
     }
   });
 }
