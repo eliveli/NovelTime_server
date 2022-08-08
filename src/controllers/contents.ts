@@ -161,7 +161,7 @@ export const userPageNovelListTitlesController: RequestHandler = async (req, res
       userIdInUserPage,
       isMyList,
     );
-    res.json({ allTitlesAndOtherInfo });
+    res.json(allTitlesAndOtherInfo);
   } catch (error: any) {
     if (error.message === "유저 없음") {
       res.status(400).json("존재하지 않는 사용자입니다.");
