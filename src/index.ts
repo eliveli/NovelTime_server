@@ -1,5 +1,6 @@
 import express from "express"; // import를 써야 express의 콜백(app.get("/", (req, res) ...에서 req, res)의 타입을 읽을 수 있음(@types/express 설치 후)
-import http from "http";
+import https from "https";
+import fs from "fs";
 import { Server } from "socket.io";
 import cors from "cors";
 import cookieParser from "cookie-parser";
@@ -8,10 +9,16 @@ import user from "./routes/user";
 import contents from "./routes/contents";
 
 const app = express();
-const server = http.createServer(app);
+
+const options = {
+  key: fs.readFileSync(require.resolve("../domainfordev.com-key.pem"), { encoding: "utf8" }),
+  cert: fs.readFileSync(require.resolve("../domainfordev.com.pem"), { encoding: "utf8" }),
+};
+
+const server = https.createServer(options, app);
 const io = new Server(server, {
   cors: {
-    origin: "http://domainfordev.com:3000",
+    origin: "https://domainfordev.com:3000",
     allowedHeaders: ["my-custom-header"],
     credentials: true,
     methods: ["GET", "POST"],
@@ -19,7 +26,7 @@ const io = new Server(server, {
 });
 
 const corsOptions = {
-  origin: "http://domainfordev.com:3000",
+  origin: "https://domainfordev.com:3000",
   allowedHeaders: ["Content-Type", "Authorization", "x-csrf-token"],
   exposedHeaders: ["*", "Authorization"],
   credentials: true,
