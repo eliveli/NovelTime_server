@@ -1,16 +1,17 @@
 import mariadb from "mariadb";
-// 개발 환경에 따라 환경변수 설정
-// : NODE_ENV 미리 설정(터미널 CMD에서 set NODE_ENV=development) : CMD (OK), bash or powershell (NO)
+// NODE_ENV is set by scripts in package.json
+// p.s. other way to set NODE_ENV
+//  : using terminal CMD. never bash or powershell. just type: set NODE_ENV=development
 if (process.env.NODE_ENV === "production") {
   require("dotenv").config({
     path: ".env.prod",
   });
-  console.log("mode : " + process.env.NODE_ENV);
+  console.log(`mode : ${process.env.NODE_ENV}`);
 } else {
   require("dotenv").config({
     path: ".env.dev",
   });
-  console.log("mode : " + process.env.NODE_ENV);
+  console.log(`mode : ${process.env.NODE_ENV}`);
 }
 
 // handle undefined env variable
