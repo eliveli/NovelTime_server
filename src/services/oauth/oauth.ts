@@ -16,7 +16,7 @@ dotenv.config();
 async function getTokenKakao(code: string) {
   const REDIRECT_URI =
     process.env.NODE_ENV === "production"
-      ? ""
+      ? "https://eliveli.github.io/NovelTime_client/oauth/callback/kakao"
       : "https://domainfordev.com:3000/oauth/callback/kakao";
 
   type BodyDataType = {

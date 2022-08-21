@@ -10,15 +10,23 @@ import contents from "./routes/contents";
 
 const app = express();
 
-const options = {
+const sslOptionsForDev = {
   key: fs.readFileSync(require.resolve("../domainfordev.com-key.pem"), { encoding: "utf8" }),
   cert: fs.readFileSync(require.resolve("../domainfordev.com.pem"), { encoding: "utf8" }),
 };
 
-const server = https.createServer(options, app);
+const server =
+  // NODE_ENV will be set to production automatically by hosting site configuration
+  process.env.NODE_ENV === "production"
+    ? https.createServer(app)
+    : https.createServer(sslOptionsForDev, app);
+const corsOrigin =
+  process.env.NODE_ENV === "production"
+    ? "https://eliveli.github.io/NovelTime_client"
+    : "https://domainfordev.com:3000";
 const io = new Server(server, {
   cors: {
-    origin: "https://domainfordev.com:3000",
+    origin: corsOrigin,
     allowedHeaders: ["my-custom-header"],
     credentials: true,
     methods: ["GET", "POST"],
@@ -26,7 +34,7 @@ const io = new Server(server, {
 });
 
 const corsOptions = {
-  origin: "https://domainfordev.com:3000",
+  origin: corsOrigin,
   allowedHeaders: ["Content-Type", "Authorization", "x-csrf-token"],
   exposedHeaders: ["*", "Authorization"],
   credentials: true,

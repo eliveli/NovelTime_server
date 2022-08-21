@@ -5,7 +5,7 @@
   "main": "src/index.ts",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "set NODE_ENV=development && nodemon --watch 'src/**/*.ts' --exec ts-node src/index.ts",
+    "start": "nodemon --watch 'src/**/*.ts' --exec ts-node src/index.ts",
     "scrape": "ts-node src/utils/scrape/runScraper.ts",
     "app": "node app.js",
     "prettier": "prettier --write --config ./.prettierrc \"src/**/*.ts\"",
