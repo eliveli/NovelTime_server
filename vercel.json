@@ -1,0 +1,10 @@
+{
+    "version": 2,
+    "name": "novel-time",
+    "builds": [
+       { "src": "src/index.ts", "use": "@vercel/node" }
+    ],
+    "routes": [
+       { "src": "src/(.*)", "dest": "index.ts" }
+    ]
+ }
