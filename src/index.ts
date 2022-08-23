@@ -16,7 +16,6 @@ const sslOptionsForDev = {
 };
 
 const server =
-  // NODE_ENV will be set to production automatically by hosting site configuration
   process.env.NODE_ENV === "production"
     ? https.createServer(app)
     : https.createServer(sslOptionsForDev, app);
@@ -24,14 +23,6 @@ const corsOrigin =
   process.env.NODE_ENV === "production"
     ? "https://eliveli.github.io/NovelTime_client"
     : "https://domainfordev.com:3000";
-const io = new Server(server, {
-  cors: {
-    origin: corsOrigin,
-    allowedHeaders: ["my-custom-header"],
-    credentials: true,
-    methods: ["GET", "POST"],
-  },
-});
 
 const corsOptions = {
   origin: corsOrigin,
@@ -68,6 +59,16 @@ app.use("/contents", contents);
 //
 // and send the current message to user
 // ------------------------------------------------------------------//
+
+const io = new Server(server, {
+  cors: {
+    origin: corsOrigin,
+    allowedHeaders: ["my-custom-header"],
+    credentials: true,
+    methods: ["GET", "POST"],
+  },
+});
+
 io.on("connection", (socket) => {
   socket.on("join room", (roomId: string) => {
     socket.join(roomId);
