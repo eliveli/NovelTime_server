@@ -4,6 +4,7 @@ import fs from "fs";
 import { Server } from "socket.io";
 import cors from "cors";
 import cookieParser from "cookie-parser";
+import home from "./routes/home";
 import novels from "./routes/novels";
 import user from "./routes/user";
 import contents from "./routes/contents";
@@ -38,11 +39,8 @@ app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-app.get("/", (req, res) => {
-  res.json({ code: "200", message: "success!" });
-});
-
 // use Routes
+app.use("/", home);
 app.use("/novels", novels);
 app.use("/user", user);
 app.use("/contents", contents);
