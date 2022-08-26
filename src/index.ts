@@ -1,8 +1,6 @@
 import express from "express"; // import를 써야 express의 콜백(app.get("/", (req, res) ...에서 req, res)의 타입을 읽을 수 있음(@types/express 설치 후)
-import https from "https";
-import fs from "fs";
+import http from "http";
 import { Server } from "socket.io";
-import cors from "cors";
 import cookieParser from "cookie-parser";
 import home from "./routes/home";
 import novels from "./routes/novels";
@@ -11,28 +9,7 @@ import contents from "./routes/contents";
 
 const app = express();
 
-const sslOptionsForDev = {
-  key: fs.readFileSync(require.resolve("../domainfordev.com-key.pem"), { encoding: "utf8" }),
-  cert: fs.readFileSync(require.resolve("../domainfordev.com.pem"), { encoding: "utf8" }),
-};
-
-const server =
-  process.env.NODE_ENV === "production"
-    ? https.createServer(app)
-    : https.createServer(sslOptionsForDev, app);
-const corsOrigin =
-  process.env.NODE_ENV === "production"
-    ? "https://eliveli.github.io/NovelTime_client"
-    : "https://domainfordev.com:3000";
-
-const corsOptions = {
-  origin: corsOrigin,
-  allowedHeaders: ["Content-Type", "Authorization", "x-csrf-token"],
-  exposedHeaders: ["*", "Authorization"],
-  credentials: true,
-};
-// credentials 사용자 인증이 필요한 리소스 접근이 필요한 경우 true
-app.use(cors(corsOptions));
+const server = http.createServer(app);
 app.use(cookieParser());
 
 // Init Middleware
@@ -58,14 +35,7 @@ app.use("/contents", contents);
 // and send the current message to user
 // ------------------------------------------------------------------//
 
-const io = new Server(server, {
-  cors: {
-    origin: corsOrigin,
-    allowedHeaders: ["my-custom-header"],
-    credentials: true,
-    methods: ["GET", "POST"],
-  },
-});
+const io = new Server(server);
 
 io.on("connection", (socket) => {
   socket.on("join room", (roomId: string) => {
