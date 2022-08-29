@@ -17,10 +17,10 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
 // use Routes
-app.use("/", home);
-app.use("/novels", novels);
-app.use("/user", user);
-app.use("/contents", contents);
+app.use("/api", home);
+app.use("/api/novels", novels);
+app.use("/api/user", user);
+app.use("/api/contents", contents);
 
 // socket io server // configure private message
 // -- it is required
