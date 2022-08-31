@@ -54,8 +54,6 @@ io.on("connection", (socket) => {
   console.log("outside send message ");
 });
 
-const port = process.env.PORT || 8082;
-// left || right  :  if left is "falsy value" then get right    //falsy value: null, undefined, 0, "", '', ``, false, NaN(Not a Number), etc
-// left ?? right  :  if left is "null or undefined" then get right
+const port = 8082;
 
 server.listen(port, () => console.log(`server running on port ${port}`));
