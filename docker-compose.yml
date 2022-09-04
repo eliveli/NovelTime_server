@@ -1,0 +1,36 @@
+version: "3.9"
+
+services:
+  webserver:
+    build:
+      context: ../client
+      dockerfile: Dockerfile
+    volumes:
+
+    ports:
+      - '80:80'
+
+  was:
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    volumes:
+
+    expose:
+      - "8082"
+
+
+  db:
+    image: mariadb
+    restart: always
+    expose:
+      - "3306"
+    env_file: .env
+    environment:
+      TZ: Asia/Seoul
+    volumes:
+
+
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci

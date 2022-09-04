@@ -1,7 +1,5 @@
 import mariadb from "mariadb";
-// NODE_ENV is set by scripts in package.json
-// p.s. other way to set NODE_ENV
-//  : using terminal CMD. never bash or powershell. just type: set NODE_ENV=development
+
 if (process.env.NODE_ENV === "production") {
   require("dotenv").config({
     path: ".env.prod",
