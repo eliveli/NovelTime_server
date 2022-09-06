@@ -1,36 +1,31 @@
-version: "3.9"
+version: "3.8"
 
 services:
   webserver:
     build:
       context: ../client
-      dockerfile: Dockerfile
-    volumes:
-
+    container_name: noveltime-webserver
     ports:
-      - '80:80'
+      - "80:80"
 
   was:
     build:
       context: ./
-      dockerfile: Dockerfile
-    volumes:
-
+    container_name: noveltime-was
     expose:
       - "8082"
 
-
   db:
-    image: mariadb
+    image: mariadb:10
+    container_name: noveltime-db
     restart: always
     expose:
       - "3306"
-    env_file: .env
-    environment:
-      TZ: Asia/Seoul
+    env_file: ./db/.env
     volumes:
-
-
+      - ./db/data:/var/lib/mysql
+      - ./db/dump:/disk
+      - ./db/initdb.d:/docker-entrypoint-initdb.d
     command:
       - --character-set-server=utf8mb4
       - --collation-server=utf8mb4_unicode_ci
