@@ -6,7 +6,9 @@ services:
       context: ../client
     container_name: noveltime-webserver
     ports:
-      - "80:80"
+      - "8080:80"
+      - "8081:443"
+      # - "192.168.0.2:8080:80"
 
   was:
     build:
@@ -14,18 +16,32 @@ services:
     container_name: noveltime-was
     expose:
       - "8082"
+    depends_on:
+      - db
+    # networks:
+    #   - docker-service
 
   db:
     image: mariadb:10
     container_name: noveltime-db
     restart: always
-    expose:
-      - "3306"
+    # expose:
+    #   - "3306"
+    ports:
+      - "3306:3306"
+
+
     env_file: ./db/.env
-    volumes:
-      - ./db/data:/var/lib/mysql
-      - ./db/dump:/disk
-      - ./db/initdb.d:/docker-entrypoint-initdb.d
+    # networks:
+    #   - docker-service
+    # volumes:
+      # - ./db/data:/var/lib/mysql
+      # - ./db/dump:/disk
+      # - ./db/initdb.d:/docker-entrypoint-initdb.d
     command:
       - --character-set-server=utf8mb4
       - --collation-server=utf8mb4_unicode_ci
+
+# networks:
+#   docker-service:
+#     driver: bridge

@@ -6,5 +6,5 @@ RUN npm install -g ts-node typescript --silent
 COPY . .
 # set env after installing all including devDependencies to avoid type error
 ENV NODE_ENV=production 
-EXPOSE 8082
+# EXPOSE 8082
 CMD ["npm", "run", "prod"]
