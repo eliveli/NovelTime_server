@@ -1,47 +1,49 @@
-version: "3.8"
+version: "3.9"
 
 services:
-  webserver:
+  noveltime-web:
     build:
       context: ../client
-    container_name: noveltime-webserver
     ports:
       - "8080:80"
       - "8081:443"
       # - "192.168.0.2:8080:80"
+    networks:
+      - api
 
-  was:
+  noveltime-was:
     build:
-      context: ./
-    container_name: noveltime-was
+      context: .
     expose:
       - "8082"
     depends_on:
+      - noveltime-db
+    networks:
+      - api
       - db
-    # networks:
-    #   - docker-service
 
-  db:
+  noveltime-db:
     image: mariadb:10
-    container_name: noveltime-db
     restart: always
-    # expose:
-    #   - "3306"
-    ports:
-      - "3306:3306"
+    expose:
+      - "3306"
+    # ports:
+    #   - "3306:3306"
 
 
     env_file: ./db/.env
-    # networks:
-    #   - docker-service
-    # volumes:
-      # - ./db/data:/var/lib/mysql
-      # - ./db/dump:/disk
-      # - ./db/initdb.d:/docker-entrypoint-initdb.d
+    networks:
+      - db
+    volumes:
+      - ./db/data:/var/lib/mysql
+      - ./db/dump:/disk
+      - ./db/initdb.d:/docker-entrypoint-initdb.d
     command:
       - --character-set-server=utf8mb4
       - --collation-server=utf8mb4_unicode_ci
 
-# networks:
-#   docker-service:
-#     driver: bridge
+networks:
+  api:
+    driver: bridge
+  db:
+    driver: bridge
