@@ -14,16 +14,17 @@ services:
   noveltime-was:
     build:
       context: .
+    depends_on:
+      - noveltime-web
+      - noveltime-db
     expose:
       - "8082"
-    depends_on:
-      - noveltime-db
     networks:
       - api
       - db
 
   noveltime-db:
-    image: mariadb:10
+    image: mariadb:10.9.2
     restart: always
     expose:
       - "3306"
