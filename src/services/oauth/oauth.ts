@@ -16,8 +16,8 @@ dotenv.config();
 async function getTokenKakao(code: string) {
   const REDIRECT_URI =
     process.env.NODE_ENV === "production"
-      ? "https://noveltime.shop/oauth/callback/kakao"
-      : "http://domainfordev.com:3000/oauth/callback/kakao";
+      ? "http://www.noveltime.shop/oauth/callback/kakao"
+      : "http://domainfordev.com/oauth/callback/kakao";
 
   type BodyDataType = {
     grant_type: string;

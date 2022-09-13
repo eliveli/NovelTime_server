@@ -5,9 +5,8 @@ services:
     build:
       context: ../client
     ports:
-      - "8080:80"
-      - "8081:443"
-      # - "192.168.0.2:8080:80"
+      - "80:80"
+      - "443:443"
     networks:
       - api
 
@@ -15,7 +14,6 @@ services:
     build:
       context: .
     depends_on:
-      - noveltime-web
       - noveltime-db
     expose:
       - "8082"
@@ -28,8 +26,6 @@ services:
     restart: always
     expose:
       - "3306"
-    # ports:
-    #   - "3306:3306"
 
 
     env_file: ./db/.env
@@ -48,3 +44,24 @@ networks:
     driver: bridge
   db:
     driver: bridge
+
+# Check Points as working with docker-compose (some of what I learned) :
+# 1. docker network.
+#     docker makes and runs its own network seperated from host machine.
+#     in docker compose file, each service's host name is its service name I set.
+#     use the name especially when setting env var. 
+# 2. port forwarding(the device's problem).
+#     it's about host port forwarding not docker's.
+#     in my case port forwarding couldn't work because of modem from ISP.
+#     I guessed it would work since I had changed router but that was not the reason.
+#     modem from SK, one of ISPs, prevented router from doing port-forwarding.
+#     so I could test as connecting PC to modem directly without router.
+#     in this way I could get public IP but there could be a secure issue without router that works as firewall as well,
+#     so I think I am going to buy new router that can work as bridge mode later...
+#     it would be better if I connect devices like this : modem - routerA (bridge mode) - routerB (router mode) - PC
+# 3. reflecting changed files directly
+#    after changing source files I should build new image that use them. the command "docker-compose down" don't rebuild it.
+#    and even the command "docker-compose --build ..." can cause an error.
+#    just after rebuilding and reusing the command "docker-compose up" it works as I expected without an error.
+#    I mean using the command twice.
+#    The error might occur because of the order in running processes.
