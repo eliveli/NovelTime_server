@@ -35,7 +35,7 @@ app.use("/api/contents", contents);
 // and send the current message to user
 // ------------------------------------------------------------------//
 
-const io = new Server(server);
+const io = new Server(server, { path: "/socket.io" });
 
 io.on("connection", (socket) => {
   socket.on("join room", (roomId: string) => {
