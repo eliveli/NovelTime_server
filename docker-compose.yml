@@ -53,15 +53,18 @@ networks:
 # 2. port forwarding(the device's problem).
 #     it's about host port forwarding not docker's.
 #     in my case port forwarding couldn't work because of modem from ISP.
-#     I guessed it would work since I had changed router but that was not the reason.
-#     modem from SK, one of ISPs, prevented router from doing port-forwarding.
-#     so I could test as connecting PC to modem directly without router.
-#     in this way I could get public IP but there could be a secure issue without router that works as firewall as well,
-#     so I think I am going to buy new router that can work as bridge mode later...
-#     it would be better if I connect devices like this : modem - routerA (bridge mode) - routerB (router mode) - PC
+#      I guessed it would work since I had replaced router with new one but that was not the reason.
+#      modem from SK, one of ISPs, prevented router from doing port-forwarding.
+#      so I could test as connecting PC to modem directly without router and requesting to the domain from the PC.
+#      it looked to work well,
+#     but again I found that port was still closed when I tested with other device - my phone as requesting to the domain.
+#      because of port prevention I couldn't get the ssl cert from certbot.
+#      I need another router to work as bridge mode.
+#      then the ethernet will be connected like this : modem - routerA (bridge mode) - routerB (router mode) - server computer
 # 3. reflecting changed files directly
-#    after changing source files I should build new image that use them. the command "docker-compose down" don't rebuild it.
-#    and even the command "docker-compose --build ..." can cause an error.
-#    just after rebuilding and reusing the command "docker-compose up" it works as I expected without an error.
-#    I mean using the command twice.
-#    The error might occur because of the order in running processes.
+#    after changing source files I should build new image that use them.
+#     using these commands "docker compose down" and "docker compose up" in order don't rebuild it.
+#     and even the command "docker compose --build ..." can cause an error.
+#     just after rebuilding and reusing the command "docker-compose up" it works as I expected without an error.
+#      like this: first "docker compose up --build", after error ctrl+c, and "docker compose down", last "docker compose up".
+#    The error might occur because of the order between running processes right after building.
