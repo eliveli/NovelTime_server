@@ -1,7 +1,7 @@
 version: "3.9"
 
 services:
-  noveltime-web:
+  web:
     build:
       context: ../client
     ports:
@@ -10,18 +10,18 @@ services:
     networks:
       - api
 
-  noveltime-was:
+  was:
     build:
       context: .
     depends_on:
-      - noveltime-db
+      - db
     expose:
       - "8082"
     networks:
       - api
       - db
 
-  noveltime-db:
+  db:
     image: mariadb:10.9.2
     restart: always
     expose:
@@ -61,10 +61,12 @@ networks:
 #      because of port prevention I couldn't get the ssl cert from certbot.
 #      I need another router to work as bridge mode.
 #      then the ethernet will be connected like this : modem - routerA (bridge mode) - routerB (router mode) - server computer
-# 3. reflecting changed files directly
+# 3. reflecting changed files
 #    after changing source files I should build new image that use them.
 #     using these commands "docker compose down" and "docker compose up" in order don't rebuild it.
-#     and even the command "docker compose --build ..." can cause an error.
-#     just after rebuilding and reusing the command "docker-compose up" it works as I expected without an error.
-#      like this: first "docker compose up --build", after error ctrl+c, and "docker compose down", last "docker compose up".
-#    The error might occur because of the order between running processes right after building.
+#    use these commands : docker compose up    docker compose down   docker compose build
+
+
+#    set project name by using "-p" flag in CLI
+#     do like this :
+#      docker compose build -> docker compose -p noveltime up

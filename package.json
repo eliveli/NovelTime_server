@@ -6,6 +6,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "nodemon --watch 'src/**/*.ts' --exec ts-node src/index.ts",
+    "prodTest": "set NODE_ENV=production && nodemon --watch 'src/**/*.ts' --exec ts-node src/index.ts",
     "prod": "tsc && node dist/index.js",
     "scrape": "ts-node src/utils/scrape/runScraper.ts",
     "app": "node app.js",
