@@ -1,5 +1,5 @@
 import pool from "../../configs/db";
-import { query } from "./contents.utils";
+import { query } from "./content.utils";
 
 async function deleteContentLike(
   contentType: "writing" | "novelList",

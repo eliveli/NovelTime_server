@@ -2,7 +2,7 @@
 /* eslint-disable no-await-in-loop */
 /* eslint-disable no-restricted-syntax */
 import pool from "../../configs/db";
-import { query } from "./contents.utils";
+import { query } from "./content.utils";
 
 type UserInfo = {
   userName: string;

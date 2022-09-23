@@ -1,5 +1,5 @@
 import pool from "../../configs/db";
-import { query } from "./contents.utils";
+import { query } from "./content.utils";
 
 type UserId = { userId: string };
 export default async function getUserId(userName: string) {

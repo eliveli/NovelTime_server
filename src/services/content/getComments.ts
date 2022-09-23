@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-misused-promises */
 /* eslint-disable no-restricted-syntax */
 import pool from "../../configs/db";
-import { query } from "./contents.utils";
+import { query } from "./content.utils";
 
 type Comment = {
   commentId: string;

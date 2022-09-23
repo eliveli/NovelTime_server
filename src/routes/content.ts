@@ -8,7 +8,7 @@ import {
   userPageOthersListController,
   userPageNovelListTitlesController,
   toggleLikeController,
-} from "../controllers/contents";
+} from "../controllers/content";
 import {
   authenticateAccessTokenMiddleware,
   getLoginUserIdByTokenForUserNovelListPage,
@@ -18,12 +18,9 @@ const router = express.Router();
 
 router.get("/userPageHome/:userName", userPageHomeController);
 
-router.get("/userPageMyWriting/:userName/:contentsType/:order", userPageMyWritingController);
+router.get("/userPageMyWriting/:userName/:contentType/:order", userPageMyWritingController);
 
-router.get(
-  "/userPageOthersWriting/:userName/:contentsType/:order",
-  userPageOthersWritingController,
-);
+router.get("/userPageOthersWriting/:userName/:contentType/:order", userPageOthersWritingController);
 
 router.get(
   "/userPageMyList/:userNameInUserPage/:listId/:order",

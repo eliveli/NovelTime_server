@@ -2,7 +2,7 @@
 /* eslint-disable no-await-in-loop */
 /* eslint-disable no-restricted-syntax */
 import pool from "../../configs/db";
-import { query } from "./contents.utils";
+import { query } from "./content.utils";
 
 type Writing = {
   writingId: string;
@@ -210,13 +210,13 @@ async function getWritingsSet(writings: Writing[], isOnesUserCreated: boolean) {
   };
 }
 
-async function getWritingByWritingId(writingId: string, contentsType?: "T" | "R") {
-  // for othersWriting in UserPage divide as contents type
+async function getWritingByWritingId(writingId: string, contentType?: "T" | "R") {
+  // for othersWriting in UserPage divide as content type
   // for UserPageHome page get all writings
-  const queryForDividingWritings = contentsType
+  const queryForDividingWritings = contentType
     ? query.getTalksOrRecommendsByWritingId
     : query.getWritingByWritingId;
-  const paramsForDividingWritings = contentsType ? [writingId, contentsType] : writingId;
+  const paramsForDividingWritings = contentType ? [writingId, contentType] : writingId;
   return new Promise<Writing>(async (resolve) => {
     await pool
       .getConnection()
@@ -242,11 +242,11 @@ async function getWritingByWritingId(writingId: string, contentsType?: "T" | "R"
   });
 }
 
-async function getWritingsByWritingIDs(writingIDs: string[], contentsType?: "T" | "R") {
+async function getWritingsByWritingIDs(writingIDs: string[], contentType?: "T" | "R") {
   const writings: Writing[] = [];
   for (const writingId of writingIDs) {
-    const writing = await getWritingByWritingId(writingId, contentsType);
-    // writing can be undefined if its contents type is different from the param's one
+    const writing = await getWritingByWritingId(writingId, contentType);
+    // writing can be undefined if its content type is different from the param's one
     // if so don't push that into the writings array
     if (!writing) continue;
 
@@ -366,12 +366,12 @@ export function getWritingsUserLikesForUserPageHome(userId: string) {
 
 export function getWritingsUserCreatedForMyWriting(
   userId: string,
-  contentsType: "T" | "R",
+  contentType: "T" | "R",
   order: number,
 ) {
   return new Promise<any>(async (resolve) => {
     try {
-      const talksOrRecommends = await getTalksOrRecommendsByUserId(userId, contentsType);
+      const talksOrRecommends = await getTalksOrRecommendsByUserId(userId, contentType);
       const { talksOrRecommendsAsOrder, isNextOrder } = getTalksOrRecommendsAsOrder(
         talksOrRecommends,
         order,
@@ -386,13 +386,13 @@ export function getWritingsUserCreatedForMyWriting(
 }
 export function getWritingsUserLikesForOthersWriting(
   userId: string,
-  contentsType: "T" | "R",
+  contentType: "T" | "R",
   order: number,
 ) {
   return new Promise<any>(async (resolve) => {
     try {
       const writingIDs = await getWritingIDsByUserId(userId);
-      const talksOrRecommends = await getWritingsByWritingIDs(writingIDs, contentsType);
+      const talksOrRecommends = await getWritingsByWritingIDs(writingIDs, contentType);
       const { talksOrRecommendsAsOrder, isNextOrder } = getTalksOrRecommendsAsOrder(
         talksOrRecommends,
         order,
