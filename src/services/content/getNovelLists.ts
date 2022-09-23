@@ -51,7 +51,7 @@ interface NovelListSetForMyOrOthersList {
   userImg?: { src: string; position: string };
 }
 async function getNovelListInfoListByUserId(userId: string, isHome = true) {
-  // for userPageHome page get the two novel list
+  // for userPage get the two novel list
   // for userPageNovelList page get all novel list
   const queryForLimitedOrNot = isHome
     ? query.getTwoOfNovelListInfoListByUserId
@@ -118,7 +118,7 @@ async function getNovelListInfoListByListIDs(novelListIDs: string[]) {
   return novelListInfoList;
 }
 async function getNovelListIDsByUserId(userId: string, isHome = true) {
-  // for userPageHome page get the two novel list IDs
+  // for userPage get the two novel list IDs
   // for userPageNovelList page get all novel list IDs
   const queryForLimitedNumber = isHome
     ? query.getTwoOfNovelListIDsByUserId

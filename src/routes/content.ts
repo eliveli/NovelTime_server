@@ -1,7 +1,7 @@
 import express from "express";
 
 import {
-  userPageHomeController,
+  userPageController,
   userPageMyWritingController,
   userPageOthersWritingController,
   userPageMyListController,
@@ -16,26 +16,29 @@ import {
 
 const router = express.Router();
 
-router.get("/userPageHome/:userName", userPageHomeController);
+router.get("/userPage/:userName", userPageController);
 
-router.get("/userPageMyWriting/:userName/:contentType/:order", userPageMyWritingController);
-
-router.get("/userPageOthersWriting/:userName/:contentType/:order", userPageOthersWritingController);
+router.get("/userPage/myWriting/:userName/:contentType/:order", userPageMyWritingController);
 
 router.get(
-  "/userPageMyList/:userNameInUserPage/:listId/:order",
+  "/userPage/othersWriting/:userName/:contentType/:order",
+  userPageOthersWritingController,
+);
+
+router.get(
+  "/userPage/myList/:userNameInUserPage/:listId/:order",
   getLoginUserIdByTokenForUserNovelListPage,
   userPageMyListController,
 );
 
 router.get(
-  "/userPageOthersList/:userNameInUserPage/:listId/:order",
+  "/userPage/othersList/:userNameInUserPage/:listId/:order",
   getLoginUserIdByTokenForUserNovelListPage,
   userPageOthersListController,
 );
 
 router.get(
-  "/userPageNovelListTitles/:userNameInUserPage/:isMyList",
+  "/userPage/novelListTitles/:userNameInUserPage/:isMyList",
   userPageNovelListTitlesController,
 );
 

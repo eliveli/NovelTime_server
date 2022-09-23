@@ -168,7 +168,7 @@ function divideWritings(writings: Writing[]) {
       recommends.push(writing);
     }
 
-    // when requesting writings from userPageHome page, "order" is always 1
+    // when requesting writings from userPage, "order" is always 1
     if (talks.length >= requiredNumber * order && recommends.length >= requiredNumber * order) {
       break;
     }

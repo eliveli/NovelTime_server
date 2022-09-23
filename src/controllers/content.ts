@@ -25,7 +25,7 @@ import toggleLike from "../services/content/toggleLike";
 
 dotenv.config();
 
-export const userPageHomeController: RequestHandler = async (req, res) => {
+export const userPageController: RequestHandler = async (req, res) => {
   try {
     const { userName } = req.params;
     const userId = await getUserId(userName);
@@ -56,7 +56,7 @@ export const userPageHomeController: RequestHandler = async (req, res) => {
     if (error.message === "유저 없음") {
       res.status(400).json("존재하지 않는 사용자입니다.");
     }
-    console.log("failed to get user's content in userPageHomeController :", error);
+    console.log("failed to get user's content in userPageController :", error);
     res.status(500).end();
   }
 };
