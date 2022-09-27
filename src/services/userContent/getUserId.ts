@@ -7,13 +7,6 @@ export default async function getUserId(userName: string) {
 
   if (data && Object.keys(data)[0] === "userId") {
     const { userId } = data;
-
-    return userId;
+    return userId as string;
   }
-
-  if (!userId) {
-    throw new Error("user does not exist in DB");
-  }
-
-  return userId;
 }

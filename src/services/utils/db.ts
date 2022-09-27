@@ -1,19 +1,18 @@
 import pool from "../../configs/db";
 
 export default async function db(dbQuery: string, args: any, isRaw?: true) {
-  let dataReturned;
+  let dataReturned: any; // avoid ts error following returning undefined
   try {
     const connection = await pool.getConnection();
 
     try {
-      const data = await connection.query(dbQuery, args);
+      const data = (await connection.query(dbQuery, args)) as { [key: string]: any }[];
       if (isRaw) {
         dataReturned = data;
-      }
-      if (Array.isArray(data) && data.length > 1) {
+      } else if (data.length > 1) {
         dataReturned = data.slice(0, data.length);
-      } else if (Array.isArray(data)) {
-        dataReturned = data; // array destructuring // dataReturned = data[0]
+      } else {
+        [dataReturned] = data; // array destructuring // dataReturned = data[0]
       }
 
       // When done with the connection, release it.
