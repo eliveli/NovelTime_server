@@ -325,6 +325,7 @@ async function getNovelListUserCreatedForMyList(
     return { novelList: novelListSet, isNextOrder };
   } catch (error) {
     console.log("error occurred in getNovelListsUserCreatedForMyList:", error);
+    return { novelList: undefined, isNextOrder: undefined };
   }
 }
 
@@ -381,6 +382,7 @@ async function getNovelListUserLikesForOthersList(
     return { novelList: novelListSet, isNextOrder };
   } catch (error) {
     console.log("error occurred in getNovelListsUserLikesForOthersList:", error);
+    return { novelList: undefined, isNextOrder: undefined };
   }
 }
 

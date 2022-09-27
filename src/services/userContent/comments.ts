@@ -93,6 +93,7 @@ async function getCommentsForMyWriting(userId: string, order: number) {
     return { commentsSet, isNextOrder };
   } catch (error) {
     console.log("error occurred in getCommentsForMyWriting:", error);
+    return { commentsSet: undefined, isNextOrder: undefined };
   }
 }
 

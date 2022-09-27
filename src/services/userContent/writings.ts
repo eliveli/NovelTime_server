@@ -215,6 +215,8 @@ async function getWritingsUserCreatedForUserPageHome(userId: string) {
     return { talksUserCreated, recommendsUserCreated };
   } catch (error) {
     console.log("error occurred in getWritingsUserCreatedForUserPageHome:", error);
+    // to avoid type error destructuring undefined in controller
+    return { talksUserCreated: undefined, recommendsUserCreated: undefined };
   }
 }
 
@@ -227,6 +229,7 @@ async function getWritingsUserLikesForUserPageHome(userId: string) {
     return { talksUserLikes, recommendsUserLikes };
   } catch (error) {
     console.log("error occurred in getWritingsUserLikesForUserPageHome:", error);
+    return { talksUserLikes: undefined, recommendsUserLikes: undefined };
   }
 }
 
@@ -246,6 +249,7 @@ async function getWritingsUserCreatedForMyWriting(
     return { talksOrRecommendsSet, isNextOrder };
   } catch (error) {
     console.log("error occurred in getTalksOrRecommendsUserCreated:", error);
+    return { talksOrRecommendsSet: undefined, isNextOrder: undefined };
   }
 }
 
@@ -266,6 +270,7 @@ async function getWritingsUserLikesForOthersWriting(
     return { talksOrRecommendsSet, isNextOrder };
   } catch (error) {
     console.log("error occurred in getWritingsUserLikesForOthersWriting:", error);
+    return { talksOrRecommendsSet: undefined, isNextOrder: undefined };
   }
 }
 
