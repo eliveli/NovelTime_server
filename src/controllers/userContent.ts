@@ -3,27 +3,27 @@
 import { RequestHandler } from "express";
 
 import dotenv from "dotenv";
-import getUserId from "../services/userPage/getUserId";
-import userPageWritingService from "../services/userPage/writings";
-import userPageCommentService from "../services/userPage/comments";
-import userPageNovelListService from "../services/userPage/novelLists";
-import toggleLike from "../services/userPage/toggleLike";
+import getUserId from "../services/userContent/getUserId";
+import userWritingService from "../services/userContent/writings";
+import userCommentService from "../services/userContent/comments";
+import userNovelListService from "../services/userContent/novelLists";
+import toggleLike from "../services/userContent/toggleLike";
 
 dotenv.config();
 
-export const userPageController: RequestHandler = async (req, res) => {
+export const userHomeController: RequestHandler = async (req, res) => {
   try {
     const { userName } = req.params;
     const userId = await getUserId(userName);
 
     if (!userId) throw new Error("유저 없음");
     const { talksUserCreated, recommendsUserCreated } =
-      await userPageWritingService.getMyWritingsForUserHome(userId);
+      await userWritingService.getMyWritingsForUserHome(userId);
     const { talksUserLikes, recommendsUserLikes } =
-      await userPageWritingService.getOthersWritingsForUserHome(userId);
-    const commentsUserCreated = await userPageCommentService.getCommentsForUserHome(userId);
-    const listsUserCreated = await userPageNovelListService.getMyListOfUserHome(userId);
-    const listsUserLikes = await userPageNovelListService.getOthersListOfUserHome(userId);
+      await userWritingService.getOthersWritingsForUserHome(userId);
+    const commentsUserCreated = await userCommentService.getCommentsForUserHome(userId);
+    const listsUserCreated = await userNovelListService.getMyListOfUserHome(userId);
+    const listsUserLikes = await userNovelListService.getOthersListOfUserHome(userId);
 
     res.json({
       talksUserCreated,
@@ -40,18 +40,18 @@ export const userPageController: RequestHandler = async (req, res) => {
     if (error.message === "유저 없음") {
       res.status(400).json("존재하지 않는 사용자입니다.");
     }
-    console.log("failed to get user's content in userPageController :", error);
+    console.log("failed to get user's content in userHomeController :", error);
     res.status(500).end();
   }
 };
 
-export const userPageMyWritingController: RequestHandler = async (req, res) => {
+export const userMyWritingController: RequestHandler = async (req, res) => {
   try {
     const { userName, contentType, order } = req.params;
     const userId = await getUserId(userName);
     if (!userId) throw new Error("유저 없음");
     if (contentType === "T" || contentType === "R") {
-      const { talksOrRecommendsSet, isNextOrder } = await userPageWritingService.getMyWritings(
+      const { talksOrRecommendsSet, isNextOrder } = await userWritingService.getMyWritings(
         userId,
         contentType,
         Number(order),
@@ -60,7 +60,7 @@ export const userPageMyWritingController: RequestHandler = async (req, res) => {
     }
 
     if (contentType === "C") {
-      const { commentsSet, isNextOrder } = await userPageCommentService.getComments(
+      const { commentsSet, isNextOrder } = await userCommentService.getComments(
         userId,
         Number(order),
       );
@@ -73,16 +73,16 @@ export const userPageMyWritingController: RequestHandler = async (req, res) => {
     if (error.message === "유저 없음") {
       res.status(400).json("존재하지 않는 사용자입니다.");
     }
-    console.log("failed to get user's content in userPageMyWritingController :", error);
+    console.log("failed to get user's content in userMyWritingController :", error);
     res.status(500).end();
   }
 };
-export const userPageOthersWritingController: RequestHandler = async (req, res) => {
+export const userOthersWritingController: RequestHandler = async (req, res) => {
   try {
     const { userName, contentType, order } = req.params;
     const userId = await getUserId(userName);
     if (!userId) throw new Error("유저 없음");
-    const { talksOrRecommendsSet, isNextOrder } = await userPageWritingService.getOthersWritings(
+    const { talksOrRecommendsSet, isNextOrder } = await userWritingService.getOthersWritings(
       userId,
       contentType as "T" | "R",
       Number(order),
@@ -92,17 +92,17 @@ export const userPageOthersWritingController: RequestHandler = async (req, res) 
     if (error.message === "유저 없음") {
       res.status(400).json("존재하지 않는 사용자입니다.");
     }
-    console.log("failed to get user's content in userPageMyWritingController :", error);
+    console.log("failed to get user's content in userOthersWritingController :", error);
     res.status(500).end();
   }
 };
-export const userPageMyListController: RequestHandler = async (req, res) => {
+export const userMyListController: RequestHandler = async (req, res) => {
   try {
     const { userNameInUserPage, listId, order } = req.params;
     const loginUserId = req.userId;
     const userIdInUserPage = await getUserId(userNameInUserPage);
     if (!userIdInUserPage) throw new Error("유저 없음");
-    const { novelList, isNextOrder } = await userPageNovelListService.getMyList(
+    const { novelList, isNextOrder } = await userNovelListService.getMyList(
       userIdInUserPage,
       listId,
       Number(order),
@@ -113,17 +113,17 @@ export const userPageMyListController: RequestHandler = async (req, res) => {
     if (error.message === "유저 없음") {
       res.status(400).json("존재하지 않는 사용자입니다.");
     }
-    console.log("failed to get user's content in userPageMyListController :", error);
+    console.log("failed to get user's content in userMyListController :", error);
     res.status(500).end();
   }
 };
-export const userPageOthersListController: RequestHandler = async (req, res) => {
+export const userOthersListController: RequestHandler = async (req, res) => {
   try {
     const { userNameInUserPage, listId, order } = req.params;
     const loginUserId = req.userId;
     const userIdInUserPage = await getUserId(userNameInUserPage);
     if (!userIdInUserPage) throw new Error("유저 없음");
-    const { novelList, isNextOrder } = await userPageNovelListService.getOthersList(
+    const { novelList, isNextOrder } = await userNovelListService.getOthersList(
       userIdInUserPage,
       listId,
       Number(order),
@@ -134,17 +134,17 @@ export const userPageOthersListController: RequestHandler = async (req, res) => 
     if (error.message === "유저 없음") {
       res.status(400).json("존재하지 않는 사용자입니다.");
     }
-    console.log("failed to get user's content in userPageOthersListController :", error);
+    console.log("failed to get user's content in userOthersListController :", error);
     res.status(500).end();
   }
 };
-export const userPageNovelListTitlesController: RequestHandler = async (req, res) => {
+export const userNovelListTitlesController: RequestHandler = async (req, res) => {
   try {
     const { userNameInUserPage, isMyList } = req.params;
     const userIdInUserPage = await getUserId(userNameInUserPage);
     if (!userIdInUserPage) throw new Error("유저 없음");
 
-    const allTitlesAndOtherInfo = await userPageNovelListService.getAllListTitles(
+    const allTitlesAndOtherInfo = await userNovelListService.getAllListTitles(
       userIdInUserPage,
       isMyList,
     );
@@ -153,7 +153,7 @@ export const userPageNovelListTitlesController: RequestHandler = async (req, res
     if (error.message === "유저 없음") {
       res.status(400).json("존재하지 않는 사용자입니다.");
     }
-    console.log("failed to get user's content in userPageNovelListTitlesController :", error);
+    console.log("failed to get user's content in userNovelListTitlesController :", error);
     res.status(500).end();
   }
 };

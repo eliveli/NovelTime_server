@@ -269,10 +269,10 @@ async function getWritingsUserLikesForOthersWriting(
   }
 }
 
-const userPageWritingService = {
+const userWritingService = {
   getMyWritings: getWritingsUserCreatedForMyWriting,
   getMyWritingsForUserHome: getWritingsUserCreatedForUserPageHome,
   getOthersWritings: getWritingsUserLikesForOthersWriting,
   getOthersWritingsForUserHome: getWritingsUserLikesForUserPageHome,
 };
-export default userPageWritingService;
+export default userWritingService;

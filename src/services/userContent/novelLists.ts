@@ -419,11 +419,11 @@ async function getNovelListsUserLikesForUserPageHome(userId: string) {
   }
 }
 
-const userPageNovelListService = {
+const userNovelListService = {
   getMyList: getNovelListUserCreatedForMyList,
   getMyListOfUserHome: getNovelListsUserCreatedForUserPageHome,
   getOthersList: getNovelListUserLikesForOthersList,
   getOthersListOfUserHome: getNovelListsUserLikesForUserPageHome,
   getAllListTitles: getAllNovelListTitlesAtTheMoment,
 };
-export default userPageNovelListService;
+export default userNovelListService;

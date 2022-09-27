@@ -96,8 +96,8 @@ async function getCommentsForMyWriting(userId: string, order: number) {
   }
 }
 
-const userPageCommentService = {
+const userCommentService = {
   getCommentsForUserHome: getCommentsForUserPageHome,
   getComments: getCommentsForMyWriting,
 };
-export default userPageCommentService;
+export default userCommentService;

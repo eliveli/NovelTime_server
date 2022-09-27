@@ -5,7 +5,7 @@ import cookieParser from "cookie-parser";
 import home from "./routes/home";
 import novels from "./routes/novels";
 import user from "./routes/user";
-import content from "./routes/content";
+import userContent from "./routes/userContent";
 
 const app = express();
 
@@ -20,7 +20,7 @@ app.use(express.urlencoded({ extended: false }));
 app.use("/api", home);
 app.use("/api/novels", novels);
 app.use("/api/user", user);
-app.use("/api/content", content);
+app.use("/api/userContent", userContent);
 
 // socket io server // configure private message
 // -- it is required
