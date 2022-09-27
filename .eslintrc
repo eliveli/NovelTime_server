@@ -37,6 +37,8 @@
         "quotes": ["warn", "double"],
         "no-unused-vars": "warn",
         "object-curly-newline": "warn",
+        "consistent-return": "off",
+        "no-return-await": "off",
 
         "@typescript-eslint/no-var-requires": "warn",
         "@typescript-eslint/no-unsafe-assignment": "warn",
@@ -60,6 +62,7 @@
         "semi-spacing": "error",
         "linebreak-style":"off",
         "prettier/prettier":"off"
+        
         // //* Best Practices
         // "eqeqeq": "warn",
         // "no-invalid-this": "error",

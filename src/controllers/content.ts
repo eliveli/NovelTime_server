@@ -3,25 +3,11 @@
 import { RequestHandler } from "express";
 
 import dotenv from "dotenv";
-import getUserId from "../services/content/getUserId";
-import {
-  getWritingsUserCreatedForMyWriting,
-  getWritingsUserCreatedForUserPageHome,
-  getWritingsUserLikesForOthersWriting,
-  getWritingsUserLikesForUserPageHome,
-} from "../services/content/getWritings";
-import {
-  getCommentsForMyWriting,
-  getCommentsForUserPageHome,
-} from "../services/content/getComments";
-import {
-  getNovelListUserCreatedForMyList,
-  getNovelListsUserCreatedForUserPageHome,
-  getNovelListUserLikesForOthersList,
-  getNovelListsUserLikesForUserPageHome,
-  getAllNovelListTitlesAtTheMoment,
-} from "../services/content/getNovelLists";
-import toggleLike from "../services/content/toggleLike";
+import getUserId from "../services/userPage/getUserId";
+import userPageWritingService from "../services/userPage/writings";
+import userPageCommentService from "../services/userPage/comments";
+import userPageNovelListService from "../services/userPage/novelLists";
+import toggleLike from "../services/userPage/toggleLike";
 
 dotenv.config();
 
@@ -31,15 +17,13 @@ export const userPageController: RequestHandler = async (req, res) => {
     const userId = await getUserId(userName);
 
     if (!userId) throw new Error("유저 없음");
-    const { talksUserCreated, recommendsUserCreated } = await getWritingsUserCreatedForUserPageHome(
-      userId,
-    );
-    const { talksUserLikes, recommendsUserLikes } = await getWritingsUserLikesForUserPageHome(
-      userId,
-    );
-    const commentsUserCreated = await getCommentsForUserPageHome(userId);
-    const listsUserCreated = await getNovelListsUserCreatedForUserPageHome(userId);
-    const listsUserLikes = await getNovelListsUserLikesForUserPageHome(userId);
+    const { talksUserCreated, recommendsUserCreated } =
+      await userPageWritingService.getMyWritingsForUserHome(userId);
+    const { talksUserLikes, recommendsUserLikes } =
+      await userPageWritingService.getOthersWritingsForUserHome(userId);
+    const commentsUserCreated = await userPageCommentService.getCommentsForUserHome(userId);
+    const listsUserCreated = await userPageNovelListService.getMyListOfUserHome(userId);
+    const listsUserLikes = await userPageNovelListService.getOthersListOfUserHome(userId);
 
     res.json({
       talksUserCreated,
@@ -67,7 +51,7 @@ export const userPageMyWritingController: RequestHandler = async (req, res) => {
     const userId = await getUserId(userName);
     if (!userId) throw new Error("유저 없음");
     if (contentType === "T" || contentType === "R") {
-      const { talksOrRecommendsSet, isNextOrder } = await getWritingsUserCreatedForMyWriting(
+      const { talksOrRecommendsSet, isNextOrder } = await userPageWritingService.getMyWritings(
         userId,
         contentType,
         Number(order),
@@ -76,7 +60,10 @@ export const userPageMyWritingController: RequestHandler = async (req, res) => {
     }
 
     if (contentType === "C") {
-      const { commentsSet, isNextOrder } = await getCommentsForMyWriting(userId, Number(order));
+      const { commentsSet, isNextOrder } = await userPageCommentService.getComments(
+        userId,
+        Number(order),
+      );
       res.json({
         commentsUserCreated: commentsSet,
         isNextOrder,
@@ -95,7 +82,7 @@ export const userPageOthersWritingController: RequestHandler = async (req, res) 
     const { userName, contentType, order } = req.params;
     const userId = await getUserId(userName);
     if (!userId) throw new Error("유저 없음");
-    const { talksOrRecommendsSet, isNextOrder } = await getWritingsUserLikesForOthersWriting(
+    const { talksOrRecommendsSet, isNextOrder } = await userPageWritingService.getOthersWritings(
       userId,
       contentType as "T" | "R",
       Number(order),
@@ -115,7 +102,7 @@ export const userPageMyListController: RequestHandler = async (req, res) => {
     const loginUserId = req.userId;
     const userIdInUserPage = await getUserId(userNameInUserPage);
     if (!userIdInUserPage) throw new Error("유저 없음");
-    const { novelList, isNextOrder } = await getNovelListUserCreatedForMyList(
+    const { novelList, isNextOrder } = await userPageNovelListService.getMyList(
       userIdInUserPage,
       listId,
       Number(order),
@@ -136,7 +123,7 @@ export const userPageOthersListController: RequestHandler = async (req, res) => 
     const loginUserId = req.userId;
     const userIdInUserPage = await getUserId(userNameInUserPage);
     if (!userIdInUserPage) throw new Error("유저 없음");
-    const { novelList, isNextOrder } = await getNovelListUserLikesForOthersList(
+    const { novelList, isNextOrder } = await userPageNovelListService.getOthersList(
       userIdInUserPage,
       listId,
       Number(order),
@@ -157,7 +144,7 @@ export const userPageNovelListTitlesController: RequestHandler = async (req, res
     const userIdInUserPage = await getUserId(userNameInUserPage);
     if (!userIdInUserPage) throw new Error("유저 없음");
 
-    const allTitlesAndOtherInfo = await getAllNovelListTitlesAtTheMoment(
+    const allTitlesAndOtherInfo = await userPageNovelListService.getAllListTitles(
       userIdInUserPage,
       isMyList,
     );
