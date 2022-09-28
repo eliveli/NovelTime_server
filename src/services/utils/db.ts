@@ -1,18 +1,38 @@
 import pool from "../../configs/db";
 
-export default async function db(dbQuery: string, args: any, isRaw?: true) {
-  let dataReturned: any; // avoid ts error following returning undefined
+type DataType = {
+  [key: string]: any;
+};
+//
+// raw : original data (including meta data),
+// all : all elements of data list,
+// first : first element of data list
+type ElementReturned = "raw" | "all" | "first";
+
+export default async function db(dbQuery: string, args: any, elementReturned: ElementReturned) {
+  // avoid ts error following returning undefined
+  // needed to set exact type after returning value
+  let dataReturned: unknown;
   try {
     const connection = await pool.getConnection();
 
     try {
-      const data = (await connection.query(dbQuery, args)) as { [key: string]: any }[];
-      if (isRaw) {
-        dataReturned = data;
-      } else if (data.length > 1) {
-        dataReturned = data.slice(0, data.length);
-      } else {
-        [dataReturned] = data; // array destructuring // dataReturned = data[0]
+      const data = (await connection.query(dbQuery, args)) as DataType[];
+
+      switch (elementReturned) {
+        case "raw":
+          dataReturned = data; // return original array
+          break;
+        case "all":
+          dataReturned = data.slice(0, data.length); // return array
+          break;
+        case "first":
+          [dataReturned] = data;
+          // array destructuring. same as >> dataReturned = data[0] // return dict
+          break;
+        default:
+          dataReturned = data;
+          break;
       }
 
       // When done with the connection, release it.

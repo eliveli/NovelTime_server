@@ -14,7 +14,7 @@ type Comment = {
 };
 
 async function getTalkTitle(talkId: string) {
-  const talkTitle = await db(query.getTalkTitle, talkId);
+  const { talkTitle } = (await db(query.getTalkTitle, talkId, "first")) as { talkTitle: string };
   return talkTitle;
 }
 
@@ -62,7 +62,7 @@ async function getCommentsSet(selectedComments: Comment[]) {
 }
 
 async function getCommentsByUserId(userId: string) {
-  return (await db(query.getComments, userId)) as Comment[];
+  return (await db(query.getComments, userId, "all")) as Comment[];
 }
 
 async function getCommentsForUserPageHome(userId: string) {

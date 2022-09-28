@@ -44,12 +44,16 @@ async function getNovelTitleAndImg(novelId: string) {
   const { novelTitle, novelImg } = (await db(
     query.getNovelTitleAndImg,
     novelId,
+    "first",
   )) as NovelTitleAndImg;
 
   return { novelTitle, novelImg };
 }
 async function getUserNameByUserId(userId: string) {
-  return (await db(query.getUserNameByUserId, userId)) as string;
+  const { userName } = (await db(query.getUserNameByUserId, userId, "first")) as {
+    userName: string;
+  };
+  return userName;
 }
 async function setWritingInfo(writing: Writing, isOnesUserCreated: boolean) {
   const {
@@ -174,7 +178,7 @@ async function getWritingByWritingId(writingId: string, contentType?: "T" | "R")
     : query.getWritingByWritingId;
   const paramsForDividingWritings = contentType ? [writingId, contentType] : writingId;
 
-  return await db(queryForDividingWritings, paramsForDividingWritings);
+  return (await db(queryForDividingWritings, paramsForDividingWritings, "first")) as Writing;
 }
 
 async function getWritingsByWritingIDs(writingIDs: string[], contentType?: "T" | "R") {
@@ -190,21 +194,27 @@ async function getWritingsByWritingIDs(writingIDs: string[], contentType?: "T" |
   return writings;
 }
 async function getWritingIDsByUserId(userId: string) {
-  const dataForWritingIDs = await db(query.getWritingIDsByUserId, userId);
+  const dataForWritingIDs = (await db(query.getWritingIDsByUserId, userId, "all")) as {
+    writingId: string;
+  }[];
   const writingIDs: string[] = [];
   for (const dataForWritingId of dataForWritingIDs) {
     const { writingId } = dataForWritingId;
-    writingIDs.push(writingId as string);
+    writingIDs.push(writingId);
   }
   return writingIDs;
 }
 
 async function getWritingsByUserId(userId: string) {
-  return (await db(query.getWritings, userId)) as Writing[];
+  return (await db(query.getWritings, userId, "all")) as Writing[];
 }
 
 async function getTalksOrRecommendsByUserId(userId: string, talksOrRecommends: "T" | "R") {
-  return (await db(query.getTalksOrRecommendsByUserId, [userId, talksOrRecommends])) as Writing[];
+  return (await db(
+    query.getTalksOrRecommendsByUserId,
+    [userId, talksOrRecommends],
+    "all",
+  )) as Writing[];
 }
 
 async function getWritingsUserCreatedForUserPageHome(userId: string) {

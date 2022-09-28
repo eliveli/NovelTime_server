@@ -56,11 +56,11 @@ async function getNovelListInfoListByUserId(userId: string, isHome = true) {
   const queryForLimitedOrNot = isHome
     ? query.getTwoOfNovelListInfoListByUserId
     : query.getAllOfNovelListInfoListByUserId;
-  return (await db(queryForLimitedOrNot, userId)) as NovelListInfo[];
+  return (await db(queryForLimitedOrNot, userId, "all")) as NovelListInfo[];
 }
 
 async function getNovelListInfoByListId(novelListId: string) {
-  return (await db(query.getNovelListInfoByListId, novelListId)) as NovelListInfo;
+  return (await db(query.getNovelListInfoByListId, novelListId, "first")) as NovelListInfo;
 }
 
 async function getNovelListInfoListByListIDs(novelListIDs: string[]) {
@@ -79,22 +79,33 @@ async function getNovelListIDsByUserId(userId: string, isHome = true) {
     ? query.getTwoOfNovelListIDsByUserId
     : query.getAllOfNovelListIDsByUserId;
 
-  const dataForNovelListIDs = await db(queryForLimitedNumber, userId);
+  const dataForNovelListIDs = (await db(queryForLimitedNumber, userId, "all")) as Array<{
+    novelListId: string;
+  }>;
 
+  console.log(dataForNovelListIDs);
+
+  console.log(Array.isArray(dataForNovelListIDs));
   const novelListIDs: string[] = [];
-  for (const dataForNovelListID of dataForNovelListIDs) {
+
+  dataForNovelListIDs.forEach((dataForNovelListID) => {
     const { novelListId } = dataForNovelListID;
-    novelListIDs.push(novelListId as string);
-  }
+    novelListIDs.push(novelListId);
+  });
+
+  // for (const dataForNovelListID of dataForNovelListIDs) {
+  //   const { novelListId } = dataForNovelListID;
+  //   novelListIDs.push(novelListId);
+  // }
   return novelListIDs;
 }
 
 async function getNovelInfoByNovelId(novelId: string) {
-  return (await db(query.getNovelInfoByNovelId, novelId)) as Novel;
+  return (await db(query.getNovelInfoByNovelId, novelId, "first")) as Novel;
 }
 
 async function getUserNameAndImgByUserId(userId: string) {
-  return (await db(query.getUserNameAndImgByUserId, userId)) as UserInfo;
+  return (await db(query.getUserNameAndImgByUserId, userId, "first")) as UserInfo;
 }
 async function getNovelsByNovelListInfo(
   novelListInfo: NovelListInfo,
@@ -150,7 +161,11 @@ async function getNovelsAndInfoByListId(novelListId: string, order: number) {
   return { novelListInfo, novels, isNextOrder };
 }
 async function getIsTheListLoginUserLikes(loginUserId: string, novelListId: string) {
-  const data = await db(query.getIsTheListLoginUserLikes, [loginUserId, novelListId], true);
+  const data = (await db(
+    query.getIsTheListLoginUserLikes,
+    [loginUserId, novelListId],
+    "raw",
+  )) as Array<{ [key: string]: any }>;
   const isTheListLoginUserLikes = !!data[0];
 
   return isTheListLoginUserLikes;

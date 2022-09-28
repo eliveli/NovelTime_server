@@ -8,7 +8,7 @@ async function deleteContentLike(
 ) {
   const querySelected =
     contentType === "writing" ? query.deleteWritingLike : query.deleteNovelListLike;
-  await db(querySelected, [userId, writingId]);
+  await db(querySelected, [userId, writingId], "raw");
 }
 async function setContentLike(
   contentType: "writing" | "novelList",
@@ -17,7 +17,7 @@ async function setContentLike(
 ) {
   const querySelected = contentType === "writing" ? query.setWritingLike : query.setNovelListLike;
 
-  await db(querySelected, [userId, writingId]);
+  await db(querySelected, [userId, writingId], "raw");
 }
 async function getContentLike(
   contentType: "writing" | "novelList",
@@ -27,7 +27,9 @@ async function getContentLike(
   let isLike = false;
 
   const querySelected = contentType === "writing" ? query.getWritingLike : query.getNovelListLike;
-  const data = await db(querySelected, [userId, writingId], true);
+  const data = (await db(querySelected, [userId, writingId], "raw")) as Array<{
+    [key: string]: any;
+  }>;
   if (data[0]) {
     isLike = true;
   }
