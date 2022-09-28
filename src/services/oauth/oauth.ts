@@ -7,10 +7,10 @@
 /* eslint-disable import/prefer-default-export */
 import dotenv from "dotenv";
 import fetch from "node-fetch";
-import pool from "../../configs/db";
 import { getTextLength, markDuplicates } from "./oauth.utils";
 import findByUserName, { loopForCheckingUserName } from "../user/findByUserName";
 import { UserInfo } from "../utils/types";
+import db from "../utils/db";
 
 dotenv.config();
 
@@ -141,58 +141,24 @@ async function getUserInfoGoogle(accessToken: string) {
   }
 }
 
-export const setNewUserDB = async (userInfo: UserInfo) => {
-  await pool
-    .getConnection()
-    .then((connection) => {
-      connection
-        .query("INSERT INTO user values (?,?,?,?,?,?,?)", [
-          userInfo.userId,
-          userInfo.userName,
-          userInfo.userImg.src,
-          userInfo.userImg.position,
-          userInfo.userBG.src,
-          userInfo.userBG.position,
-          "", // for refresh token
-        ])
-        .then(() => {
-          // When done with the connection, release it.
-          connection.release();
-        })
+export function setNewUserDB(userInfo: UserInfo) {
+  db("INSERT INTO user values (?,?,?,?,?,?,?)", [
+    userInfo.userId,
+    userInfo.userName,
+    userInfo.userImg.src,
+    userInfo.userImg.position,
+    userInfo.userBG.src,
+    userInfo.userBG.position,
+    "", // for refresh token
+  ]);
+}
 
-        .catch((err) => {
-          console.log(err);
-          connection.release();
-        });
-    })
-    .catch((err) => {
-      console.log(`not connected due to error: ${err}`);
-    });
-};
-
-function getUserInfoDB(userId: string): Promise<any> {
-  return new Promise(async (resolve) => {
-    await pool
-      .getConnection()
-      .then((connection) => {
-        connection
-          .query(
-            "SELECT userName, userImgSrc, userImgPosition, userBGSrc, userBGPosition FROM user WHERE userId = (?) ",
-            userId,
-          )
-          .then((data) => {
-            connection.release();
-            resolve(data);
-          })
-          .catch((err) => {
-            console.log(err);
-            connection.release();
-          });
-      })
-      .catch((err) => {
-        console.log(`not connected due to error: ${err}`);
-      });
-  });
+async function getUserInfoDB(userId: string) {
+  return (await db(
+    "SELECT userName, userImgSrc, userImgPosition, userBGSrc, userBGPosition FROM user WHERE userId = (?) ",
+    userId,
+    "raw",
+  )) as any;
 }
 
 function getUserInfo({ userInfo }: { userInfo: UserInfo }) {
@@ -262,64 +228,15 @@ function getUserInfo({ userInfo }: { userInfo: UserInfo }) {
   });
 }
 
-export const setRefreshTokenDB = async (userId: string, refreshToken: string) =>
-  pool
-    .getConnection()
-    .then((connection) => {
-      connection
-        .query("UPDATE user SET refreshToken = (?) WHERE userId = (?)", [refreshToken, userId])
-        .then(() => {
-          // When done with the connection, release it.
-          connection.release();
-        })
-
-        .catch((err) => {
-          console.log(err);
-          connection.release();
-        });
-    })
-    .catch((err) => {
-      console.log(`not connected due to error: ${err}`);
-    });
+export function setRefreshTokenDB(userId: string, refreshToken: string) {
+  db("UPDATE user SET refreshToken = (?) WHERE userId = (?)", [refreshToken, userId]);
+}
 
 export function deleteRefreshTokenDB(userId: string) {
-  pool
-    .getConnection()
-    .then((connection) => {
-      connection
-        .query("UPDATE user SET refreshToken = (?) WHERE userId = (?)", ["", userId])
-        .then(() => {
-          connection.release();
-        })
-        .catch((err) => {
-          console.log(err);
-          connection.release();
-        });
-    })
-    .catch((err) => {
-      console.log(`not connected due to error: ${err}`);
-    });
+  db("UPDATE user SET refreshToken = (?) WHERE userId = (?)", ["", userId]);
 }
-export async function getRefreshTokenDB(userId: string): Promise<any> {
-  return new Promise(async (resolve) => {
-    await pool
-      .getConnection()
-      .then((connection) => {
-        connection
-          .query("SELECT refreshToken FROM user WHERE userId = (?) ", userId)
-          .then((data) => {
-            connection.release();
-            resolve(data);
-          })
-          .catch((err) => {
-            console.log(err);
-            connection.release();
-          });
-      })
-      .catch((err) => {
-        console.log(`not connected due to error: ${err}`);
-      });
-  });
+export async function getRefreshTokenDB(userId: string) {
+  return (await db("SELECT refreshToken FROM user WHERE userId = (?) ", userId, "raw")) as any;
 }
 // expire seconds //
 // function expireAt(expireIn: number) {

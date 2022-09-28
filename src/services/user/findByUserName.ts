@@ -1,34 +1,12 @@
-import pool from "../../configs/db";
 import { markDuplicates } from "../oauth/oauth.utils";
+import db from "../utils/db";
 
 const query = {
   checkForDuplicate: " SELECT * FROM user WHERE userName = (?) ",
 };
 
-export default function findByUserName(newUserName: string) {
-  // default return type is unknown. it makes error so I changed it as any
-  return new Promise<any>((resolve) => {
-    pool
-      .getConnection()
-      .then((connection) => {
-        connection
-          .query(query.checkForDuplicate, [newUserName])
-          .then((data) => {
-            resolve(data);
-            console.log("findByUserName data[0]:", data[0]);
-            // When done with the connection, release it.
-            connection.release();
-          })
-
-          .catch((err) => {
-            console.log(err);
-            connection.release();
-          });
-      })
-      .catch((err) => {
-        console.log(`not connected due to error: ${err}`);
-      });
-  });
+export default async function findByUserName(newUserName: string) {
+  return (await db(query.checkForDuplicate, [newUserName], "raw")) as any;
 }
 export async function loopForCheckingUserName(userName: string) {
   let newUserName = userName;
