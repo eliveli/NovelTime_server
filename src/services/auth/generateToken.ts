@@ -1,30 +1,11 @@
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
+import { ChangedUserInfo, UserInfo } from "../utils/types";
 
 dotenv.config();
 
 const privateKey = process.env.JWT_PRIVATE_KEY;
 
-type UserInfo = {
-  userId: string;
-  userName: string;
-  userImg: {
-    src: string;
-    position: string;
-  };
-  userBG: {
-    src: string;
-    position: string;
-  };
-};
-type ChangedUserInfo = {
-  userId: string;
-  userName: string;
-  userImgSrc: string;
-  userImgPosition: string;
-  userBGSrc: string;
-  userBGPosition: string;
-};
 export function generateAccessToken(changedUserInfo: ChangedUserInfo) {
   const jwtExpirySeconds = 1800; // 30 min
 

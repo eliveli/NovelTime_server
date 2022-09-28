@@ -2,53 +2,14 @@
 /* eslint-disable no-await-in-loop */
 /* eslint-disable no-restricted-syntax */
 import db from "../utils/db";
+import {
+  Novel,
+  NovelList,
+  NovelListInfo,
+  NovelListSetForMyOrOthersList,
+  NovelListsSimpleInfos,
+} from "../utils/types";
 
-type UserInfo = {
-  userName: string;
-  userImgSrc: string;
-  userImgPosition: string;
-};
-type NovelListInfo = {
-  userId: string;
-  novelListId: string;
-  novelListTitle: string;
-  novelIDs: string;
-};
-
-type Novel = {
-  novelId: string;
-  novelImg: string;
-  novelTitle: string;
-  novelAuthor: string;
-  novelGenre: string;
-  novelIsEnd: boolean;
-};
-
-type NovelList = {
-  novels: Novel[];
-  novelListId: string;
-  userId: string;
-  novelListTitle: string;
-  novelIDs: string;
-};
-interface NovelListsSimpleInfos {
-  listId: string;
-  listTitle: string;
-  userName?: string;
-  userImg?: {
-    src: string;
-    position: string;
-  };
-}
-interface NovelListSetForMyOrOthersList {
-  listId: string;
-  listTitle: string;
-  isLike: boolean;
-  otherList: NovelListsSimpleInfos[];
-  novel: Novel[];
-  userName?: string;
-  userImg?: { src: string; position: string };
-}
 async function getNovelListInfoListByUserId(userId: string, isHome = true) {
   // for userPage get the two novel list
   // for userPageNovelList page get all novel list
@@ -110,7 +71,11 @@ async function getNovelInfoByNovelId(novelId: string) {
     "first",
   )) as Novel;
 }
-
+type UserInfo = {
+  userName: string;
+  userImgSrc: string;
+  userImgPosition: string;
+};
 async function getUserNameAndImgByUserId(userId: string) {
   return (await db(
     "SELECT userName, userImgSrc, userImgPosition FROM user WHERE userId = (?)",

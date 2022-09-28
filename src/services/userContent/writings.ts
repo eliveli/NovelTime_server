@@ -2,38 +2,8 @@
 /* eslint-disable no-await-in-loop */
 /* eslint-disable no-restricted-syntax */
 import db from "../utils/db";
+import { Recommend, Talk, Writing } from "../utils/types";
 
-type Writing = {
-  writingId: string;
-  userId: string;
-  createDate: string;
-  writingTitle: string;
-  writingImg: string;
-  writingDesc: string;
-  novelId: string;
-  likeNO: number;
-  commentNO: number;
-  talkOrRecommend: "T" | "R";
-};
-type Recommend = {
-  recommendId: string;
-  recommendTitle: string;
-  createDate: string;
-  likeNO: number;
-  novelTitle: string;
-  novelImg: string;
-  userName?: string;
-};
-type Talk = {
-  talkId: string;
-  talkTitle: string;
-  createDate: string;
-  likeNO: number;
-  commentNO: number;
-  novelTitle: string;
-  novelImg: string;
-  userName?: string;
-};
 type NovelTitleAndImg = {
   novelTitle: string;
   novelImg: string;

@@ -10,6 +10,7 @@ import fetch from "node-fetch";
 import pool from "../../configs/db";
 import { getTextLength, markDuplicates } from "./oauth.utils";
 import findByUserName, { loopForCheckingUserName } from "../user/findByUserName";
+import { UserInfo } from "../utils/types";
 
 dotenv.config();
 
@@ -140,18 +141,6 @@ async function getUserInfoGoogle(accessToken: string) {
   }
 }
 
-type UserInfo = {
-  userId: string;
-  userName: string;
-  userImg: {
-    src: string;
-    position: string;
-  };
-  userBG: {
-    src: string;
-    position: string;
-  };
-};
 export const setNewUserDB = async (userInfo: UserInfo) => {
   await pool
     .getConnection()
