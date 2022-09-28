@@ -9,10 +9,7 @@ import {
   userNovelListTitlesController,
   toggleLikeController,
 } from "../controllers/userContent";
-import {
-  authenticateAccessTokenMiddleware,
-  getLoginUserIdByTokenForUserNovelListPage,
-} from "../controllers/user";
+import { authenticateAccessTokenMiddleware, getUserIdByTokenMiddleware } from "../controllers/user";
 
 const router = express.Router();
 
@@ -24,13 +21,13 @@ router.get("/othersWriting/:userName/:contentType/:order", userOthersWritingCont
 
 router.get(
   "/myList/:userNameInUserPage/:listId/:order",
-  getLoginUserIdByTokenForUserNovelListPage,
+  getUserIdByTokenMiddleware,
   userMyListController,
 );
 
 router.get(
   "/othersList/:userNameInUserPage/:listId/:order",
-  getLoginUserIdByTokenForUserNovelListPage,
+  getUserIdByTokenMiddleware,
   userOthersListController,
 );
 
