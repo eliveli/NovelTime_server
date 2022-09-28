@@ -10,7 +10,8 @@ import {
 } from "../services/oauth/oauth";
 import { generateToken, generateAccessToken } from "../services/auth/generateToken";
 import findByUserName from "../services/user/findByUserName";
-import saveUserInfo from "../services/user/saveUserInfo";
+import { UserImg } from "../services/utils/types";
+import db from "../services/utils/db";
 
 dotenv.config();
 
@@ -211,10 +212,26 @@ export const checkUserNameController: RequestHandler = (req, res) => {
     });
 };
 
-type ChangedImg = {
-  src: string;
-  position: string;
-};
+async function saveUserInfo(
+  userId: string,
+  changedUserName: string,
+  changedUserImg: UserImg,
+  changedUserBG: UserImg,
+) {
+  await db(
+    `UPDATE user SET userName = (?), userImgSrc = (?), userImgPosition = (?), userBGSrc = (?),  userBGPosition = (?)
+ WHERE userId = (?)`,
+    [
+      changedUserName,
+      changedUserImg.src,
+      changedUserImg.position,
+      changedUserBG.src,
+      changedUserBG.position,
+      userId,
+    ],
+  );
+}
+
 export const saveChangedInfoController: RequestHandler = (req, res) => {
   const {
     changedUserInfo: { changedUserName, changedUserImg, changedUserBG },
@@ -223,16 +240,16 @@ export const saveChangedInfoController: RequestHandler = (req, res) => {
   const userInfo = {
     userId: req.userId as string,
     userName: changedUserName as string,
-    userImg: changedUserImg as ChangedImg,
-    userBG: changedUserBG as ChangedImg,
+    userImg: changedUserImg as UserImg,
+    userBG: changedUserBG as UserImg,
   };
 
   // save changed user info in DB
   saveUserInfo(
     req.userId as string,
     changedUserName as string,
-    changedUserImg as ChangedImg,
-    changedUserBG as ChangedImg,
+    changedUserImg as UserImg,
+    changedUserBG as UserImg,
   )
     .then(async () => {
       const { accessToken, refreshToken } = generateToken({ userInfo });

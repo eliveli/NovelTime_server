@@ -47,20 +47,12 @@ async function getNovelListIDsByUserId(userId: string, isHome = true) {
     novelListId: string;
   }>;
 
-  console.log(dataForNovelListIDs);
-
-  console.log(Array.isArray(dataForNovelListIDs));
   const novelListIDs: string[] = [];
 
-  dataForNovelListIDs.forEach((dataForNovelListID) => {
-    const { novelListId } = dataForNovelListID;
+  dataForNovelListIDs.forEach(({ novelListId }) => {
     novelListIDs.push(novelListId);
   });
 
-  // for (const dataForNovelListID of dataForNovelListIDs) {
-  //   const { novelListId } = dataForNovelListID;
-  //   novelListIDs.push(novelListId);
-  // }
   return novelListIDs;
 }
 
