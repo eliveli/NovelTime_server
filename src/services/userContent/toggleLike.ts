@@ -9,7 +9,7 @@ async function deleteContentLike(
     contentType === "writing"
       ? "DELETE FROM writingLike WHERE userId = (?) and writingId = (?)"
       : "DELETE FROM novelListLike WHERE userId = (?) and novelListId = (?)";
-  await db(querySelected, [userId, writingId], "raw");
+  await db(querySelected, [userId, writingId]);
 }
 async function setContentLike(
   contentType: "writing" | "novelList",
@@ -21,7 +21,7 @@ async function setContentLike(
       ? "INSERT INTO writingLike SET userId = (?), writingId = (?)"
       : "INSERT INTO novelListLike SET userId = (?), novelListId = (?)";
 
-  await db(querySelected, [userId, writingId], "raw");
+  await db(querySelected, [userId, writingId]);
 }
 async function getContentLike(
   contentType: "writing" | "novelList",

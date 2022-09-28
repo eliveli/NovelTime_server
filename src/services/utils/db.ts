@@ -7,9 +7,9 @@ type DataType = {
 // raw : original data (including meta data),
 // all : all elements of data list,
 // first : first element of data list
-type ElementReturned = "raw" | "all" | "first";
+type ElementReturned = "raw" | "all" | "first" | undefined;
 
-export default async function db(dbQuery: string, args: any, elementReturned: ElementReturned) {
+export default async function db(dbQuery: string, args: any, elementReturned?: ElementReturned) {
   // avoid ts error following returning undefined
   // needed to set exact type after returning value
   let dataReturned: unknown;
@@ -30,8 +30,10 @@ export default async function db(dbQuery: string, args: any, elementReturned: El
           [dataReturned] = data;
           // array destructuring. same as >> dataReturned = data[0] // return dict
           break;
+        // don't return any specific data
+        case undefined:
+          break;
         default:
-          dataReturned = data;
           break;
       }
 
