@@ -1,5 +1,4 @@
 import db from "../utils/db";
-import { query } from "../utils/query";
 
 async function deleteContentLike(
   contentType: "writing" | "novelList",
@@ -7,7 +6,9 @@ async function deleteContentLike(
   writingId: string,
 ) {
   const querySelected =
-    contentType === "writing" ? query.deleteWritingLike : query.deleteNovelListLike;
+    contentType === "writing"
+      ? "DELETE FROM writingLike WHERE userId = (?) and writingId = (?)"
+      : "DELETE FROM novelListLike WHERE userId = (?) and novelListId = (?)";
   await db(querySelected, [userId, writingId], "raw");
 }
 async function setContentLike(
@@ -15,7 +16,10 @@ async function setContentLike(
   userId: string,
   writingId: string,
 ) {
-  const querySelected = contentType === "writing" ? query.setWritingLike : query.setNovelListLike;
+  const querySelected =
+    contentType === "writing"
+      ? "INSERT INTO writingLike SET userId = (?), writingId = (?)"
+      : "INSERT INTO novelListLike SET userId = (?), novelListId = (?)";
 
   await db(querySelected, [userId, writingId], "raw");
 }
@@ -26,7 +30,10 @@ async function getContentLike(
 ) {
   let isLike = false;
 
-  const querySelected = contentType === "writing" ? query.getWritingLike : query.getNovelListLike;
+  const querySelected =
+    contentType === "writing"
+      ? "SELECT * FROM writingLike WHERE userId = (?) and writingId = (?)"
+      : "SELECT * FROM novelListLike WHERE userId = (?) and novelListId = (?)";
   const data = (await db(querySelected, [userId, writingId], "raw")) as Array<{
     [key: string]: any;
   }>;

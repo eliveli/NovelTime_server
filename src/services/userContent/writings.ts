@@ -2,7 +2,6 @@
 /* eslint-disable no-await-in-loop */
 /* eslint-disable no-restricted-syntax */
 import db from "../utils/db";
-import { query } from "../utils/query";
 
 type Writing = {
   writingId: string;
@@ -42,7 +41,7 @@ type NovelTitleAndImg = {
 
 async function getNovelTitleAndImg(novelId: string) {
   const { novelTitle, novelImg } = (await db(
-    query.getNovelTitleAndImg,
+    "SELECT novelTitle, novelImg FROM novelInfo WHERE novelId = (?)",
     novelId,
     "first",
   )) as NovelTitleAndImg;
@@ -50,7 +49,11 @@ async function getNovelTitleAndImg(novelId: string) {
   return { novelTitle, novelImg };
 }
 async function getUserNameByUserId(userId: string) {
-  const { userName } = (await db(query.getUserNameByUserId, userId, "first")) as {
+  const { userName } = (await db(
+    "SELECT userName FROM user WHERE userId = (?)",
+    userId,
+    "first",
+  )) as {
     userName: string;
   };
   return userName;
@@ -174,8 +177,8 @@ async function getWritingByWritingId(writingId: string, contentType?: "T" | "R")
   // for othersWriting in UserPage divide as content type
   // for UserPageHome page get all writings
   const queryForDividingWritings = contentType
-    ? query.getTalksOrRecommendsByWritingId
-    : query.getWritingByWritingId;
+    ? "SELECT * FROM writing WHERE writingId = (?) and talkOrRecommend = (?)"
+    : "SELECT * FROM writing WHERE writingId = (?)";
   const paramsForDividingWritings = contentType ? [writingId, contentType] : writingId;
 
   return (await db(queryForDividingWritings, paramsForDividingWritings, "first")) as Writing;
@@ -194,7 +197,11 @@ async function getWritingsByWritingIDs(writingIDs: string[], contentType?: "T" |
   return writings;
 }
 async function getWritingIDsByUserId(userId: string) {
-  const dataForWritingIDs = (await db(query.getWritingIDsByUserId, userId, "all")) as {
+  const dataForWritingIDs = (await db(
+    "SELECT writingId FROM writingLike WHERE userId = (?)",
+    userId,
+    "all",
+  )) as {
     writingId: string;
   }[];
   const writingIDs: string[] = [];
@@ -206,12 +213,12 @@ async function getWritingIDsByUserId(userId: string) {
 }
 
 async function getWritingsByUserId(userId: string) {
-  return (await db(query.getWritings, userId, "all")) as Writing[];
+  return (await db("SELECT * FROM writing WHERE userId = (?)", userId, "all")) as Writing[];
 }
 
 async function getTalksOrRecommendsByUserId(userId: string, talksOrRecommends: "T" | "R") {
   return (await db(
-    query.getTalksOrRecommendsByUserId,
+    "SELECT * FROM writing WHERE userId = (?) and talkOrRecommend = (?)",
     [userId, talksOrRecommends],
     "all",
   )) as Writing[];

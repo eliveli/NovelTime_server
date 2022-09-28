@@ -2,7 +2,6 @@
 /* eslint-disable no-await-in-loop */
 /* eslint-disable no-restricted-syntax */
 import db from "../utils/db";
-import { query } from "../utils/query";
 
 type UserInfo = {
   userName: string;
@@ -54,13 +53,17 @@ async function getNovelListInfoListByUserId(userId: string, isHome = true) {
   // for userPage get the two novel list
   // for userPageNovelList page get all novel list
   const queryForLimitedOrNot = isHome
-    ? query.getTwoOfNovelListInfoListByUserId
-    : query.getAllOfNovelListInfoListByUserId;
+    ? "SELECT * FROM novelList WHERE userId = (?) limit 2"
+    : "SELECT * FROM novelList WHERE userId = (?)";
   return (await db(queryForLimitedOrNot, userId, "all")) as NovelListInfo[];
 }
 
 async function getNovelListInfoByListId(novelListId: string) {
-  return (await db(query.getNovelListInfoByListId, novelListId, "first")) as NovelListInfo;
+  return (await db(
+    "SELECT * FROM novelList WHERE novelListId = (?)",
+    novelListId,
+    "first",
+  )) as NovelListInfo;
 }
 
 async function getNovelListInfoListByListIDs(novelListIDs: string[]) {
@@ -76,8 +79,8 @@ async function getNovelListIDsByUserId(userId: string, isHome = true) {
   // for userPage get the two novel list IDs
   // for userPageNovelList page get all novel list IDs
   const queryForLimitedNumber = isHome
-    ? query.getTwoOfNovelListIDsByUserId
-    : query.getAllOfNovelListIDsByUserId;
+    ? "SELECT novelListId FROM novelListLike WHERE userId = (?) limit 2"
+    : "SELECT novelListId FROM novelListLike WHERE userId = (?)";
 
   const dataForNovelListIDs = (await db(queryForLimitedNumber, userId, "all")) as Array<{
     novelListId: string;
@@ -101,11 +104,19 @@ async function getNovelListIDsByUserId(userId: string, isHome = true) {
 }
 
 async function getNovelInfoByNovelId(novelId: string) {
-  return (await db(query.getNovelInfoByNovelId, novelId, "first")) as Novel;
+  return (await db(
+    "SELECT novelId, novelImg, novelTitle, novelAuthor, novelGenre, novelIsEnd FROM novelInfo WHERE novelId = (?)",
+    novelId,
+    "first",
+  )) as Novel;
 }
 
 async function getUserNameAndImgByUserId(userId: string) {
-  return (await db(query.getUserNameAndImgByUserId, userId, "first")) as UserInfo;
+  return (await db(
+    "SELECT userName, userImgSrc, userImgPosition FROM user WHERE userId = (?)",
+    userId,
+    "first",
+  )) as UserInfo;
 }
 async function getNovelsByNovelListInfo(
   novelListInfo: NovelListInfo,
@@ -162,7 +173,7 @@ async function getNovelsAndInfoByListId(novelListId: string, order: number) {
 }
 async function getIsTheListLoginUserLikes(loginUserId: string, novelListId: string) {
   const data = (await db(
-    query.getIsTheListLoginUserLikes,
+    "SELECT novelListId FROM novelListLike WHERE userId = (?) and novelListId = (?)",
     [loginUserId, novelListId],
     "raw",
   )) as Array<{ [key: string]: any }>;
