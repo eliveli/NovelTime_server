@@ -16,36 +16,37 @@ dotenv.config();
 
 const privateKey = process.env.JWT_PRIVATE_KEY;
 
+// note : don't make controller async
+//  just use promise then/catch in controller instead of using async/await to controller itself
+//  to avoid the following eslint error
+//  "Promise-returning function provided to variable where a void return was expected"
+
 export const loginController: RequestHandler = (req, res) => {
   loginOauthServer(req.params.oauthServer, req.query.data as string)
-    .then((userInfo) => {
-      console.log("before generateToken in loginController:", userInfo);
+    .then(async (userInfo) => {
+      if (!userInfo) throw new Error("no oauth server");
 
-      try {
-        if (!userInfo) throw new Error("no oauth server");
+      const { accessToken, refreshToken } = generateToken({ userInfo });
 
-        const { accessToken, refreshToken } = generateToken({ userInfo });
+      await setRefreshTokenDB(userInfo.userId, refreshToken);
 
-        setRefreshTokenDB(userInfo.userId, refreshToken);
+      res.cookie("refreshToken", refreshToken, {
+        path: "/user/refreshToken",
+        expires: new Date(Date.now() + 2 * 30 * 24 * 60 * 60 * 1000), // 2 months
+        httpOnly: true, // You can't access these tokens in the client's javascript
+        secure: process.env.NODE_ENV === "production", // Forces to use https in production
+        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax", // set to none for cross-request
+        // to set "sameSite:none", "secure:true" must be set
+      });
 
-        res.cookie("refreshToken", refreshToken, {
-          path: "/user/refreshToken",
-          expires: new Date(Date.now() + 2 * 30 * 24 * 60 * 60 * 1000), // 2 months
-          httpOnly: true, // You can't access these tokens in the client's javascript
-          secure: process.env.NODE_ENV === "production", // Forces to use https in production
-          sameSite: process.env.NODE_ENV === "production" ? "none" : "lax", // set to none for cross-request
-          // to set "sameSite:none", "secure:true" must be set
-        });
-
-        return res.json({ accessToken, userInfo });
-      } catch (e) {
-        if (e instanceof jwt.JsonWebTokenError) {
-          console.log("failed to generate token, jsonWebtokenError : ", e);
-        }
-        console.log("failed to generate token or set cookie : ", e);
-      }
+      return res.json({ accessToken, userInfo });
     })
-    .catch((err) => console.log("in controller : ", err));
+    .catch((err) => {
+      if (err instanceof jwt.JsonWebTokenError) {
+        console.log("failed to generate token, jsonWebtokenError : ", err);
+      }
+      console.log("error occurred in loginController: ", err);
+    });
 };
 
 type ChangedUserInfo = {
@@ -62,8 +63,6 @@ export const authenticateAccessTokenMiddleware: RequestHandler = (req, res, next
   const authHeader = req.headers.authorization;
   const token = authHeader && authHeader.split(" ")[1];
 
-  console.log("authHeader: ", authHeader);
-  console.log("token:", token);
   if (!token) {
     console.log("wrong token format or token was not sended");
     return res.status(400);
@@ -102,20 +101,22 @@ export const logoutController: RequestHandler = (req, res) => {
     console.log("user id was not set in header");
     return res.status(400).end();
   }
-  try {
-    deleteRefreshTokenDB(userId);
-    res.clearCookie("refreshToken", { path: "/user/refreshToken" });
-    res.removeHeader("authorization");
 
-    console.log("로그아웃 완료");
-    res.json("로그아웃 완료");
-    // 리프레시 토큰 디비에서 지우기
-    // 리프레시 토큰 쿠키 지우기
-    // 헤더 액세스 토큰 지우기
-    // 프론트에서 로그인 유저 정보 지우기
-  } catch (error) {
-    console.log(error);
-  }
+  deleteRefreshTokenDB(userId)
+    .then(() => {
+      res.clearCookie("refreshToken", { path: "/user/refreshToken" });
+      res.removeHeader("authorization");
+
+      console.log("로그아웃 완료");
+      res.json("로그아웃 완료");
+      // 리프레시 토큰 디비에서 지우기
+      // 리프레시 토큰 쿠키 지우기
+      // 헤더 액세스 토큰 지우기
+      // 프론트에서 로그인 유저 정보 지우기
+    })
+    .catch((error) => {
+      console.log(error);
+    });
 };
 
 // 1. 리프레시 토큰 검증 2. 액세스 토큰 발급
@@ -248,10 +249,10 @@ export const saveChangedInfoController: RequestHandler = (req, res) => {
     changedUserImg as UserImg,
     changedUserBG as UserImg,
   )
-    .then(() => {
+    .then(async () => {
       const { accessToken, refreshToken } = generateToken({ userInfo });
 
-      setRefreshTokenDB(userInfo.userId, refreshToken);
+      await setRefreshTokenDB(userInfo.userId, refreshToken);
 
       res.cookie("refreshToken", refreshToken, {
         path: "/user/refreshToken",

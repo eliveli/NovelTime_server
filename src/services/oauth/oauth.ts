@@ -1,10 +1,3 @@
-/* eslint-disable @typescript-eslint/no-misused-promises */
-/* eslint-disable @typescript-eslint/no-floating-promises */
-/* eslint-disable @typescript-eslint/no-unsafe-return */
-/* eslint-disable consistent-return */
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable implicit-arrow-linebreak */
-/* eslint-disable import/prefer-default-export */
 import dotenv from "dotenv";
 import fetch from "node-fetch";
 import { getTextLength, markDuplicates } from "./oauth.utils";
@@ -141,8 +134,8 @@ async function getUserInfoGoogle(accessToken: string) {
   }
 }
 
-export function setNewUserDB(userInfo: UserInfo) {
-  db("INSERT INTO user values (?,?,?,?,?,?,?)", [
+export async function setNewUserDB(userInfo: UserInfo) {
+  await db("INSERT INTO user values (?,?,?,?,?,?,?)", [
     userInfo.userId,
     userInfo.userName,
     userInfo.userImg.src,
@@ -212,12 +205,12 @@ function getUserInfo({ userInfo }: { userInfo: UserInfo }) {
           return newUserName;
         })
         .then((userName) => loopForCheckingUserName(userName))
-        .then((changedUserName) => {
+        .then(async (changedUserName) => {
           const newUserInfo = { ...userInfo, userName: changedUserName };
 
           console.log("changedUserName:", changedUserName);
           console.log("newUserInfo:", newUserInfo);
-          setNewUserDB(newUserInfo);
+          await setNewUserDB(newUserInfo);
           return newUserInfo;
         })
 
@@ -228,12 +221,12 @@ function getUserInfo({ userInfo }: { userInfo: UserInfo }) {
   });
 }
 
-export function setRefreshTokenDB(userId: string, refreshToken: string) {
-  db("UPDATE user SET refreshToken = (?) WHERE userId = (?)", [refreshToken, userId]);
+export async function setRefreshTokenDB(userId: string, refreshToken: string) {
+  await db("UPDATE user SET refreshToken = (?) WHERE userId = (?)", [refreshToken, userId]);
 }
 
-export function deleteRefreshTokenDB(userId: string) {
-  db("UPDATE user SET refreshToken = (?) WHERE userId = (?)", ["", userId]);
+export async function deleteRefreshTokenDB(userId: string) {
+  await db("UPDATE user SET refreshToken = (?) WHERE userId = (?)", ["", userId]);
 }
 export async function getRefreshTokenDB(userId: string) {
   return (await db("SELECT refreshToken FROM user WHERE userId = (?) ", userId, "first")) as {

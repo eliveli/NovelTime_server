@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-misused-promises */
-/* eslint-disable no-restricted-syntax */
 import db from "../utils/db";
 
 type Comment = {

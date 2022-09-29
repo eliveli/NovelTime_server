@@ -1,6 +1,3 @@
-/* eslint-disable @typescript-eslint/no-misused-promises */
-/* eslint-disable no-await-in-loop */
-/* eslint-disable no-restricted-syntax */
 import db from "../utils/db";
 import { Recommend, Talk, Writing } from "../utils/types";
 
