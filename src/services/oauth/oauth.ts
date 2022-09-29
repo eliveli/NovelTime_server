@@ -202,8 +202,8 @@ function getUserInfo({ userInfo }: { userInfo: UserInfo }) {
     return (
       // - check for duplicate username
       findByUserName(newUserName)
-        .then((data1) => {
-          if (data1[0]) {
+        .then((_userInfo) => {
+          if (_userInfo) {
             // if the user name already exists in DB
             // : set the user name except its last character and check for duplicates
             newUserName = newUserName.substring(0, newUserName.length - 1);
@@ -236,7 +236,9 @@ export function deleteRefreshTokenDB(userId: string) {
   db("UPDATE user SET refreshToken = (?) WHERE userId = (?)", ["", userId]);
 }
 export async function getRefreshTokenDB(userId: string) {
-  return (await db("SELECT refreshToken FROM user WHERE userId = (?) ", userId, "raw")) as any;
+  return (await db("SELECT refreshToken FROM user WHERE userId = (?) ", userId, "first")) as {
+    refreshToken: string;
+  };
 }
 // expire seconds //
 // function expireAt(expireIn: number) {
