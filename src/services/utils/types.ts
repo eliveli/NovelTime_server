@@ -95,3 +95,13 @@ export type Talk = {
   novelImg: string;
   userName?: string;
 };
+
+export type Comment = {
+  commentId: string;
+  writingId: string;
+  userId: string;
+  novelTitle: string;
+  createDate: string;
+  commentContent: string;
+  originalCommentIdForReComment: string; // if it is not "" empty string, get the info for it
+};

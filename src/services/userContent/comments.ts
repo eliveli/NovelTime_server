@@ -1,14 +1,5 @@
 import db from "../utils/db";
-
-type Comment = {
-  commentId: string;
-  writingId: string;
-  userId: string;
-  novelTitle: string;
-  createDate: string;
-  commentContent: string;
-  originalCommentIdForReComment: string; // if it is not "" empty string, get the info for it
-};
+import { Comment } from "../utils/types";
 
 async function getTalkTitle(talkId: string) {
   const { talkTitle } = (await db(
