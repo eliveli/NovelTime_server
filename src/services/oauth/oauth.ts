@@ -2,7 +2,7 @@ import dotenv from "dotenv";
 import fetch from "node-fetch";
 import { getTextLength, markDuplicates } from "./oauth.utils";
 import findByUserName, { loopForCheckingUserName } from "../user/findByUserName";
-import { UserInfo } from "../utils/types";
+import { UserInfo, UserInfoInDB } from "../utils/types";
 import db from "../utils/db";
 
 dotenv.config();
@@ -29,109 +29,87 @@ async function getTokenKakao(code: string) {
     .map((k) => `${encodeURIComponent(k)}=${encodeURI(bodyData[k as keyof BodyDataType])}`)
     .join("&");
 
-  try {
-    return await fetch("https://kauth.kakao.com/oauth/token", {
-      method: "POST",
-      headers: {
-        "Content-type": "application/x-www-form-urlencoded;charset=utf-8",
-      },
-      body: queryStringBody, // only query string required for redirect uri
+  return (await fetch("https://kauth.kakao.com/oauth/token", {
+    method: "POST",
+    headers: {
+      "Content-type": "application/x-www-form-urlencoded;charset=utf-8",
+    },
+    body: queryStringBody, // only query string required for redirect uri
+  })
+    .then((res) => {
+      console.log("token from server : ", res);
+      return res.json();
     })
-      .then((res) => {
-        console.log("token from server : ", res);
-        return res.json();
-      })
-      .catch((err) => {
-        console.log("in service : fail when getting token : ", err);
-      });
-  } catch (error) {
-    console.log("in service, getAccessToken error: ", error);
-  }
+    .catch((err) => {
+      console.log("in service, getTokenKakao error: ", err);
+    })) as unknown;
 }
 
 async function getTokenNaver(code: string) {
   const BEFORE_ENCODED_URI_NAVER = process.env.NAVER_STATE as string;
   const NAVER_STATE = encodeURI(BEFORE_ENCODED_URI_NAVER);
 
-  try {
-    return await fetch(
-      `https://nid.naver.com/oauth2.0/token?grant_type=authorization_code&client_id=${
-        process.env.NAVER_CLIENT_ID as string
-      }&client_secret=${
-        process.env.NAVER_CLIENT_SECRET as string
-      }&code=${code}&state=${NAVER_STATE}`,
-    )
-      .then((res) => {
-        console.log("token info from server : ", res);
-        return res.json();
-      })
-      .catch((err) => {
-        console.log("in service : fail when getting token : ", err);
-      });
-  } catch (error) {
-    console.log("in service, getToken error: ", error);
-  }
+  return (await fetch(
+    `https://nid.naver.com/oauth2.0/token?grant_type=authorization_code&client_id=${
+      process.env.NAVER_CLIENT_ID as string
+    }&client_secret=${process.env.NAVER_CLIENT_SECRET as string}&code=${code}&state=${NAVER_STATE}`,
+  )
+    .then((res) => {
+      console.log("token info from server : ", res);
+      return res.json();
+    })
+    .catch((err) => {
+      console.log("in service, getTokenNaver error: ", err);
+    })) as unknown;
 }
 
 async function getUserInfoKakao(accessToken: string) {
-  try {
-    return await fetch("https://kapi.kakao.com/v2/user/me", {
-      method: "GET",
-      headers: {
-        "Content-type": "application/x-www-form-urlencoded;charset=utf-8",
-        Authorization: `Bearer ${accessToken}`,
-      },
+  return (await fetch("https://kapi.kakao.com/v2/user/me", {
+    method: "GET",
+    headers: {
+      "Content-type": "application/x-www-form-urlencoded;charset=utf-8",
+      Authorization: `Bearer ${accessToken}`,
+    },
+  })
+    .then((res) => {
+      console.log("user info : ", res);
+      return res.json();
     })
-      .then((res) => {
-        console.log("user info : ", res);
-        return res.json();
-      })
-      .catch((err) => {
-        console.log("in service : fail when getting user info : ", err);
-      });
-  } catch (error) {
-    console.log("in service, getUserInfoKakao error: ", error);
-  }
+    .catch((err) => {
+      console.log("in service, getUserInfoKakao : ", err);
+    })) as unknown;
 }
 
 async function getUserInfoNaver(accessToken: string) {
-  try {
-    return await fetch("https://openapi.naver.com/v1/nid/me", {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
+  return (await fetch("https://openapi.naver.com/v1/nid/me", {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  })
+    .then((res) => {
+      console.log("user info : ", res);
+      return res.json();
     })
-      .then((res) => {
-        console.log("user info : ", res);
-        return res.json();
-      })
-      .catch((err) => {
-        console.log("in service : fail when getting user info : ", err);
-      });
-  } catch (error) {
-    console.log("in service, getUserInfoNaver error: ", error);
-  }
+    .catch((err) => {
+      console.log("in service, getUserInfoNaver : ", err);
+    })) as unknown;
 }
 
 async function getUserInfoGoogle(accessToken: string) {
-  try {
-    return await fetch("https://www.googleapis.com/oauth2/v2/userinfo", {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
+  return (await fetch("https://www.googleapis.com/oauth2/v2/userinfo", {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  })
+    .then((res) => {
+      console.log("user info by google: ", res);
+      return res.json();
     })
-      .then((res) => {
-        console.log("user info by google: ", res);
-        return res.json();
-      })
-      .catch((err) => {
-        console.log("in service : fail when getting user info : ", err);
-      });
-  } catch (error) {
-    console.log("in service, getUserInfoGoogle error: ", error);
-  }
+    .catch((err) => {
+      console.log("in service, getUserInfoGoogle : ", err);
+    })) as unknown;
 }
 
 export async function setNewUserDB(userInfo: UserInfo) {
@@ -150,8 +128,8 @@ async function getUserInfoDB(userId: string) {
   return (await db(
     "SELECT userName, userImgSrc, userImgPosition, userBGSrc, userBGPosition FROM user WHERE userId = (?) ",
     userId,
-    "raw",
-  )) as any;
+    "first",
+  )) as UserInfoInDB;
 }
 
 function getUserInfo({ userInfo }: { userInfo: UserInfo }) {
@@ -167,19 +145,19 @@ function getUserInfo({ userInfo }: { userInfo: UserInfo }) {
   //     in this case, user must login again and get new tokens.
   // - if user is new(signup user), set new user info in DB
 
-  return getUserInfoDB(userInfo.userId).then((data) => {
+  return getUserInfoDB(userInfo.userId).then((userInfoDB) => {
     // 1. user who is in DB //
-    if (data[0]?.userName) {
+    if (userInfoDB?.userName) {
       return {
         userId: userInfo.userId,
-        userName: data[0].userName,
+        userName: userInfoDB.userName,
         userImg: {
-          src: data[0].userImgSrc,
-          position: data[0].userImgPosition,
+          src: userInfoDB.userImgSrc,
+          position: userInfoDB.userImgPosition,
         },
         userBG: {
-          src: data[0].userBGSrc,
-          position: data[0].userBGPosition,
+          src: userInfoDB.userBGSrc,
+          position: userInfoDB.userBGPosition,
         },
       };
     }
@@ -238,22 +216,27 @@ export async function getRefreshTokenDB(userId: string) {
 //   const timestampSecond = +new Date() / 1000; // current time stamp seconds
 //   return timestampSecond + expireIn;
 // }
-
+type UserInfoKakao = {
+  kakao_account: { email: string };
+  properties: {
+    nickname: string;
+    profile_image: string;
+  };
+};
 async function loginKakao(code: string) {
-  const tokenKakao = await getTokenKakao(code);
+  const tokenKakao = (await getTokenKakao(code)) as { access_token: string };
   const token = {
-    accessToken: tokenKakao.access_token as string,
+    accessToken: tokenKakao.access_token,
     // accessTokenExpireAt: expireAt(tokenKakao.expires_in as number),
     // refreshToken: tokenKakao.refresh_token as string,
     // refreshTokenExpireAt: expireAt(tokenKakao.refresh_token_expires_in as number),
   };
-
-  const userInfoKakao = await getUserInfoKakao(token.accessToken);
+  const userInfoKakao = (await getUserInfoKakao(token.accessToken)) as UserInfoKakao;
   const userInfo = {
-    userId: `kakao ${userInfoKakao.kakao_account.email as string}`,
-    userName: userInfoKakao.properties.nickname as string,
+    userId: `kakao ${userInfoKakao.kakao_account.email}`,
+    userName: userInfoKakao.properties.nickname,
     userImg: {
-      src: userInfoKakao.properties.profile_image as string,
+      src: userInfoKakao.properties.profile_image,
       position: "",
     },
     userBG: { src: "", position: "" },
@@ -262,16 +245,21 @@ async function loginKakao(code: string) {
   return getUserInfo({ userInfo });
 }
 
+type UserInfoNaver = {
+  response: {
+    email: string;
+    nickname: string;
+    profile_image: string;
+  };
+};
 async function loginNaver(code: string) {
-  const tokenNaver = await getTokenNaver(code);
-
-  const userInfoNaver = await getUserInfoNaver(tokenNaver.access_token as string);
-  console.log("userInfoNaver:", userInfoNaver);
+  const tokenNaver = (await getTokenNaver(code)) as { access_token: string };
+  const userInfoNaver = (await getUserInfoNaver(tokenNaver.access_token)) as UserInfoNaver;
   const userInfo = {
-    userId: `naver ${userInfoNaver.response.email as string}`,
-    userName: userInfoNaver.response.nickname as string,
+    userId: `naver ${userInfoNaver.response.email}`,
+    userName: userInfoNaver.response.nickname,
     userImg: {
-      src: userInfoNaver.response.profile_image as string,
+      src: userInfoNaver.response.profile_image,
       position: "",
     },
     userBG: { src: "", position: "" },
@@ -280,14 +268,18 @@ async function loginNaver(code: string) {
   return getUserInfo({ userInfo });
 }
 
+type UserInfoGoogle = {
+  id: string;
+  name: string;
+  picture: string;
+};
 async function loginGoogle(accessToken: string) {
-  const userInfoByGoogle = await getUserInfoGoogle(accessToken);
-
+  const userInfoByGoogle = (await getUserInfoGoogle(accessToken)) as UserInfoGoogle;
   const userInfo = {
-    userId: `google ${userInfoByGoogle.id as string}`,
-    userName: userInfoByGoogle.name as string,
+    userId: `google ${userInfoByGoogle.id}`,
+    userName: userInfoByGoogle.name,
     userImg: {
-      src: userInfoByGoogle.picture as string,
+      src: userInfoByGoogle.picture,
       position: "",
     },
     userBG: { src: "", position: "" },

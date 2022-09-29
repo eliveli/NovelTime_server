@@ -11,7 +11,7 @@ export type UserInfo = {
   };
 };
 export type UserInfoInDB = {
-  userId: string;
+  userId?: string;
   userName: string;
   userImgSrc: string;
   userImgPosition: string;
