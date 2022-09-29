@@ -1,10 +1,4 @@
-import pool from "../configs/db";
-
-const query = {
-  insertNovel: "INSERT INTO novelInfo values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
-  getNovels: " SELECT * FROM novelInfo WHERE novelTitle like (?) ",
-  getNovel: " SELECT * FROM novelInfo WHERE novelId = (?) ",
-};
+import db from "./utils/db";
 
 interface NovelInfo {
   novelId: string;
@@ -19,88 +13,35 @@ interface NovelInfo {
   novelUrl: string;
 }
 
-export const setNovel = async (novelInfo: NovelInfo) => {
-  await pool
-    .getConnection()
-    .then((connection) => {
-      connection
-        .query(query.insertNovel, [
-          novelInfo.novelId,
-          novelInfo.novelImg,
-          novelInfo.novelTitle,
-          novelInfo.novelDesc,
-          novelInfo.novelAuthor,
-          novelInfo.novelAge,
-          novelInfo.novelGenre,
-          novelInfo.novelIsEnd,
-          novelInfo.novelPlatform,
-          "", // platform2
-          "", // platform3
-          novelInfo.novelUrl,
-          "", // url2
-          "", // url3
-          0,
-          0,
-        ])
-        .then(() => {
-          // When done with the connection, release it.
-          connection.release();
-        })
+export async function setNovel(novelInfo: NovelInfo) {
+  await db("INSERT INTO novelInfo values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", [
+    novelInfo.novelId,
+    novelInfo.novelImg,
+    novelInfo.novelTitle,
+    novelInfo.novelDesc,
+    novelInfo.novelAuthor,
+    novelInfo.novelAge,
+    novelInfo.novelGenre,
+    novelInfo.novelIsEnd,
+    novelInfo.novelPlatform,
+    "", // platform2
+    "", // platform3
+    novelInfo.novelUrl,
+    "", // url2
+    "", // url3
+    0,
+    0,
+  ]);
+}
 
-        .catch((err) => {
-          console.log(err);
-          connection.release();
-        });
-    })
-    .catch((err) => {
-      console.log(`not connected due to error: ${err}`);
-    });
-};
+export async function getNovels(novelTitle: string) {
+  return (await db(
+    "SELECT * FROM novelInfo WHERE novelTitle like (?)",
+    `%${novelTitle}%`,
+    "raw",
+  )) as any;
+}
 
-export const getNovels = (novelTitle: string) =>
-  new Promise(async (resolve) => {
-    await pool
-      .getConnection()
-      .then((connection) => {
-        connection
-          .query(query.getNovels, `%${novelTitle}%`)
-          .then((data) => {
-            resolve(data);
-
-            // When done with the connection, release it.
-            connection.release();
-          })
-
-          .catch((err) => {
-            console.log(err);
-            connection.release();
-          });
-      })
-      .catch((err) => {
-        console.log(`not connected due to error: ${err}`);
-      });
-  });
-
-export const getNovel = (novelId: string) =>
-  new Promise(async (resolve) => {
-    await pool
-      .getConnection()
-      .then((connection) => {
-        connection
-          .query(query.getNovel, novelId)
-          .then((data) => {
-            resolve(data[0]);
-
-            // When done with the connection, release it.
-            connection.release();
-          })
-
-          .catch((err) => {
-            console.log(err);
-            connection.release();
-          });
-      })
-      .catch((err) => {
-        console.log(`not connected due to error: ${err}`);
-      });
-  });
+export async function getNovel(novelId: string) {
+  return (await db("SELECT * FROM novelInfo WHERE novelId = (?)", novelId, "first")) as any;
+}
