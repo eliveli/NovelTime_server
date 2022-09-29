@@ -39,11 +39,15 @@
         "object-curly-newline": "warn",
         "consistent-return": "off",
         "no-return-await": "off",
+        "no-await-in-loop": "off", // 루프 안에서 비동기 수행 시 순서대로 작업. 병렬X
 
         "@typescript-eslint/no-var-requires": "warn",
         "@typescript-eslint/no-unsafe-assignment": "warn",
         "@typescript-eslint/no-unsafe-call": "warn",
         "@typescript-eslint/no-unsafe-return": "warn",
+
+        // override Airbnb's preset // except "ForOfStatement" from following syntax list
+        "no-restricted-syntax": ["error", "ForInStatement", "LabeledStatement", "WithStatement"],
 
         "import/extensions": [
             "error",

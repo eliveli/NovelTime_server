@@ -1,4 +1,3 @@
-/* eslint-disable import/prefer-default-export */
 import { RequestHandler } from "express";
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
@@ -19,7 +18,7 @@ const privateKey = process.env.JWT_PRIVATE_KEY;
 
 export const loginController: RequestHandler = (req, res) => {
   loginOauthServer(req.params.oauthServer, req.query.data as string)
-    .then(async (userInfo) => {
+    .then((userInfo) => {
       console.log("before generateToken in loginController:", userInfo);
 
       try {
@@ -27,7 +26,7 @@ export const loginController: RequestHandler = (req, res) => {
 
         const { accessToken, refreshToken } = generateToken({ userInfo });
 
-        await setRefreshTokenDB(userInfo.userId, refreshToken);
+        setRefreshTokenDB(userInfo.userId, refreshToken);
 
         res.cookie("refreshToken", refreshToken, {
           path: "/user/refreshToken",
@@ -151,12 +150,10 @@ export const refreshTokenController: RequestHandler = (req, res) => {
   // Make sure that refresh token is the one in DB
   getRefreshTokenDB(payload.userId)
     .then((data) => {
-      console.log("data:", data);
-
-      if (!data[0]) {
+      if (!data) {
         throw new Error("user id might be not correct");
       }
-      const isUsersToken = refreshToken === data[0].refreshToken;
+      const isUsersToken = refreshToken === data.refreshToken;
 
       if (!isUsersToken) {
         throw new Error("access token is different from one in DB");
@@ -200,9 +197,9 @@ export const checkUserNameController: RequestHandler = (req, res) => {
   const { newUserName } = req.body;
   // check for duplicate username
   findByUserName(newUserName as string)
-    .then((data) => {
+    .then((userInfo) => {
       // if the user name exists or not
-      if (!data[0]) {
+      if (!userInfo) {
         return res.json("you can use this name");
       }
       return res.json("you can't use this name");
@@ -251,10 +248,10 @@ export const saveChangedInfoController: RequestHandler = (req, res) => {
     changedUserImg as UserImg,
     changedUserBG as UserImg,
   )
-    .then(async () => {
+    .then(() => {
       const { accessToken, refreshToken } = generateToken({ userInfo });
 
-      await setRefreshTokenDB(userInfo.userId, refreshToken);
+      setRefreshTokenDB(userInfo.userId, refreshToken);
 
       res.cookie("refreshToken", refreshToken, {
         path: "/user/refreshToken",
@@ -286,12 +283,12 @@ export const getUserInfoController: RequestHandler = (req, res) => {
   const { userName } = req.params;
   // get user info from DB
   findByUserName(userName)
-    .then(async (data) => {
-      if (data[0]) {
+    .then((_userInfo) => {
+      if (_userInfo) {
         const userInfo = {
           userName,
-          userImg: { src: data[0].userImgSrc, position: data[0].userImgPosition },
-          userBG: { src: data[0].userBGSrc, position: data[0].userBGPosition },
+          userImg: { src: _userInfo.userImgSrc, position: _userInfo.userImgPosition },
+          userBG: { src: _userInfo.userBGSrc, position: _userInfo.userBGPosition },
         };
         return res.json(userInfo);
       }

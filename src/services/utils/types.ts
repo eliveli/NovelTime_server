@@ -10,13 +10,14 @@ export type UserInfo = {
     position: string;
   };
 };
-export type ChangedUserInfo = {
+export type UserInfoInDB = {
   userId: string;
   userName: string;
   userImgSrc: string;
   userImgPosition: string;
   userBGSrc: string;
   userBGPosition: string;
+  // refreshToken // it exists but don't use it here
 };
 export type UserImg = {
   src: string;

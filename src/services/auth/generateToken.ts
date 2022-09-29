@@ -1,12 +1,12 @@
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
-import { ChangedUserInfo, UserInfo } from "../utils/types";
+import { UserInfoInDB, UserInfo } from "../utils/types";
 
 dotenv.config();
 
 const privateKey = process.env.JWT_PRIVATE_KEY;
 
-export function generateAccessToken(changedUserInfo: ChangedUserInfo) {
+export function generateAccessToken(changedUserInfo: UserInfoInDB) {
   const jwtExpirySeconds = 1800; // 30 min
 
   const accessToken = jwt.sign(changedUserInfo, privateKey as string, {
@@ -17,7 +17,7 @@ export function generateAccessToken(changedUserInfo: ChangedUserInfo) {
   console.log("changedUserInfo: ", changedUserInfo);
   return accessToken;
 }
-export function generateRefreshToken(changedUserInfo: ChangedUserInfo) {
+export function generateRefreshToken(changedUserInfo: UserInfoInDB) {
   const jwtExpirySeconds = 5184000; // 2 months
   const refreshToken = jwt.sign(changedUserInfo, privateKey as string, {
     algorithm: "HS256",
