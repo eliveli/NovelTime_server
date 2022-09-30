@@ -19,6 +19,11 @@ export type UserInfoInDB = {
   userBGPosition: string;
   // refreshToken // it exists but don't use it here
 };
+export type UserImgAndNameInDB = {
+  userName: string;
+  userImgSrc: string;
+  userImgPosition: string;
+};
 export type UserImg = {
   src: string;
   position: string;
@@ -31,7 +36,7 @@ export type NovelListInfo = {
 };
 
 export type Novel = {
-  novelId: string;
+  novelId?: string;
   novelImg: string;
   novelTitle: string;
   novelAuthor: string;
