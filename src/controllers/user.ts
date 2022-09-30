@@ -31,7 +31,7 @@ export const loginController: RequestHandler = (req, res) => {
       await setRefreshTokenDB(userInfo.userId, refreshToken);
 
       res.cookie("refreshToken", refreshToken, {
-        path: "/user/refreshToken",
+        path: "/api/user/refreshToken",
         expires: new Date(Date.now() + 2 * 30 * 24 * 60 * 60 * 1000), // 2 months
         httpOnly: true, // You can't access these tokens in the client's javascript
         secure: process.env.NODE_ENV === "production", // Forces to use https in production
@@ -104,7 +104,7 @@ export const logoutController: RequestHandler = (req, res) => {
 
   deleteRefreshTokenDB(userId)
     .then(() => {
-      res.clearCookie("refreshToken", { path: "/user/refreshToken" });
+      res.clearCookie("refreshToken", { path: "/api/user/refreshToken" });
       res.removeHeader("authorization");
 
       console.log("로그아웃 완료");
@@ -255,7 +255,7 @@ export const saveChangedInfoController: RequestHandler = (req, res) => {
       await setRefreshTokenDB(userInfo.userId, refreshToken);
 
       res.cookie("refreshToken", refreshToken, {
-        path: "/user/refreshToken",
+        path: "/api/user/refreshToken",
         expires: new Date(Date.now() + 2 * 30 * 24 * 60 * 60 * 1000), // 2 months
         httpOnly: true, // You can't access these tokens in the client's javascript
         secure: process.env.NODE_ENV === "production", // Forces to use https in production
