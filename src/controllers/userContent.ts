@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-misused-promises */
-/* eslint-disable import/prefer-default-export */
 import { RequestHandler } from "express";
 
 import dotenv from "dotenv";
@@ -11,7 +9,7 @@ import toggleLike from "../services/userContent/toggleLike";
 
 dotenv.config();
 
-export const userHomeController: RequestHandler = async (req, res) => {
+export const userHomeController: RequestHandler = (async (req, res) => {
   try {
     const { userName } = req.params;
     const userId = await getUserId(userName);
@@ -43,9 +41,9 @@ export const userHomeController: RequestHandler = async (req, res) => {
     console.log("failed to get user's content in userHomeController :", error);
     res.status(500).end();
   }
-};
+}) as RequestHandler;
 
-export const userMyWritingController: RequestHandler = async (req, res) => {
+export const userMyWritingController: RequestHandler = (async (req, res) => {
   try {
     const { userName, contentType, order } = req.params;
     const userId = await getUserId(userName);
@@ -76,8 +74,8 @@ export const userMyWritingController: RequestHandler = async (req, res) => {
     console.log("failed to get user's content in userMyWritingController :", error);
     res.status(500).end();
   }
-};
-export const userOthersWritingController: RequestHandler = async (req, res) => {
+}) as RequestHandler;
+export const userOthersWritingController: RequestHandler = (async (req, res) => {
   try {
     const { userName, contentType, order } = req.params;
     const userId = await getUserId(userName);
@@ -95,8 +93,8 @@ export const userOthersWritingController: RequestHandler = async (req, res) => {
     console.log("failed to get user's content in userOthersWritingController :", error);
     res.status(500).end();
   }
-};
-export const userMyListController: RequestHandler = async (req, res) => {
+}) as RequestHandler;
+export const userMyListController: RequestHandler = (async (req, res) => {
   try {
     const { userNameInUserPage, listId, order } = req.params;
     const loginUserId = req.userId;
@@ -116,8 +114,8 @@ export const userMyListController: RequestHandler = async (req, res) => {
     console.log("failed to get user's content in userMyListController :", error);
     res.status(500).end();
   }
-};
-export const userOthersListController: RequestHandler = async (req, res) => {
+}) as RequestHandler;
+export const userOthersListController: RequestHandler = (async (req, res) => {
   try {
     const { userNameInUserPage, listId, order } = req.params;
     const loginUserId = req.userId;
@@ -137,8 +135,8 @@ export const userOthersListController: RequestHandler = async (req, res) => {
     console.log("failed to get user's content in userOthersListController :", error);
     res.status(500).end();
   }
-};
-export const userNovelListTitlesController: RequestHandler = async (req, res) => {
+}) as RequestHandler;
+export const userNovelListTitlesController: RequestHandler = (async (req, res) => {
   try {
     const { userNameInUserPage, isMyList } = req.params;
     const userIdInUserPage = await getUserId(userNameInUserPage);
@@ -156,8 +154,8 @@ export const userNovelListTitlesController: RequestHandler = async (req, res) =>
     console.log("failed to get user's content in userNovelListTitlesController :", error);
     res.status(500).end();
   }
-};
-export const toggleLikeController: RequestHandler = async (req, res) => {
+}) as RequestHandler;
+export const toggleLikeController: RequestHandler = (async (req, res) => {
   try {
     const { contentType, contentId } = req.params;
     const loginUserId = req.userId;
@@ -174,4 +172,4 @@ export const toggleLikeController: RequestHandler = async (req, res) => {
     console.log("failed to toggle Like in toggleLikeController :", error);
     res.status(500).end();
   }
-};
+}) as RequestHandler;

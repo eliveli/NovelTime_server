@@ -14,7 +14,7 @@ import db from "../services/utils/db";
 
 dotenv.config();
 
-const privateKey = process.env.JWT_PRIVATE_KEY;
+const privateKey = process.env.JWT_PRIVATE_KEY as string;
 
 // note : don't make controller async
 //  just use promise then/catch in controller instead of using async/await to controller itself
@@ -68,7 +68,7 @@ export const authenticateAccessTokenMiddleware: RequestHandler = (req, res, next
     return res.status(400);
   }
   try {
-    const payload = jwt.verify(token, privateKey as string) as ChangedUserInfo;
+    const payload = jwt.verify(token, privateKey) as ChangedUserInfo;
 
     req.userId = payload.userId;
 
@@ -85,7 +85,7 @@ export const getUserIdByTokenMiddleware: RequestHandler = (req, res, next) => {
     const authHeader = req.headers.authorization;
     const token = authHeader && authHeader.split(" ")[1];
     if (token) {
-      const payload = jwt.verify(token, privateKey as string) as ChangedUserInfo;
+      const payload = jwt.verify(token, privateKey) as ChangedUserInfo;
       req.userId = payload.userId;
     }
     next();
@@ -134,7 +134,7 @@ export const refreshTokenController: RequestHandler = (req, res) => {
     // Note that we are passing the key in this method as well. This method will throw an error
     // if the token is invalid (if it has expired according to the expiry time we set on sign in),
     // or if the signature does not match
-    payload = jwt.verify(refreshToken as string, privateKey as string) as ChangedUserInfo;
+    payload = jwt.verify(refreshToken as string, privateKey) as ChangedUserInfo;
     console.log("payload refresh token info: ", payload);
   } catch (e) {
     if (e instanceof jwt.JsonWebTokenError) {
