@@ -17,12 +17,12 @@
         //----------------------------------------------------------------//
 
         "lib": ["es5", "es6", "dom"],
-         "module": "commonjs", // which system for the program AMD, UMD, System, CommonJS
-         "target": "ES2017",  // which level of JS support to target
+        "module": "commonjs", // which system for the program AMD, UMD, System, CommonJS
+        "target": "ES2017",  // which level of JS support to target
                               // puppeteer 최신 버전의 크롬을 run 함. 그래서 modern version of node js 필요
-         "esModuleInterop": true,
+        "esModuleInterop": true,
 
-         "outDir": "dist", // where to put the compiled JS files
+        "outDir": "dist", // where to put the compiled JS files
     
         // Recommended: Compiler complains about expressions implicitly typed as 'any'
         "noImplicitAny": true, 
