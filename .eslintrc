@@ -3,7 +3,9 @@
         "browser": true,
         "node": true, // Enable Node.js global variables
         // "commonjs": true,
-        "es2021": true
+        "es2021": true,
+        "es6": true,
+        "jest": true
     },
     "plugins": ["@typescript-eslint"],
     
@@ -14,14 +16,14 @@
         "plugin:import/typescript",
 
         "plugin:@typescript-eslint/recommended",
-        "plugin:@typescript-eslint/recommended-requiring-type-checking",
+        "plugin:@typescript-eslint/recommended-requiring-type-checking"
         ],
         
     "parser": "@typescript-eslint/parser",
     "parserOptions": {
         "ecmaVersion": "latest", // Allows the use of modern ECMAScript features
         "sourceType": "module", // Allows for the use of imports
-        "project":"**/tsconfig.json" // tsconfig 파일 못 찾는 에러 해결
+        "project": "**/tsconfig.json" // tsconfig 파일 못 찾는 에러 해결
     },
     // "overrides": [
     //     {

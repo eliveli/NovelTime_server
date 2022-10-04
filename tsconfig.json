@@ -19,7 +19,7 @@
         "lib": ["es5", "es6", "dom"],
         "module": "commonjs", // which system for the program AMD, UMD, System, CommonJS
         "target": "ES2017",  // which level of JS support to target
-                              // puppeteer 최신 버전의 크롬을 run 함. 그래서 modern version of node js 필요
+                             // in puppeteer, running latest version of chrome. so modern version of node js is required.
         "esModuleInterop": true,
 
         "outDir": "dist", // where to put the compiled JS files
@@ -29,11 +29,12 @@
 
         "typeRoots": [
           "./src/types",
-          "./node_modules/types",
-        ] 
+          "./node_modules/@types",
+        ],                       
+        // "types": ["jest", "@types/jest"], 
 
       },
-      "include": ["src", "node_modules/@types/puppeteer/index.d.ts"], // which files to compile
+      "include": ["src", "node_modules/@types/puppeteer/index.d.ts", "funcTest.ts"], // which files to compile
       "exclude": ["node_modules"], // which files to skip
 
   }
