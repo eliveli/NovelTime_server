@@ -29,9 +29,8 @@ async function getWritingsFromDB(contentType: "T" | "R") {
     "all",
   )) as Writing[];
 }
-async function getWritings(contentType: "T" | "R") {
-  const writings = await getWritingsFromDB(contentType);
 
+async function composeWritings(contentType: "T" | "R", writings: Writing[]) {
   const writingsReturned = [];
 
   // compose writings that will be returned as searching data needed
@@ -84,6 +83,10 @@ async function getWritings(contentType: "T" | "R") {
   }
 
   return writingsReturned;
+}
+async function getWritings(contentType: "T" | "R") {
+  const writings = await getWritingsFromDB(contentType);
+  return await composeWritings(contentType, writings);
 }
 
 // async function getUserRank(contentType: "T" | "R") {}
