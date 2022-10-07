@@ -1,5 +1,5 @@
 import db from "../utils/db";
-import { Novel, UserImgAndNameInDB, Writing } from "../utils/types";
+import { Novel, UserImgAndNameInDB, UserInfoInDB, Writing } from "../utils/types";
 
 async function getNovelInfo(novelId: string) {
   return (await db(
@@ -14,7 +14,7 @@ async function getNovelTitle(novelId: string) {
   };
 }
 
-async function getUserNameAndImg(userId: string) {
+export async function getUserNameAndImg(userId: string) {
   return (await db(
     "SELECT userName, userImgSrc, userImgPosition FROM user WHERE userId = (?)",
     userId,
@@ -89,9 +89,45 @@ async function getWritings(contentType: "T" | "R") {
   return await composeWritings(contentType, writings);
 }
 
-// async function getUserRank(contentType: "T" | "R") {}
+//
+
+async function getUserInfo(userId: string) {
+  return (await db(
+    "SELECT userName, userImgSrc, userImgPosition, userBGSrc, userBGPosition FROM user WHERE userId = (?)",
+    userId,
+    "first",
+  )) as UserInfoInDB;
+}
+export async function getTalkRank() {
+  return (await db(
+    `SELECT userId, COUNT(*) FROM writing WHERE talkOrRecommend = (?) GROUP BY userId
+  ORDER BY count(*) DESC LIMIT 10`,
+    "T",
+    "all",
+  )) as { userId: string; "COUNT(*)": any }[];
+}
+
+export async function getUserRank(contentType: "T" | "R") {
+  if (contentType === "T") {
+    const userIdRanks = await getTalkRank();
+
+    const writing = [];
+    for (const userInfo of userIdRanks) {
+      const { userName, userImgSrc, userImgPosition } = await getUserNameAndImg(userInfo.userId);
+      const count = Number(userInfo["COUNT(*)"]);
+      const rankInfo = {
+        userImg: { src: userImgSrc, position: userImgPosition },
+        userName,
+        count,
+      };
+      writing.push(rankInfo);
+    }
+    return writing;
+  }
+}
 
 export const writingHomeService = {
   getWritings,
+  getUserRank,
 };
 export default writingHomeService;
