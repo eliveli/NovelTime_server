@@ -1,7 +1,8 @@
-import { getUserNameAndImg, getTalkCommentRank, getUserRankByContent, getUserRank } from "../home";
+import getWritings, { getUserNameAndImg } from "../getWritings";
+import { getUserRankByContent } from "../getUserRankOfWritings";
 
-jest.mock("../home", () => {
-  const originalModule = jest.requireActual("../home");
+jest.mock("../getWritings", () => {
+  const originalModule = jest.requireActual("../getWritings");
   return {
     __esModule: true,
     ...originalModule,
@@ -10,6 +11,13 @@ jest.mock("../home", () => {
       userImgSrc: "",
       userImgPosition: "",
     }),
+  };
+});
+jest.mock("../getUserRankOfWritings", () => {
+  const originalModule = jest.requireActual("../getUserRankOfWritings");
+  return {
+    __esModule: true,
+    ...originalModule,
     getUserRankByContent: jest.fn().mockResolvedValue([
       { userId: "1", "sum(likeNO)": 5 },
       { userId: "2", "sum(likeNO)": 2 },
@@ -21,6 +29,11 @@ jest.mock("../home", () => {
       { userId: "10", "sum(likeNO)": null },
     ]),
   };
+});
+
+it("getWritings", async () => {
+  const writings = await getWritings("R");
+  console.log("writings:", writings);
 });
 
 it("get user rank of recommend like", async () => {
