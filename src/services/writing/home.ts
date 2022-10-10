@@ -1,5 +1,5 @@
 import db from "../utils/db";
-import { Novel, UserImgAndNameInDB, UserInfoInDB, Writing } from "../utils/types";
+import { Novel, UserImg, UserImgAndNameInDB, UserInfoInDB, Writing } from "../utils/types";
 
 async function getNovelInfo(novelId: string) {
   return (await db(
@@ -30,53 +30,62 @@ async function getWritingsFromDB(contentType: "T" | "R") {
   )) as Writing[];
 }
 
+async function composeTalk(userName: string, userImg: UserImg, writing: Writing) {
+  const { novelTitle } = await getNovelTitle(writing.novelId);
+
+  return {
+    talkId: writing.writingId,
+    userName,
+    userImg,
+    createDate: writing.createDate,
+    likeNO: writing.likeNO,
+    commentNO: writing.commentNO,
+    talkTitle: writing.writingTitle,
+    talkImg: writing.writingImg,
+    novelTitle,
+  };
+}
+async function composeRecommend(userName: string, userImg: UserImg, writing: Writing) {
+  const { novelImg, novelTitle, novelAuthor, novelGenre, novelIsEnd } = await getNovelInfo(
+    writing.novelId,
+  );
+
+  return {
+    recommend: {
+      recommendId: writing.writingId,
+      userName,
+      userImg,
+      createDate: writing.createDate,
+      likeNO: writing.likeNO,
+      recommendTitle: writing.writingTitle,
+    },
+    novel: {
+      novelImg,
+      novelTitle,
+      novelAuthor,
+      novelGenre,
+      isEnd: novelIsEnd,
+    },
+  };
+}
+
 async function composeWritings(contentType: "T" | "R", writings: Writing[]) {
   const writingsReturned = [];
 
-  // compose writings that will be returned as searching data needed
+  // compose writings that will be returned as searching data
   for (const writing of writings) {
     const { userName, userImgSrc, userImgPosition } = await getUserNameAndImg(writing.userId);
 
-    if (contentType === "T") {
-      const { novelTitle } = await getNovelTitle(writing.novelId);
+    const userImg = { src: userImgSrc, position: userImgPosition };
 
-      const writingSet = {
-        talkId: writing.writingId,
-        userName,
-        userImg: { src: userImgSrc, position: userImgPosition },
-        createDate: writing.createDate,
-        likeNO: writing.likeNO,
-        commentNO: writing.commentNO,
-        talkTitle: writing.writingTitle,
-        talkImg: writing.writingImg,
-        novelTitle,
-      };
+    if (contentType === "T") {
+      const writingSet = await composeTalk(userName, userImg, writing);
 
       writingsReturned.push(writingSet);
     }
 
     if (contentType === "R") {
-      const { novelImg, novelTitle, novelAuthor, novelGenre, novelIsEnd } = await getNovelInfo(
-        writing.novelId,
-      );
-
-      const writingSet = {
-        recommend: {
-          recommendId: writing.writingId,
-          userName,
-          userImg: { src: userImgSrc, position: userImgPosition },
-          createDate: writing.createDate,
-          likeNO: writing.likeNO,
-          recommendTitle: writing.writingTitle,
-        },
-        novel: {
-          novelImg,
-          novelTitle,
-          novelAuthor,
-          novelGenre,
-          isEnd: novelIsEnd,
-        },
-      };
+      const writingSet = await composeRecommend(userName, userImg, writing);
 
       writingsReturned.push(writingSet);
     }
@@ -84,6 +93,7 @@ async function composeWritings(contentType: "T" | "R", writings: Writing[]) {
 
   return writingsReturned;
 }
+
 async function getWritings(contentType: "T" | "R") {
   const writings = await getWritingsFromDB(contentType);
   return await composeWritings(contentType, writings);
@@ -117,6 +127,7 @@ export async function getWritingLikeRank(contentType: "T" | "R") {
     "all",
   )) as { userId: string; "sum(likeNO)": number | null }[];
 }
+
 export async function getUserRankByContent(
   contentType: "T" | "C" | "R",
   actType: "Create" | "ReceiveLike",
@@ -167,6 +178,7 @@ async function setRankWithUserInfo(userIdRanks: UserIdRanks) {
   }
   return rank;
 }
+
 export async function getUserRank(
   contentType: "T" | "C" | "R", // Talk, Comment, Recommend
   actType: "Create" | "ReceiveLike",
