@@ -1,10 +1,4 @@
-import {
-  getUserNameAndImg,
-  getTalkRank,
-  getTalkCommentRank,
-  getUserRankByContent,
-  getUserRank,
-} from "../home";
+import { getUserNameAndImg, getTalkCommentRank, getUserRankByContent, getUserRank } from "../home";
 
 jest.mock("../home", () => {
   const originalModule = jest.requireActual("../home");
@@ -16,34 +10,21 @@ jest.mock("../home", () => {
       userImgSrc: "",
       userImgPosition: "",
     }),
+    getUserRankByContent: jest.fn().mockResolvedValue([
+      { userId: "1", "sum(likeNO)": 5 },
+      { userId: "2", "sum(likeNO)": 2 },
+      { userId: "3", "sum(likeNO)": 2 },
+      { userId: "4", "sum(likeNO)": 1 },
+      { userId: "7", "sum(likeNO)": 1 },
+      { userId: "8", "sum(likeNO)": 1 },
+      { userId: "9", "sum(likeNO)": 1 },
+      { userId: "10", "sum(likeNO)": null },
+    ]),
   };
 });
 
-// it("get user rank of writing T", async () => {
-//   const userIdRanks = await getTalkRank();
-//   console.log("userIdRanks:", userIdRanks);
-
-//   const writing = [];
-//   for (const userInfo of userIdRanks) {
-//     const { userName, userImgSrc, userImgPosition } = await getUserNameAndImg(userInfo.userId);
-//     const count = Number(userInfo["COUNT(*)"]);
-//     const rankInfo = {
-//       userImg: { src: userImgSrc, position: userImgPosition },
-//       userName,
-//       count,
-//     };
-//     writing.push(rankInfo);
-//   }
-//   console.log("writing:", writing);
-// });
-
-// it("get user rank of comment", async () => {
-//   const userIdRanks = await getTalkCommentRank();
-//   console.log("userIdRanks:", userIdRanks);
-// });
-
-it("get user rank of talk like", async () => {
-  const userIdRanks = await getUserRankByContent("T", "ReceiveLike");
+it("get user rank of recommend like", async () => {
+  const userIdRanks = await getUserRankByContent("R", "ReceiveLike");
 
   if (!userIdRanks) return;
 

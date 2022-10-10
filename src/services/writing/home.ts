@@ -99,50 +99,57 @@ export async function getTalkCommentRank() {
     `,
     undefined,
     "all",
-  )) as { userId: string; "COUNT(*)": any }[];
+  )) as { userId: string; "COUNT(*)": BigInt }[];
 }
-export async function getTalkRank() {
+export async function getWritingRank(contentType: "T" | "R") {
   return (await db(
-    `SELECT userId, COUNT(*) FROM writing WHERE talkOrRecommend = "T" GROUP BY userId
+    `SELECT userId, COUNT(*) FROM writing WHERE talkOrRecommend = (?) GROUP BY userId
   ORDER BY count(*) DESC LIMIT 10`,
-    undefined,
+    contentType,
     "all",
-  )) as { userId: string; "COUNT(*)": any }[];
+  )) as { userId: string; "COUNT(*)": BigInt }[];
 }
-export async function getTalkLikeRank() {
+export async function getWritingLikeRank(contentType: "T" | "R") {
   return (await db(
-    `SELECT userId, sum(likeNO) FROM writing WHERE talkOrRecommend = 'T' GROUP BY userId
+    `SELECT userId, sum(likeNO) FROM writing WHERE talkOrRecommend = (?) GROUP BY userId
     ORDER BY sum(likeNO) DESC LIMIT 10;`,
-    undefined,
+    contentType,
     "all",
-  )) as { userId: string; "sum(likeNO)": any }[];
+  )) as { userId: string; "sum(likeNO)": number | null }[];
 }
 export async function getUserRankByContent(
   contentType: "T" | "C" | "R",
   actType: "Create" | "ReceiveLike",
 ) {
   if (contentType === "T" && actType === "Create") {
-    return await getTalkRank();
+    return await getWritingRank(contentType);
   }
   if (contentType === "C" && actType === "Create") {
     return await getTalkCommentRank();
   }
   if (contentType === "T" && actType === "ReceiveLike") {
-    return await getTalkLikeRank();
+    return await getWritingLikeRank(contentType);
+  }
+
+  if (contentType === "R" && actType === "Create") {
+    return await getWritingRank(contentType);
+  }
+  if (contentType === "R" && actType === "ReceiveLike") {
+    return await getWritingLikeRank(contentType);
   }
 }
 
 type UserIdRanks =
   | {
       userId: string;
-      "COUNT(*)": any;
+      "COUNT(*)": BigInt;
     }[]
   | {
       userId: string;
-      "sum(likeNO)": any;
+      "sum(likeNO)": number | null;
     }[];
 
-async function composeUserRank(userIdRanks: UserIdRanks) {
+async function setRankWithUserInfo(userIdRanks: UserIdRanks) {
   const rank = [];
   for (const userInfo of userIdRanks) {
     const { userName, userImgSrc, userImgPosition } = await getUserNameAndImg(userInfo.userId);
@@ -150,8 +157,6 @@ async function composeUserRank(userIdRanks: UserIdRanks) {
     const count =
       "COUNT(*)" in userInfo ? Number(userInfo["COUNT(*)"]) : Number(userInfo["sum(likeNO)"]);
     // convert BIGINT to Number (i.e. 6n -> 6)
-    // though type of userInfo["sum(likeNO)"] from mariaDB is not BIGINT,
-    //   Number function is necessary as well to confirm the type to avoid ts error
 
     const rankInfo = {
       userImg: { src: userImgSrc, position: userImgPosition },
@@ -170,7 +175,7 @@ export async function getUserRank(
 
   if (!userIdRanks) return;
 
-  return await composeUserRank(userIdRanks);
+  return await setRankWithUserInfo(userIdRanks);
 }
 
 export const writingHomeService = {
