@@ -4,10 +4,11 @@
   "description": "",
   "main": "src/index.ts",
   "jest": {
-    "preset": "ts-jest"
+    "preset": "ts-jest",
+    "resetMocks": false
   },
   "scripts": {
-    "test": "jest",
+    "test": "jest --forceExit",
     "start": "nodemon --watch 'src/**/*.ts' --exec ts-node src/index.ts",
     "prodTest": "set NODE_ENV=production && nodemon --watch 'src/**/*.ts' --exec ts-node src/index.ts",
     "prod": "tsc && node dist/index.js",

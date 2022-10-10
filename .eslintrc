@@ -42,6 +42,7 @@
         "consistent-return": "off",
         "no-return-await": "off",
         "no-await-in-loop": "off", // 루프 안에서 비동기 수행 시 순서대로 작업. 병렬X
+        "operator-linebreak": "off",
 
         "@typescript-eslint/no-var-requires": "warn",
         "@typescript-eslint/no-unsafe-assignment": "warn",
