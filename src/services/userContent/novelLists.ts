@@ -55,7 +55,7 @@ async function getNovelListIDsByUserId(userId: string, isHome = true) {
 
 async function getNovelInfoByNovelId(novelId: string) {
   return (await db(
-    "SELECT novelId, novelImg, novelTitle, novelAuthor, novelGenre, novelIsEnd FROM novelInfo WHERE novelId = (?)",
+    "SELECT novelId, novelImg, novelTitle, novelAuthor, novelGenre, if(novelIsEnd, 'true', 'false') AS novelIsEnd FROM novelInfo WHERE novelId = (?)",
     novelId,
     "first",
   )) as Novel;

@@ -1,10 +1,10 @@
 import db from "../utils/db";
-import { Novel, UserImg, UserImgAndNameInDB, Writing } from "../utils/types";
+import { Novel, UserImg, Writing } from "../utils/types";
 import getUserNameAndImg from "./shared/getUserNameAndImg";
 
 async function getNovelInfo(novelId: string) {
   return (await db(
-    "SELECT novelImg, novelTitle, novelAuthor, novelGenre, novelIsEnd FROM novelInfo WHERE novelId = (?)",
+    "SELECT novelImg, novelTitle, novelAuthor, novelGenre, if(novelIsEnd, 'true', 'false') AS novelIsEnd FROM novelInfo WHERE novelId = (?)",
     novelId,
     "first",
   )) as Novel;
