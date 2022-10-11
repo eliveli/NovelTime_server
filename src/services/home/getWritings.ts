@@ -3,11 +3,12 @@ import { Novel, UserImg, Writing } from "../utils/types";
 import getUserNameAndImg from "./shared/getUserNameAndImg";
 
 async function getNovelInfo(novelId: string) {
-  return (await db(
-    "SELECT novelImg, novelTitle, novelAuthor, novelGenre, if(novelIsEnd, 'true', 'false') AS novelIsEnd FROM novelInfo WHERE novelId = (?)",
+  const novel = (await db(
+    "SELECT novelImg, novelTitle, novelAuthor, novelGenre, novelIsEnd FROM novelInfo WHERE novelId = (?)",
     novelId,
     "first",
   )) as Novel;
+  return { ...novel, novelIsEnd: !!novel.novelIsEnd };
 }
 async function getNovelTitle(novelId: string) {
   return (await db("SELECT novelTitle FROM novelInfo WHERE novelId = (?)", novelId, "first")) as {
