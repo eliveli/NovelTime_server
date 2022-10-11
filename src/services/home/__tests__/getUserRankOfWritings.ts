@@ -1,4 +1,4 @@
-import getWritings, { getUserNameAndImg } from "../getWritings";
+import { getUserNameAndImg } from "../getWritings";
 import { getUserRankByContent } from "../getUserRankOfWritings";
 
 jest.mock("../getWritings", () => {
@@ -29,11 +29,6 @@ jest.mock("../getUserRankOfWritings", () => {
       { userId: "10", "sum(likeNO)": null },
     ]),
   };
-});
-
-it("getWritings", async () => {
-  const writings = await getWritings("R");
-  console.log("writings:", writings);
 });
 
 it("get user rank of recommend like", async () => {
