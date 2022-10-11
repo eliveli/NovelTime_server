@@ -30,26 +30,36 @@ jest.mock("../getUserRankOfWritings", () => {
     ]),
   };
 });
+jest.mock("../shared/getUserNameAndImg", () =>
+  // eslint-disable-next-line implicit-arrow-linebreak
+  jest.fn().mockResolvedValue({
+    userName: "name",
+    userImgSrc: "",
+    userImgPosition: "",
+  }),
+);
 
 it("get user rank of recommend like", async () => {
   const userIdRanks = await getUserRankByContent("R", "ReceiveLike");
 
-  if (!userIdRanks) return;
+  // when there is any post of recommend
+  expect(userIdRanks).not.toBeUndefined();
 
-  const rank = [];
-  for (const userInfo of userIdRanks) {
-    const { userName, userImg } = await getUserNameAndImg(userInfo.userId);
+  if (userIdRanks) {
+    const rank = [];
+    for (const userInfo of userIdRanks) {
+      const { userName, userImg } = await getUserNameAndImg(userInfo.userId);
 
-    const count =
-      "COUNT(*)" in userInfo ? Number(userInfo["COUNT(*)"]) : Number(userInfo["sum(likeNO)"]); // convert BIGINT to Number (i.e. 6n -> 6)
+      const count =
+        "COUNT(*)" in userInfo ? Number(userInfo["COUNT(*)"]) : Number(userInfo["sum(likeNO)"]); // convert BIGINT to Number (i.e. 6n -> 6)
 
-    const rankInfo = {
-      userImg,
-      userName,
-      count,
-    };
-    rank.push(rankInfo);
+      const rankInfo = {
+        userImg,
+        userName,
+        count,
+      };
+      rank.push(rankInfo);
+    }
+    console.log("userIdRanks:", rank);
   }
-
-  console.log("userIdRanks:", rank);
 });

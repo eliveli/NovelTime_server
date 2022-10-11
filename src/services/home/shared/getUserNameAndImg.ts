@@ -8,7 +8,7 @@ async function getUserNameAndImgFromDB(userId: string) {
     "first",
   )) as UserImgAndNameInDB;
 }
-export default async function composeUser(userId: string) {
+export default async function getUserNameAndImg(userId: string) {
   const { userName, userImgSrc, userImgPosition } = await getUserNameAndImgFromDB(userId);
   const userImg = { src: userImgSrc, position: userImgPosition };
   return { userName, userImg };
