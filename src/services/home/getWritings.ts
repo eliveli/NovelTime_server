@@ -1,5 +1,6 @@
 import db from "../utils/db";
 import { Novel, UserImg, UserImgAndNameInDB, Writing } from "../utils/types";
+import getUserNameAndImg from "./shared/getUserNameAndImg";
 
 async function getNovelInfo(novelId: string) {
   return (await db(
@@ -12,14 +13,6 @@ async function getNovelTitle(novelId: string) {
   return (await db("SELECT novelTitle FROM novelInfo WHERE novelId = (?)", novelId, "first")) as {
     novelTitle: string;
   };
-}
-
-export async function getUserNameAndImg(userId: string) {
-  return (await db(
-    "SELECT userName, userImgSrc, userImgPosition FROM user WHERE userId = (?)",
-    userId,
-    "first",
-  )) as UserImgAndNameInDB;
 }
 
 async function getWritingsFromDB(contentType: "T" | "R") {
@@ -74,9 +67,7 @@ async function composeWritings(contentType: "T" | "R", writings: Writing[]) {
 
   // compose writings that will be returned as searching data
   for (const writing of writings) {
-    const { userName, userImgSrc, userImgPosition } = await getUserNameAndImg(writing.userId);
-
-    const userImg = { src: userImgSrc, position: userImgPosition };
+    const { userName, userImg } = await getUserNameAndImg(writing.userId);
 
     if (contentType === "T") {
       const writingSet = await composeTalk(userName, userImg, writing);

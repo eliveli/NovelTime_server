@@ -1,4 +1,4 @@
-import { getUserNameAndImg } from "../getWritings";
+import getUserNameAndImg from "../shared/getUserNameAndImg";
 import { getUserRankByContent } from "../getUserRankOfWritings";
 
 jest.mock("../getWritings", () => {
@@ -38,13 +38,13 @@ it("get user rank of recommend like", async () => {
 
   const rank = [];
   for (const userInfo of userIdRanks) {
-    const { userName, userImgSrc, userImgPosition } = await getUserNameAndImg(userInfo.userId);
+    const { userName, userImg } = await getUserNameAndImg(userInfo.userId);
 
     const count =
       "COUNT(*)" in userInfo ? Number(userInfo["COUNT(*)"]) : Number(userInfo["sum(likeNO)"]); // convert BIGINT to Number (i.e. 6n -> 6)
 
     const rankInfo = {
-      userImg: { src: userImgSrc, position: userImgPosition },
+      userImg,
       userName,
       count,
     };
