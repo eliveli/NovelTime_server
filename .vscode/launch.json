@@ -1,22 +1,45 @@
 {
-    "version": "0.2.0",
-    "configurations": [
-      {
-        "name": "Launch Program Test TS In Server",
-        "type": "node",
-        "request": "launch",
-        "runtimeExecutable": "node",
-        "runtimeArgs": ["--nolazy", "-r", "ts-node/register/transpile-only"],
-  
-        // test the main program
-        "args": ["src/index.ts"],
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Debug Jest Tests",
+      "type": "node",
+      "request": "launch",
+      "runtimeArgs": [
+        "--inspect-brk",
+        "${workspaceRoot}/node_modules/jest/bin/jest.js",
+        "--runInBand"
+      ],
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen",
 
-        // test the current open file
-        "program": "${file}",
+      // exit jest : "--forceExit"
+      // debug the current file only : other options
+      "args": ["--forceExit", "--verbose", "-i", "--no-cache", "--testPathPattern", "${fileBasename}"],
+    }
+  ]
+}
+
+// without jest. only with ts :
+// {
+//     "version": "0.2.0",
+//     "configurations": [
+//       {
+//         "name": "Launch Program Test TS In Server",
+//         "type": "node",
+//         "request": "launch",
+//         "runtimeExecutable": "node",
+//         "runtimeArgs": ["--nolazy", "-r", "ts-node/register/transpile-only"],
+  
+//         // test the main program
+//         "args": ["src/index.ts"],
+
+//         // test the current open file
+//         "program": "${file}",
         
-        "cwd": "${workspaceRoot}",
-        "internalConsoleOptions": "openOnSessionStart",
-        "skipFiles": ["<node_internals>/**", "node_modules/**"]
-      }
-    ]
-  }
+//         "cwd": "${workspaceRoot}",
+//         "internalConsoleOptions": "openOnSessionStart",
+//         "skipFiles": ["<node_internals>/**", "node_modules/**"]
+//       }
+//     ]
+//   }
