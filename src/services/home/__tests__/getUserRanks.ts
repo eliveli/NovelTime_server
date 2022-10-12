@@ -15,7 +15,6 @@ import {
 // for the more, I won't manage the case where data is empty so that I can focus on other works.
 //  to treat this I just won't let the data empty in DB later.
 jest.mock("../shared/getUserNameAndImg", () =>
-  // eslint-disable-next-line implicit-arrow-linebreak
   jest.fn().mockResolvedValue({
     userName: "name",
     userImg: {
