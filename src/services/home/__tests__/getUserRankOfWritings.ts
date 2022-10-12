@@ -1,18 +1,18 @@
 import getUserNameAndImg from "../shared/getUserNameAndImg";
 import { getUserRankByContent } from "../getUserRankOfWritings";
 
-jest.mock("../getWritings", () => {
-  const originalModule = jest.requireActual("../getWritings");
-  return {
-    __esModule: true,
-    ...originalModule,
-    getUserNameAndImg: jest.fn().mockResolvedValue({
-      userName: "userName",
-      userImgSrc: "",
-      userImgPosition: "",
-    }),
-  };
-});
+// I set the user data as mock to avoid ts error because it can be empty
+//  when getting them from DB they may not match each other as I set them temporarily
+// for the more, I won't manage the case where data is empty so that I can focus on other works.
+//  to treat this I just won't let the data empty in DB later.
+jest.mock("../shared/getUserNameAndImg", () =>
+  // eslint-disable-next-line implicit-arrow-linebreak
+  jest.fn().mockResolvedValue({
+    userName: "name",
+    userImgSrc: "",
+    userImgPosition: "",
+  }),
+);
 jest.mock("../getUserRankOfWritings", () => {
   const originalModule = jest.requireActual("../getUserRankOfWritings");
   return {
@@ -30,14 +30,6 @@ jest.mock("../getUserRankOfWritings", () => {
     ]),
   };
 });
-jest.mock("../shared/getUserNameAndImg", () =>
-  // eslint-disable-next-line implicit-arrow-linebreak
-  jest.fn().mockResolvedValue({
-    userName: "name",
-    userImgSrc: "",
-    userImgPosition: "",
-  }),
-);
 
 it("get user rank of recommend like", async () => {
   const userIdRanks = await getUserRankByContent("R", "ReceiveLike");
