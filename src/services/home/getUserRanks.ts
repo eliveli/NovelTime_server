@@ -38,6 +38,39 @@ export async function getNovelListRank() {
   )) as { userId: string; count: BigInt }[];
 }
 
+export async function getNovelListLikeRankFromDB() {
+  return (await db(
+    `
+    SELECT novelListId, count(*) AS count FROM novelListLike
+      GROUP BY novelListId
+      ORDER BY count(*) DESC LIMIT 10; 
+    `,
+    undefined,
+    "all",
+  )) as { novelListId: string; count: BigInt }[];
+}
+export async function getUserWhoCreatedNovelList(novelListId: string) {
+  return (await db(
+    `SELECT userId FROM novelList WHERE novelListId = (?)
+    `,
+    novelListId,
+    "first",
+  )) as { userId: string };
+}
+
+export async function getNovelListLikeRank() {
+  const ranksWithUserId = [];
+
+  const novelListRanks = await getNovelListLikeRankFromDB();
+
+  for (const novelListRank of novelListRanks) {
+    const { userId } = await getUserWhoCreatedNovelList(novelListRank.novelListId);
+
+    ranksWithUserId.push({ userId, count: novelListRank.count });
+  }
+  return ranksWithUserId;
+}
+
 export async function getUserRankByContent(
   contentType: "T" | "C" | "R" | "L",
   actType: "Create" | "ReceiveLike",
@@ -62,9 +95,9 @@ export async function getUserRankByContent(
   if (contentType === "L" && actType === "Create") {
     return await getNovelListRank();
   }
-  //   if (contentType === "L" && actType === "ReceiveLike") {
-  //     return await getWritingLikeRank(contentType);
-  //   }
+  if (contentType === "L" && actType === "ReceiveLike") {
+    return await getNovelListLikeRank();
+  }
 }
 
 type UserIdRanks = {
@@ -72,7 +105,7 @@ type UserIdRanks = {
   count: BigInt | number | null; // i.e. BigInt : 6n
 }[];
 
-async function setRankWithUserInfo(userIdRanks: UserIdRanks) {
+export async function setRankWithUserInfo(userIdRanks: UserIdRanks) {
   const rank = [];
   for (const userInfo of userIdRanks) {
     const { userName, userImg } = await getUserNameAndImg(userInfo.userId);
