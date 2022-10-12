@@ -1,5 +1,11 @@
 import getUserNameAndImg from "../shared/getUserNameAndImg";
-import { getUserRankByContent } from "../getUserRankOfWritings";
+import {
+  getNovelListRank,
+  getTalkCommentRank,
+  getUserRankByContent,
+  getWritingLikeRank,
+  getWritingRank,
+} from "../getUserRankOfWritings";
 
 // I set the user data as mock to avoid ts error because it can be empty
 //  when getting them from DB they may not match each other as I set them temporarily
@@ -9,8 +15,10 @@ jest.mock("../shared/getUserNameAndImg", () =>
   // eslint-disable-next-line implicit-arrow-linebreak
   jest.fn().mockResolvedValue({
     userName: "name",
-    userImgSrc: "",
-    userImgPosition: "",
+    userImg: {
+      src: "",
+      position: "",
+    },
   }),
 );
 jest.mock("../getUserRankOfWritings", () => {
@@ -19,20 +27,27 @@ jest.mock("../getUserRankOfWritings", () => {
     __esModule: true,
     ...originalModule,
     getUserRankByContent: jest.fn().mockResolvedValue([
-      { userId: "1", "sum(likeNO)": 5 },
-      { userId: "2", "sum(likeNO)": 2 },
-      { userId: "3", "sum(likeNO)": 2 },
-      { userId: "4", "sum(likeNO)": 1 },
-      { userId: "7", "sum(likeNO)": 1 },
-      { userId: "8", "sum(likeNO)": 1 },
-      { userId: "9", "sum(likeNO)": 1 },
-      { userId: "10", "sum(likeNO)": null },
+      { userId: "1", count: 5 },
+      { userId: "2", count: 2 },
+      { userId: "3", count: 2 },
+      { userId: "4", count: 1 },
+      { userId: "7", count: 1 },
+      { userId: "8", count: 1 },
+      { userId: "9", count: 1 },
+      // { userId: "10", count: null },
     ]),
   };
 });
 
-it("get user rank of recommend like", async () => {
-  const userIdRanks = await getUserRankByContent("R", "ReceiveLike");
+it("check the async function getting data from DB", async () => {
+  console.log("getTalkCommentRank:", await getTalkCommentRank());
+  console.log("getWritingRank:", await getWritingRank("R"));
+  console.log("getWritingLikeRank:", await getWritingLikeRank("T"));
+  console.log("getNovelListRank:", await getNovelListRank());
+});
+
+it("get user rank of novel list", async () => {
+  const userIdRanks = await getUserRankByContent("L", "Create");
 
   // when there is any post of recommend
   expect(userIdRanks).not.toBeUndefined();
@@ -42,8 +57,7 @@ it("get user rank of recommend like", async () => {
     for (const userInfo of userIdRanks) {
       const { userName, userImg } = await getUserNameAndImg(userInfo.userId);
 
-      const count =
-        "COUNT(*)" in userInfo ? Number(userInfo["COUNT(*)"]) : Number(userInfo["sum(likeNO)"]); // convert BIGINT to Number (i.e. 6n -> 6)
+      const count = Number(userInfo.count);
 
       const rankInfo = {
         userImg,
