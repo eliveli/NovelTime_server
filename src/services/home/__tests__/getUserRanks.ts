@@ -5,7 +5,7 @@ import {
   getUserRankByContent,
   getWritingLikeRank,
   getWritingRank,
-} from "../getUserRankOfWritings";
+} from "../getUserRanks";
 
 // I set the user data as mock to avoid ts error because it can be empty
 //  when getting them from DB they may not match each other as I set them temporarily

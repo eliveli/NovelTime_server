@@ -89,7 +89,7 @@ async function setRankWithUserInfo(userIdRanks: UserIdRanks) {
   return rank;
 }
 
-export default async function getUserRankOfWritings(
+export default async function getUserRanks(
   contentType: "T" | "C" | "R" | "L", // Talk, Comment, Recommend, novelList
   actType: "Create" | "ReceiveLike",
 ) {
