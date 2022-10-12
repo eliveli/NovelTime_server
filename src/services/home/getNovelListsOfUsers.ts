@@ -1,5 +1,6 @@
 import db from "../utils/db";
 import { Novel, NovelListInfo } from "../utils/types";
+import getNovelByNovelIdFromDB from "./shared/getNovelByNovelId";
 import getUserNameAndImg from "./shared/getUserNameAndImg";
 
 export async function getNovelListsOfUsersFromDB() {
@@ -10,14 +11,6 @@ export async function getNovelListsOfUsersFromDB() {
     "all",
   )) as NovelListInfo[];
 }
-export async function getNovelsByNovelIdFromDB(novelId: string) {
-  const novel = (await db(
-    "SELECT novelId, novelImg, novelTitle, novelAuthor, novelGenre, novelIsEnd FROM novelInfo WHERE novelId = (?)",
-    novelId,
-    "first",
-  )) as Novel;
-  return { ...novel, novelIsEnd: !!novel.novelIsEnd }; // convert tinyInt to boolean
-}
 
 export async function getNovelsByNovelId(novelIDs: string) {
   // change string to string array holding novel IDs
@@ -25,7 +18,7 @@ export async function getNovelsByNovelId(novelIDs: string) {
 
   const novels = [];
   for (const novelId of novelIdInArray) {
-    const novel = await getNovelsByNovelIdFromDB(novelId);
+    const novel = await getNovelByNovelIdFromDB(novelId);
     novels.push(novel);
   }
   return novels;
