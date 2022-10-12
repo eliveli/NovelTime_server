@@ -7,5 +7,8 @@ export default async function getNovelByNovelIdFromDB(novelId: string) {
     novelId,
     "first",
   )) as Novel;
+
+  if (!novel) return;
+
   return { ...novel, novelIsEnd: !!novel.novelIsEnd }; // convert tinyInt to boolean
 }

@@ -24,6 +24,11 @@ export async function getNovelsByNovelIDs(novelIDs: NovelIDs) {
   for (const { novelId } of novelIDs) {
     const novel = await getNovelByNovelIdFromDB(novelId);
 
+    if (!novel) {
+      console.log("there is no novel for this novel id:", novelId);
+      continue;
+    }
+
     novels.push(novel);
   }
 
