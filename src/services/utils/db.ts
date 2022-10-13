@@ -28,7 +28,7 @@ export default async function db(dbQuery: string, args: any, elementReturned?: E
           break;
         case "first":
           [dataReturned] = data;
-          // array destructuring. same as >> dataReturned = data[0] // return dict
+          // array destructuring. same as -> dataReturned = data[0] // return dict
           break;
         // don't return any specific data
         case undefined:
