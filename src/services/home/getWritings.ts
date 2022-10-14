@@ -68,16 +68,18 @@ async function composeWritings(contentType: "T" | "R", writings: Writing[]) {
 
   // compose writings that will be returned as searching data
   for (const writing of writings) {
-    const { userName, userImg } = await getUserNameAndImg(writing.userId);
+    const user = await getUserNameAndImg(writing.userId);
+
+    if (!user) continue;
 
     if (contentType === "T") {
-      const writingSet = await composeTalk(userName, userImg, writing);
+      const writingSet = await composeTalk(user.userName, user.userImg, writing);
 
       writingsReturned.push(writingSet);
     }
 
     if (contentType === "R") {
-      const writingSet = await composeRecommend(userName, userImg, writing);
+      const writingSet = await composeRecommend(user.userName, user.userImg, writing);
 
       writingsReturned.push(writingSet);
     }

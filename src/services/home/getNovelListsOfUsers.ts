@@ -35,13 +35,15 @@ async function composeNovelLists(novelLists: NovelListInfo[]) {
 
   for (const novelList of novelLists) {
     const novel = await getNovelsByNovelId(novelList.novelIDs);
-    const { userName, userImg } = await getUserNameAndImg(novelList.userId);
+    const user = await getUserNameAndImg(novelList.userId);
+
+    if (!user) continue;
 
     novelListComposed.push({
       listId: novelList.novelListId,
       listTitle: novelList.novelListTitle,
-      userName,
-      userImg,
+      userName: user.userName,
+      userImg: user.userImg,
       novel,
     });
   }
