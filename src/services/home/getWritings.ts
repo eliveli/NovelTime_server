@@ -16,7 +16,7 @@ async function getNovelTitle(novelId: string) {
   };
 }
 
-async function getWritingsFromDB(contentType: "T" | "R") {
+export async function getWritingsFromDB(contentType: "T" | "R") {
   return (await db(
     "SELECT * FROM writing WHERE talkOrRecommend = (?) limit 3",
     contentType,
@@ -65,7 +65,7 @@ async function composeRecommendWithNovel(userName: string, userImg: UserImg, wri
   };
 }
 
-async function composeWritings(contentType: "T" | "R", writings: Writing[]) {
+export async function composeWritings(contentType: "T" | "R", writings: Writing[]) {
   if (writings.length === 0) return;
 
   const writingsReturned = [];
