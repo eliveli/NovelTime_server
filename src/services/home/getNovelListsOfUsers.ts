@@ -1,5 +1,5 @@
 import db from "../utils/db";
-import { Novel, NovelListInfo } from "../utils/types";
+import { NovelListInfo } from "../utils/types";
 import getNovelByNovelIdFromDB from "./shared/getNovelByNovelId";
 import getUserNameAndImg from "./shared/getUserNameAndImg";
 
@@ -19,18 +19,17 @@ export async function getNovelsByNovelId(novelIDs: string) {
   const novels = [];
   for (const novelId of novelIdInArray) {
     const novel = await getNovelByNovelIdFromDB(novelId);
+
+    if (!novel) continue;
+
     novels.push(novel);
   }
   return novels;
 }
 
-export async function setNovelsInNovelList(novelLists: NovelListInfo[]) {
-  for (const novelList of novelLists) {
-    await getNovelsByNovelId(novelList.novelIDs);
-  }
-}
-
 async function composeNovelLists(novelLists: NovelListInfo[]) {
+  if (novelLists.length === 0) return; // when getting no data from DB
+
   const novelListComposed = [];
 
   for (const novelList of novelLists) {
@@ -44,7 +43,7 @@ async function composeNovelLists(novelLists: NovelListInfo[]) {
       listTitle: novelList.novelListTitle,
       userName: user.userName,
       userImg: user.userImg,
-      novel,
+      novel, // can be empty array
     });
   }
 
@@ -53,5 +52,6 @@ async function composeNovelLists(novelLists: NovelListInfo[]) {
 
 export default async function getNovelListsOfUsers() {
   const novelLists = await getNovelListsOfUsersFromDB();
+
   return await composeNovelLists(novelLists);
 }
