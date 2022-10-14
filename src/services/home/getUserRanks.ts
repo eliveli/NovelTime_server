@@ -58,17 +58,29 @@ export async function getUserWhoCreatedNovelList(novelListId: string) {
   )) as { userId: string };
 }
 
-export async function getNovelListLikeRank() {
+type NovelListLikeRank = {
+  novelListId: string;
+  count: BigInt;
+};
+export async function composeNovelListLikeRank(novelListRanks: NovelListLikeRank[]) {
   const ranksWithUserId = [];
-
-  const novelListRanks = await getNovelListLikeRankFromDB();
 
   for (const novelListRank of novelListRanks) {
     const { userId } = await getUserWhoCreatedNovelList(novelListRank.novelListId);
 
+    if (!userId) continue;
+
     ranksWithUserId.push({ userId, count: novelListRank.count });
   }
   return ranksWithUserId;
+}
+
+export async function getNovelListLikeRank() {
+  const novelListRanks = await getNovelListLikeRankFromDB();
+
+  if (novelListRanks.length === 0) return [];
+
+  return composeNovelListLikeRank(novelListRanks);
 }
 
 export async function getUserRankByContent(
@@ -98,6 +110,7 @@ export async function getUserRankByContent(
   if (contentType === "L" && actType === "ReceiveLike") {
     return await getNovelListLikeRank();
   }
+  return []; // when getting no data from DB
 }
 
 type UserIdRanks = {
@@ -106,17 +119,17 @@ type UserIdRanks = {
 }[];
 
 export async function setRankWithUserInfo(userIdRanks: UserIdRanks) {
+  if (userIdRanks.length === 0) return; // when getting no data from DB
+
   const rank = [];
   for (const userInfo of userIdRanks) {
-    const { userName, userImg } = await getUserNameAndImg(userInfo.userId);
+    const user = await getUserNameAndImg(userInfo.userId);
+
+    if (!user) continue;
 
     const count = Number(userInfo.count);
 
-    const rankInfo = {
-      userImg,
-      userName,
-      count,
-    };
+    const rankInfo = { userImg: user.userImg, userName: user.userName, count };
     rank.push(rankInfo);
   }
   return rank;
@@ -127,8 +140,6 @@ export default async function getUserRanks(
   actType: "Create" | "ReceiveLike",
 ) {
   const userIdRanks = await getUserRankByContent(contentType, actType);
-
-  if (!userIdRanks) return;
 
   return await setRankWithUserInfo(userIdRanks);
 }

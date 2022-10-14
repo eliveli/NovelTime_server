@@ -36,5 +36,8 @@ export async function getNovelsByNovelIDs(novelIDs: NovelIDs) {
 }
 export default async function getPopularNovelsInNovelTime() {
   const novelIDs = await getPopularNovelsFromDB();
-  return await getNovelsByNovelIDs(novelIDs); // can return [] if I can't get data from DB
+
+  if (novelIDs.length === 0) return; // when getting no data from DB
+
+  return await getNovelsByNovelIDs(novelIDs);
 }
