@@ -27,7 +27,7 @@ export async function getNovelsByNovelId(novelIDs: string) {
   return novels;
 }
 
-async function composeNovelLists(novelLists: NovelListInfo[]) {
+export async function composeNovelLists(novelLists: NovelListInfo[]) {
   if (novelLists.length === 0) return; // when getting no data from DB
 
   const novelListComposed = [];

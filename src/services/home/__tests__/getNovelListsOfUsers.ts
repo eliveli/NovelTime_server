@@ -1,36 +1,36 @@
-import {
+import getNovelListsOfUsers, {
+  composeNovelLists,
   getNovelListsOfUsersFromDB,
-  getNovelsByNovelId,
-  getNovelsByNovelIdFromDB,
 } from "../getNovelListsOfUsers";
-import getUserNameAndImg from "../shared/getUserNameAndImg";
 
-// it("check type of novelIsEnd", async () => {
-//   const novelList = await getNovelsByNovelIdFromDB("20220225081951109");
-//   const { novelIsEnd } = novelList;
-//   console.log("typeof novelIsEnd:", typeof novelIsEnd);
-//   console.log("novelIsEnd:", novelIsEnd);
-//   // expect(novelIsEnd).toBeTruthy();
-//   // expect(novelIsEnd).toBeFalsy();
-// });
+jest.mock("../getNovelListsOfUsers", () => {
+  const originalModule = jest.requireActual("../getNovelListsOfUsers");
+  return {
+    __esModule: true,
+    ...originalModule,
+    getNovelListsOfUsersFromDB: jest.fn().mockResolvedValue([]),
+  };
+});
 
-it("get novel lists of users", async () => {
-  const novelLists = await getNovelListsOfUsersFromDB();
+it("case to return undefined : passing [] to composeNovelLists", async () => {
+  const novelLists = await getNovelListsOfUsersFromDB(); // resolving [] as mock data
 
-  const novelListComposed = [];
+  await expect(composeNovelLists(novelLists)).resolves.toEqual(undefined);
+});
 
-  for (const novelList of novelLists) {
-    const novel = await getNovelsByNovelId(novelList.novelIDs);
-    const { userName, userImg } = await getUserNameAndImg(novelList.userId);
+it("case to return empty array : user doesn't match one in DB", async () => {
+  const novelLists = [
+    {
+      userId: "1",
+      novelListId: "1",
+      novelListTitle: "1",
+      novelIDs: "1 2 3",
+    },
+  ];
 
-    novelListComposed.push({
-      listId: novelList.novelListId,
-      listTitle: novelList.novelListTitle,
-      userName,
-      userImg,
-      novel,
-    });
-  }
+  await expect(composeNovelLists(novelLists)).resolves.toEqual([]);
+});
 
-  console.log("novelListComposed:", novelListComposed);
+it("case to return expected data : getNovelListsOfUsers used actually", async () => {
+  await expect(getNovelListsOfUsers()).resolves.toEqual([]); // fail : got specific data in array
 });
