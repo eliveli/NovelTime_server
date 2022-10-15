@@ -11,18 +11,23 @@ const genreFilter = {
   ridi: { RF: ["1703", "1653"], F: ["1711", "1712", "1715", "1751", "1752"] },
 };
 
-// 스크랩: 완료: 시리즈 로판, 리디 로판, 리디 판타지
-scrapeKakape(genreFilter.kakape.RF, 3609); // scrapeKakape(genreNO, currentOrder)
+// 스크랩: 완료: 시리즈 로판, 시리즈 판타지(~7869), 리디 로판, 리디 판타지
+scrapeKakape(genreFilter.kakape.F, 4157); // scrapeKakape(genreNO, currentOrder)
+// scrapeKakape(genreFilter.kakape.RF, 4255); // scrapeKakape(genreNO, currentOrder)
 // scrapeKakape(genreFilter.kakape.F, 369); // scrapeKakape(genreNO, currentOrder)
-// scrapeSeries(genreFilter.series.RF); // scrapeSeries(genreNO)
+// scrapeSeries(genreFilter.series.F); // scrapeSeries(genreNO)
 // scrapeRidi(genreFilter.ridi.F); // scrapeRidi(genreNOs)
 
+//--------------------------------------------------------------------------
 // 공유하기
 // shareRidi("https://ridibooks.com/books/1250067763"); // shareRidi(inputUrl)
+
 // shareSeries(
 //   "던전 브레이크의 원인이 되어 버렸다 [선공개]출처 : 시리즈 완전판http://naver.me/GG4CxHtp"
 // ); // shareSeries(inputUrl)
+
 // shareKakape(
 //   "link-page.kakao.com/goto_view?series_id=58884103&referrer=utm_source%3Dsh_clip [카카오페이지 | 소설] 의무 결혼 "
-); //shareKakape(inputUrl)
+// ); //shareKakape(inputUrl)
+
 // shareJoara("https://www.joara.com/book/1601829");

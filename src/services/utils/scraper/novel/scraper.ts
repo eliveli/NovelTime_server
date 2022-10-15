@@ -1,7 +1,7 @@
 import puppeteer, { ElementHandle } from "puppeteer";
 import dotenv from "dotenv";
 import getCurrentTime from "./getCurrentTime";
-import { setNovel } from "../../services/novels";
+import { setNovel } from "../../../novels";
 
 dotenv.config(); // 여기(이 명령어를 실행한 파일)에서만 환경변수 사용 가능
 // require("dotenv").config();
@@ -252,7 +252,7 @@ export async function scrapeKakape(genreNO: string, currentOrder: number) {
 
         currentNovelNO += 1;
 
-        if (currentNovelNO % 10 === 0) break; // 작품 10번째 마다 loop 탈출, 시크릿창 여닫기
+        if (currentNovelNO % 5 === 0) break; // 작품 5번째 마다 loop 탈출, 시크릿창 여닫기
         // : 작품 번호가 클수록 무한스크롤 횟수가 많으므로 루프 탈출 주기도 점점 짧게 하기
 
         await page.goBack(); // 목록 페이지로 이동
