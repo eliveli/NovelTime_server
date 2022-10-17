@@ -17,7 +17,9 @@
         //----------------------------------------------------------------//
 
         "lib": ["es5", "es6", "dom"],
-        "module": "commonjs", // which system for the program AMD, UMD, System, CommonJS
+
+        // changed commonJS -> ES2022   to treat Top-level 'await' expressions when running scraper
+        "module": "ES2022", // which system for the program AMD, UMD, System, CommonJS
 
         // changed ES2017 -> ES2020   to treat bigInt type from mariaDB
         "target": "ES2020",   // which level of JS support to target
