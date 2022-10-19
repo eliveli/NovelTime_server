@@ -19,11 +19,13 @@
         "lib": ["es5", "es6", "dom"],
 
         // changed commonJS -> ES2022   to treat Top-level 'await' expressions when running scraper
-        "module": "ES2022", // which system for the program AMD, UMD, System, CommonJS
+        // -> i restored this because other thing didn't work such as importing dotenv in the previous set
+        "module": "commonJS", // which system for the program AMD, UMD, System, CommonJS
 
         // changed ES2017 -> ES2020   to treat bigInt type from mariaDB
-        "target": "ES2020",   // which level of JS support to target
-                              // in puppeteer, running latest version of chrome. so modern version of node js is required.
+        // "target": "ES2020",   // which level of JS support to target
+                                 // target is es2021 without overwriting because of extending from the first line
+                                 // in puppeteer, running latest version of chrome. so modern version of node js is required.
         "esModuleInterop": true,
 
         "outDir": "dist", // where to put the compiled JS files
