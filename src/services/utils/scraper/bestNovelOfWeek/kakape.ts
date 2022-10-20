@@ -30,6 +30,8 @@ export default async function weeklyKakape() {
       "#__next > div > div.css-gqvt86-PcLayout > div.css-oezh2b-ContentMainPage > div.css-1m11tvk-ContentMainPcContainer > div.css-1hq49jx-ContentDetailTabContainer > div.css-9rge6r > div:nth-child(2) > div.css-1luchs4-ContentDetailTabContainer > div > div",
     genre:
       "#__next > div > div.css-gqvt86-PcLayout > div.css-oezh2b-ContentMainPage > div.css-4z4dsn-ContentMainPcContainer > div.css-6wrvoh-ContentMainPcContainer > div.css-dwn26i > div > div.css-0 > div.css-6vpm3i-ContentOverviewInfo > div.css-1ao35gu-ContentOverviewInfo > span:nth-child(9)",
+    isEnd:
+      "#__next > div > div.css-gqvt86-PcLayout > div.css-oezh2b-ContentMainPage > div.css-4z4dsn-ContentMainPcContainer > div.css-6wrvoh-ContentMainPcContainer > div.css-dwn26i > div > div.css-0 > div.css-6vpm3i-ContentOverviewInfo > div.css-484gjc-ContentOverviewInfo > div:nth-child(1) > span",
   };
 
   async function getNovelUrls() {
@@ -84,8 +86,16 @@ export default async function weeklyKakape() {
     return await getInfo(selectorsOfNovelPage.genre);
   }
 
-  async function getNovel(novelUrl: string) {
-    await page.goto(`page.kakao.com${novelUrl}?tab_type=about`);
+  async function setIsEnd() {
+    const checkingEnd = await getInfo(selectorsOfNovelPage.isEnd);
+    if (checkingEnd.includes("완결")) {
+      return true;
+    }
+    return false;
+  }
+
+  async function getNovel(novelPage: string) {
+    await page.goto(`page.kakao.com${novelPage}?tab_type=about`);
 
     // DB에 있는 소설인지 확인 필요.
 
@@ -93,29 +103,30 @@ export default async function weeklyKakape() {
     // - set primary key as novel id
     //   get novel info from novelInfo table
 
+    const novelId = getCurrentTime();
+    const novelImg = await getInfo(selectorsOfNovelPage.img, "attr", "src");
     const novelTitle = await getInfo(selectorsOfNovelPage.title);
+    const novelDesc = await getInfo(selectorsOfNovelPage.desc, "html");
+    const novelAuthor = await getInfo(selectorsOfNovelPage.author);
+    const novelAge = await getInfo(selectorsOfNovelPage.age);
+    const novelGenre = await setGenre(novelTitle);
+    const novelIsEnd = await setIsEnd();
+    const novelPlatform = "카카오페이지";
+    const novelUrl = `page.kakao.com${novelPage}`;
 
     const novel = {
-      novelId: getCurrentTime(),
-
-      novelImg: await getInfo(selectorsOfNovelPage.img, "attr", "src"),
-
+      novelId,
+      novelImg,
       novelTitle,
-
-      novelDesc: await getInfo(selectorsOfNovelPage.desc, "html"),
-
-      novelAuthor: await getInfo(selectorsOfNovelPage.author),
-
-      novelAge: await getInfo(selectorsOfNovelPage.age),
-
-      novelGenre: await setGenre(novelTitle),
-
-      novelIsEnd: "boolean;",
-
-      novelPlatform: "카카오페이지",
-
-      novelUrl: `page.kakao.com${novelUrl}`,
+      novelDesc,
+      novelAuthor,
+      novelAge,
+      novelGenre,
+      novelIsEnd,
+      novelPlatform,
+      novelUrl,
     };
+
     return novel;
   }
 
