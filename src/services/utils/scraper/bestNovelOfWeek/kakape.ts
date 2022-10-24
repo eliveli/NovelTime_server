@@ -5,17 +5,16 @@ import getCurrentTime from "../novel/getCurrentTime";
 
 export default async function weeklyKakape() {
   const browser = await puppeteer.launch({
-    headless: true, // 브라우저 화면 열려면 false
+    headless: false, // 브라우저 화면 열려면 false
   });
 
-  const context = await browser.createIncognitoBrowserContext();
-  const page = await context.newPage();
+  const page = await browser.newPage();
 
   const novelListUrl =
     "https://page.kakao.com/menu/11/screen/16?subcategory_uid=0&ranking_type=weekly";
 
   await page.goto(novelListUrl);
-  page.setDefaultTimeout(10000);
+  page.setDefaultTimeout(100000);
 
   // 로그인 필요! 15세 이용가 작품이 베스트인 경우
   //
@@ -99,10 +98,11 @@ export default async function weeklyKakape() {
 
     // DB에 있는 소설인지 확인 필요.
 
-    // DB 테이블 추가 : 주간 베스트
+    // DB에 테이블 추가해야 함: 주간 베스트
     // - set primary key as novel id
     //   get novel info from novelInfo table
 
+    // DB에 없는 소설일 때 소설 정보 새로 가져오기
     const novelId = getCurrentTime();
     const novelImg = await getInfo(selectorsOfNovelPage.img, "attr", "src");
     const novelTitle = await getInfo(selectorsOfNovelPage.title);
@@ -149,8 +149,8 @@ export default async function weeklyKakape() {
   const novelUrls = await getNovelUrls();
   const novels = await getNovels(novelUrls);
 
-  await context.close(); // 시크릿창 닫기
-  await browser.close(); // 브라우저 닫기
+  await browser.close();
 
+  console.log("novels:", novels);
   return novels;
 }
