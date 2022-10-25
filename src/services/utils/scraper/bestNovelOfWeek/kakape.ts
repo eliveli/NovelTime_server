@@ -83,7 +83,7 @@ export default async function weeklyKakape() {
         `#__next > div > div.css-gqvt86-PcLayout > div.css-58idf7-Menu > div.css-1dqbyyp-Home > div > div > div.css-1k8yz4-StaticLandingRanking > div > div > div > div:nth-child(${bestNo}) > div > div > a`,
       );
       const novelUrl: string = await page.evaluate(
-        (novelElement) => novelElement.getAttribute("href"),
+        (element) => element.getAttribute("href"),
         novelElement,
       );
 
@@ -100,17 +100,22 @@ export default async function weeklyKakape() {
     attributeName = "",
   ) {
     const infoElement = await page.waitForSelector(selector);
-    const info: string = await page.evaluate((infoElement) => {
-      if (instruction === "attr") {
-        return infoElement.getAttribute(attributeName);
-      }
+    const info: string = await page.evaluate(
+      (element, instr, attrName) => {
+        if (instr === "attr") {
+          return element.getAttribute(attrName);
+        }
 
-      if (instruction === "html") {
-        return infoElement.innerHTML;
-      }
+        if (instr === "html") {
+          return element.innerHTML;
+        }
 
-      return infoElement.innerText;
-    }, infoElement);
+        return element.innerText;
+      },
+      infoElement,
+      instruction as SerializableOrJSHandle,
+      attributeName as SerializableOrJSHandle,
+    );
     return info;
   }
 
