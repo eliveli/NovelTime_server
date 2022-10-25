@@ -49,14 +49,14 @@ export default async function weeklyKakape() {
 
   const page = await browser.newPage();
 
+  page.setDefaultNavigationTimeout(500000); // set timeout globally
+
   const novelListUrl =
     "https://page.kakao.com/menu/11/screen/16?subcategory_uid=0&ranking_type=weekly";
 
   await page.goto(novelListUrl);
   // await page.goto(novelListUrl, { waitUntil: "load", timeout: 500000 });
-  // set timeout for navigational events such as page.waitForSelector
-
-  page.setDefaultTimeout(100000);
+  // set timeout specifically for navigational events such as page.waitForSelector
 
   // 로그인 필요! 15세 이용가 작품이 베스트인 경우
   //
@@ -190,7 +190,6 @@ export default async function weeklyKakape() {
       novelUrlsDecreased.shift();
       novelNo += 1;
     }
-
     return novels;
   }
 
