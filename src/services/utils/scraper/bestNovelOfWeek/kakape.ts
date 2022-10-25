@@ -178,18 +178,18 @@ export default async function weeklyKakape() {
   }
 
   async function getNovels(novelUrls: string[]) {
-    let novelNo = 1;
     const novels = [];
-    const novelUrlsDecreased = novelUrls;
 
-    while (novelUrlsDecreased.length !== 0) {
-      const novel = await getNovel(novelUrlsDecreased[novelNo - 1]);
+    while (novelUrls.length !== 0) {
+      const novel = await getNovel(novelUrls[0]);
 
       novels.push(novel);
 
-      novelUrlsDecreased.shift();
-      novelNo += 1;
+      novelUrls.shift();
+
+      console.log("novelUrls:", novelUrls);
     }
+
     return novels;
   }
 
