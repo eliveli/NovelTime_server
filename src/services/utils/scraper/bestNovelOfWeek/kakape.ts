@@ -1,11 +1,50 @@
-import puppeteer from "puppeteer";
+import puppeteer, { SerializableOrJSHandle } from "puppeteer";
 import getCurrentTime from "../novel/getCurrentTime";
 
 // 각 플랫폼에서 주간베스트 소설 20개 씩 가져오기
 
 export default async function weeklyKakape() {
+  const minimalArgs = [
+    "--autoplay-policy=user-gesture-required",
+    "--disable-background-networking",
+    "--disable-background-timer-throttling",
+    "--disable-backgrounding-occluded-windows",
+    "--disable-breakpad",
+    "--disable-client-side-phishing-detection",
+    "--disable-component-update",
+    "--disable-default-apps",
+    "--disable-dev-shm-usage",
+    "--disable-domain-reliability",
+    "--disable-extensions",
+    "--disable-features=AudioServiceOutOfProcess",
+    "--disable-hang-monitor",
+    "--disable-ipc-flooding-protection",
+    "--disable-notifications",
+    "--disable-offer-store-unmasked-wallet-cards",
+    "--disable-popup-blocking",
+    "--disable-print-preview",
+    "--disable-prompt-on-repost",
+    "--disable-renderer-backgrounding",
+    "--disable-setuid-sandbox",
+    "--disable-speech-api",
+    "--disable-sync",
+    "--hide-scrollbars",
+    "--ignore-gpu-blacklist",
+    "--metrics-recording-only",
+    "--mute-audio",
+    "--no-default-browser-check",
+    "--no-first-run",
+    "--no-pings",
+    "--no-sandbox",
+    "--no-zygote",
+    "--password-store=basic",
+    "--use-gl=swiftshader",
+    "--use-mock-keychain",
+  ];
+
   const browser = await puppeteer.launch({
     headless: false, // 브라우저 화면 열려면 false
+    args: minimalArgs,
   });
 
   const page = await browser.newPage();
@@ -14,6 +53,9 @@ export default async function weeklyKakape() {
     "https://page.kakao.com/menu/11/screen/16?subcategory_uid=0&ranking_type=weekly";
 
   await page.goto(novelListUrl);
+  // await page.goto(novelListUrl, { waitUntil: "load", timeout: 500000 });
+  // set timeout for navigational events such as page.waitForSelector
+
   page.setDefaultTimeout(100000);
 
   // 로그인 필요! 15세 이용가 작품이 베스트인 경우
@@ -94,7 +136,7 @@ export default async function weeklyKakape() {
   }
 
   async function getNovel(novelPage: string) {
-    await page.goto(`page.kakao.com${novelPage}?tab_type=about`);
+    await page.goto(`https://page.kakao.com${novelPage}?tab_type=about`);
 
     // DB에 있는 소설인지 확인 필요.
 
@@ -133,13 +175,14 @@ export default async function weeklyKakape() {
   async function getNovels(novelUrls: string[]) {
     let novelNo = 1;
     const novels = [];
+    const novelUrlsDecreased = novelUrls;
 
-    while (novelUrls.length !== 0) {
-      const novel = await getNovel(novelUrls[novelNo - 1]);
+    while (novelUrlsDecreased.length !== 0) {
+      const novel = await getNovel(novelUrlsDecreased[novelNo - 1]);
 
       novels.push(novel);
 
-      novelUrls.shift();
+      novelUrlsDecreased.shift();
       novelNo += 1;
     }
 
