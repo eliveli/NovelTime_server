@@ -1,4 +1,4 @@
-import puppeteer, { SerializableOrJSHandle } from "puppeteer";
+import puppeteer, { ElementHandle, SerializableOrJSHandle } from "puppeteer";
 import getCurrentTime from "../novel/getCurrentTime";
 
 // 각 플랫폼에서 주간베스트 소설 20개 씩 가져오기
@@ -94,6 +94,9 @@ export default async function weeklyKakape() {
   const idElement = await newPage.waitForSelector("#input-loginKey");
   await newPage.evaluate(
     (ID, element) => {
+      // don't set the type to element parameter as ElementHandle<HTMLInputElement>
+      // because it makes ts error
+      // just let it as any type though it makes eslint notification
       element.value = ID;
     },
     kakaoID,
