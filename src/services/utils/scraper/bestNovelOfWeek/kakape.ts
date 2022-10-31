@@ -52,7 +52,7 @@ export default async function weeklyKakape() {
 
   const page = await browser.newPage();
 
-  page.setDefaultNavigationTimeout(500000); // set timeout globally
+  page.setDefaultTimeout(500000); // set timeout globally
 
   const novelListUrl =
     "https://page.kakao.com/menu/11/screen/16?subcategory_uid=0&ranking_type=weekly";
@@ -80,8 +80,6 @@ export default async function weeklyKakape() {
     // declare new tab/window, now you can work with it
     const newPage = (await newPagePromise) as puppeteer.Page;
 
-    newPage.setDefaultNavigationTimeout(500000); // set timeout globally
-
     let kakaoID: string;
     let kakaoPW: string;
 
@@ -97,9 +95,7 @@ export default async function weeklyKakape() {
       throw new Error("KAKAO_PW env was not set");
     }
 
-    console.log("kakaoID:", kakaoID);
-
-    const idElement = await newPage.waitForSelector("#input-loginKey");
+    const idElement = await newPage.waitForSelector("#input-loginKey", { timeout: 50000 });
     await newPage.evaluate(
       (ID, element) => {
         // don't set the type to element parameter as ElementHandle<HTMLInputElement>
