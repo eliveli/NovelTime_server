@@ -120,6 +120,16 @@ export default async function weeklyKakape() {
       "#mainContent > div > div > form > div.set_login > div > label > span.ico_comm.ico_check",
     ); // click 로그인상태유지
 
+    // without following code
+    //  I could see the process that types login info but removes them
+    // with this code
+    //  I couldn't see the process. it just stop after opening the login popup.
+    // how can I fix it?
+
+    await new Promise((resolve) => {
+      setTimeout(resolve, 500);
+    });
+
     // click login button
     await newPage.click(
       "#mainContent > div > div > form > div.confirm_btn > button.btn_g.highlight",
