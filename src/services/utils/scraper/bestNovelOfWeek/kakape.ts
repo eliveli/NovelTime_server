@@ -95,40 +95,17 @@ export default async function weeklyKakape() {
       throw new Error("KAKAO_PW env was not set");
     }
 
-    const idElement = await newPage.waitForSelector("#input-loginKey", { timeout: 50000 });
-    await newPage.evaluate(
-      (ID, element) => {
-        // don't set the type to element parameter as ElementHandle<HTMLInputElement>
-        // because it makes ts error
-        // just let it as any type though it makes eslint notification
-        element.value = ID;
-      },
-      kakaoID,
-      idElement,
-    );
+    await newPage.waitForSelector("#input-loginKey", { timeout: 50000 });
 
-    const pwElement = await newPage.waitForSelector("#input-password");
-    await newPage.evaluate(
-      (PW, element) => {
-        element.value = PW;
-      },
-      kakaoPW,
-      pwElement,
-    );
+    await newPage.type("#input-loginKey", kakaoID);
+
+    await newPage.waitForSelector("#input-password");
+
+    await newPage.type("#input-password", kakaoPW);
 
     await newPage.click(
       "#mainContent > div > div > form > div.set_login > div > label > span.ico_comm.ico_check",
     ); // click 로그인상태유지
-
-    // without following code
-    //  I could see the process that types login info but removes them
-    // with this code
-    //  I couldn't see the process. it just stop after opening the login popup.
-    // how can I fix it?
-
-    await new Promise((resolve) => {
-      setTimeout(resolve, 500);
-    });
 
     // click login button
     await newPage.click(
