@@ -95,7 +95,7 @@ export default async function weeklyKakape() {
       throw new Error("KAKAO_PW env was not set");
     }
 
-    await newPage.waitForSelector("#input-loginKey", { timeout: 50000 });
+    const idElement = await newPage.waitForSelector("#input-loginKey", { timeout: 50000 });
 
     await newPage.type("#input-loginKey", kakaoID);
 
