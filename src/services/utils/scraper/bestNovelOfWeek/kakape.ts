@@ -208,11 +208,14 @@ export default async function weeklyKakape() {
     novelPlatform: string;
     novelPlatform2: string;
     novelPlatform3: string;
+    novelUrl: string;
+    novelUrl2: string;
+    novelUrl3: string;
   };
 
   async function getSameNovelFromDB(novelTitle: string, novelAuthor: string) {
     return (await db(
-      `SELECT novelId, novelTitle, novelAuthor, novelPlatform, novelPlatform2, novelPlatform3 FROM novelInfo
+      `SELECT novelId, novelTitle, novelAuthor, novelPlatform, novelPlatform2, novelPlatform3, novelUrl, novelUrl2, novelUrl3 FROM novelInfo
     WHERE novelTitle = (?) AND novelAuthor = (?)`,
       [novelTitle, novelAuthor],
       "all",
@@ -316,9 +319,54 @@ export default async function weeklyKakape() {
       return novelFromDB[0].novelId;
     }
 
-    // when novel is more than one and they are not duplicate
+    // when novel is more than one
+    if (novelFromDB.length > 1) {
+      const novelPlatforms: Array<string> = [];
+      const novelUrls = [];
 
-    // when novel is more than one and some of them are duplicate
+      // check novels that has same title and author
+      for (const novelPlatformPage of novelFromDB) {
+        // get platform info that is not empty
+        for (const { platform, url } of [
+          { platform: novelPlatformPage.novelPlatform, url: novelPlatformPage.novelUrl },
+          { platform: novelPlatformPage.novelPlatform2, url: novelPlatformPage.novelUrl2 },
+          { platform: novelPlatformPage.novelPlatform3, url: novelPlatformPage.novelUrl3 },
+        ]) {
+          if (platform) {
+            novelPlatforms.push(platform);
+            novelUrls.push(url);
+          }
+        }
+      }
+
+      // remove duplicate platform info
+      const newNovelPages = novelPlatforms
+        .map((platform, index) => {
+          if (novelPlatforms.indexOf(platform) === index) {
+            return { platform, url: novelUrl[index] };
+          }
+          return undefined;
+        })
+        // remove undefined item from the array made by map function
+        .filter((platform) => !!platform);
+
+      // add the platform kakao page if it is not in the novel info of DB
+      if (!novelPlatforms.includes(targetPlatform)) {
+        newNovelPages.push({ platform: targetPlatform, url: novelUrl });
+      }
+
+      // remove JOARA platform of the novel info if platform is more than 3
+      if (novelPlatforms.length > 3 && novelPlatforms.includes("조아라")) {
+        for (const [index, value] of newNovelPages.entries()) {
+          if (value?.platform === "조아라") {
+            newNovelPages.splice(index, 1);
+            break;
+          }
+        }
+      }
+
+      // update one novel and remove other novel rows in DB and get a novel id
+    }
   }
 
   async function getNovel(novelPage: string) {
