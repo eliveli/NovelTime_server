@@ -265,6 +265,46 @@ export default async function weeklyKakape() {
     ]);
   }
 
+  type NewNovelPages = Array<{
+    platform: string;
+    url: string;
+  }>;
+
+  async function updateNovel(novelId: string, newNovelPages: NewNovelPages) {
+    await db(
+      "UPDATE novelInfo SET novelPlatform = (?), novelUrl = (?), novelPlatform2 = (?), novelUrl2 = (?), novelPlatform3 = (?), novelUrl3 = (?) WHERE novelId = (?)",
+      [
+        newNovelPages[0].platform,
+        newNovelPages[0].url,
+        newNovelPages[1].platform,
+        newNovelPages[1].url,
+        newNovelPages[2].platform,
+        newNovelPages[2].url,
+        novelId,
+      ],
+    );
+  }
+
+  async function deleteSameNovel(novelId: string) {
+    await db("DELETE FROM novelInfo WHERE novelId = (?)", [novelId]);
+  }
+  async function deleteSameNovels(novelIDs: Array<string>) {
+    for (const novelId of novelIDs) {
+      await deleteSameNovel(novelId);
+    }
+  }
+
+  async function makeNovelOne(novelIDs: Array<string>, newNovelPages: NewNovelPages) {
+    const novelIdForUpdate = novelIDs[0];
+    const novelIDsForDelete = novelIDs.splice(0, 1);
+
+    await updateNovel(novelIdForUpdate, newNovelPages);
+
+    await deleteSameNovels(novelIDsForDelete);
+
+    return novelIdForUpdate;
+  }
+
   async function checkNovelInDB(novelTitle: string, novelAuthor: string, novelPage: string) {
     const targetPlatform = "카카오페이지";
     const novelUrl = `page.kakao.com${novelPage}`;
@@ -348,7 +388,7 @@ export default async function weeklyKakape() {
           return undefined;
         })
         // remove undefined item from the array made by map function
-        .filter((platform) => !!platform);
+        .filter((platform) => !!platform) as NewNovelPages;
 
       // add the platform kakao page if it is not in the novel info of DB
       if (!novelPlatforms.includes(targetPlatform)) {
@@ -365,7 +405,25 @@ export default async function weeklyKakape() {
         }
       }
 
-      // update one novel and remove other novel rows in DB and get a novel id
+      // make newNovelPages array had 3 platforms and urls including empty string
+      //  to deal with db when updating novel
+      for (let i = newNovelPages.length; i < 3; i += 1) {
+        newNovelPages.push({ platform: "", url: "" });
+      }
+
+      //
+      // update one novel and remove other novel rows in DB
+      //
+      // make an array of novelID with the same novel
+      const novelIDsWithSameNovel: Array<string> = [];
+      for (const novel of novelFromDB) {
+        novelIDsWithSameNovel.push(novel.novelId);
+      }
+      //
+      // make same novels one and return the novel id
+      const novelId = await makeNovelOne(novelIDsWithSameNovel, newNovelPages);
+
+      return novelId;
     }
   }
 
