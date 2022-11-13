@@ -97,8 +97,9 @@ export default async function weeklyKakape() {
       throw new Error("KAKAO_PW env was not set");
     }
 
-    // without this I couldn't see the execution of next code line
-    const idElement = await newPage.waitForSelector("#input-loginKey", { timeout: 50000 });
+    // sometimes it can not work (when playing video or running DBeaver)
+    //  It seems to occur when there are many processes in my computer
+    await newPage.waitForSelector("#input-loginKey", { timeout: 50000 });
 
     await newPage.type("#input-loginKey", kakaoID);
 
@@ -458,8 +459,6 @@ export default async function weeklyKakape() {
       novelIDs.push(novelID);
 
       novelUrls.shift();
-
-      console.log("novelUrls:", novelUrls);
     }
 
     return novelIDs;
@@ -468,7 +467,6 @@ export default async function weeklyKakape() {
   async function addWeeklyNovel(novelId: string, novelRank: number, scrapeDate: string) {
     const novelPlatform = "카카오페이지";
 
-    // don't make novelId primary key because it can be in multiple rows with multiple platforms
     await db(
       "INSERT INTO weeklyNovel SET novelId = (?), novelRank = (?), novelPlatform = (?), scrapeDate = (?),  isLatest = 1",
       [novelId, novelRank, novelPlatform, scrapeDate],
@@ -507,6 +505,5 @@ export default async function weeklyKakape() {
 
   await browser.close();
 
-  console.log("novelIDs:", novelIDs);
   return novelIDs;
 }
