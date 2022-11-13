@@ -317,15 +317,18 @@ export default async function weeklyKakape() {
     //                           delete duplicate
     //                           make one novel from same novels with multiple platforms
 
-    // when they novel is not in table
-    // need to add new novel to novelInfo table
+    // when the novel is not in db //
+    //  add new novel to novelInfo table
     if (novelFromDB.length === 0) {
       const novelId = await addNewNovel(novelTitle, novelAuthor, novelPage);
       return novelId;
     }
 
+    //
+    // when novel is in db //
+    //
     // when novel is one and the one of the platforms is kakao
-    // do not anything except returning novelId
+    //  do not anything except returning novelId
     if (
       novelFromDB.length === 1 &&
       [
@@ -338,7 +341,7 @@ export default async function weeklyKakape() {
     }
 
     // when novel is one and the platform is not kakao
-    // add platform and url to the novel and return novelId
+    //  add platform and url to the novel and return novelId
     if (
       novelFromDB.length === 1 &&
       ![
@@ -430,26 +433,27 @@ export default async function weeklyKakape() {
   async function getNovel(novelPage: string) {
     await page.goto(`https://page.kakao.com${novelPage}?tab_type=about`);
 
-    // DB에 있는 소설인지 확인 필요.
-
-    // DB에 테이블 추가해야 함: 주간 베스트
-    // - set primary key as novel id
-    //   get novel info from novelInfo table
-
-    // DB에 없는 소설일 때 소설 정보 새로 가져오기
+    // they are necessary to check whether the novel is in DB
     const novelTitle = await getInfo(selectorsOfNovelPage.title);
     const novelAuthor = await getInfo(selectorsOfNovelPage.author);
 
+    // add the novel as new one or update novel in novelInfo table
+    //  and get the novel id
     const novelId = await checkNovelInDB(novelTitle, novelAuthor, novelPage);
 
     return novelId;
   }
 
   async function getNovels(novelUrls: string[]) {
-    const novelIDs = [];
+    const novelIDs: string[] = [];
 
     while (novelUrls.length !== 0) {
       const novelID = await getNovel(novelUrls[0]);
+
+      if (!novelID) {
+        novelUrls.shift();
+        continue;
+      }
 
       novelIDs.push(novelID);
 
@@ -461,6 +465,36 @@ export default async function weeklyKakape() {
     return novelIDs;
   }
 
+  async function addWeeklyNovel(novelId: string, novelRank: number, scrapeDate: string) {
+    const novelPlatform = "카카오페이지";
+
+    // - set primary key as novel id -
+    await db(
+      "INSERT INTO weeklyNovel SET novelId = (?), rank = (?), scrapeDate = (?), platform = (?), isLatest = 1",
+      [novelId, novelRank, scrapeDate, novelPlatform],
+    );
+  }
+
+  async function handlePreviousWeeklyNovels() {
+    const novelPlatform = "카카오페이지";
+
+    await db("UPDATE weeklyNovel SET isLatest = 0 WHERE isLatest = 1 AND platform = (?)", [
+      novelPlatform,
+    ]);
+  }
+  async function addWeeklyNovels(novelIDs: Array<string>) {
+    const scrapeDate = getCurrentTime();
+
+    // make isLatest value 0 that means false of previous weekly novels
+    await handlePreviousWeeklyNovels();
+
+    for (const [index, novelId] of novelIDs.entries()) {
+      await addWeeklyNovel(novelId, index + 1, scrapeDate);
+    }
+
+    // later I will get weekly novels from DB where isLatest is 1 and platform is 카카오페이지
+  }
+
   await login();
 
   await waitForProfileIconAfterLogin();
@@ -468,7 +502,8 @@ export default async function weeklyKakape() {
   const novelUrls = await getNovelUrls();
   const novelIDs = await getNovels(novelUrls);
 
-  // update weekly novel table with novelIDs
+  // update new weekly novels to weeklyNovel table
+  await addWeeklyNovels(novelIDs);
 
   await browser.close();
 
