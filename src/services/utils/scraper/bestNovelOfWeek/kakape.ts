@@ -468,17 +468,17 @@ export default async function weeklyKakape() {
   async function addWeeklyNovel(novelId: string, novelRank: number, scrapeDate: string) {
     const novelPlatform = "카카오페이지";
 
-    // - set primary key as novel id -
+    // don't make novelId primary key because it can be in multiple rows with multiple platforms
     await db(
-      "INSERT INTO weeklyNovel SET novelId = (?), rank = (?), scrapeDate = (?), platform = (?), isLatest = 1",
-      [novelId, novelRank, scrapeDate, novelPlatform],
+      "INSERT INTO weeklyNovel SET novelId = (?), novelRank = (?), novelPlatform = (?), scrapeDate = (?),  isLatest = 1",
+      [novelId, novelRank, novelPlatform, scrapeDate],
     );
   }
 
   async function handlePreviousWeeklyNovels() {
     const novelPlatform = "카카오페이지";
 
-    await db("UPDATE weeklyNovel SET isLatest = 0 WHERE isLatest = 1 AND platform = (?)", [
+    await db("UPDATE weeklyNovel SET isLatest = 0 WHERE isLatest = 1 AND novelPlatform = (?)", [
       novelPlatform,
     ]);
   }
