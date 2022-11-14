@@ -286,7 +286,7 @@ export default async function weeklyKakape() {
     await updateNovel(novelIdForUpdate, newNovelPages);
 
     if (novelIDs.length > 1) {
-      const novelIDsForDelete = novelIDs.splice(0, 1);
+      const novelIDsForDelete = novelIDs.slice(1, novelIDs.length);
 
       await deleteSameNovels(novelIDsForDelete);
     }
