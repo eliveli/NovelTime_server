@@ -251,21 +251,6 @@ export default async function weeklyKakape() {
     return novelId;
   }
 
-  async function addPlatform2ToNovel(novelId: string, novelPlatform: string, novelUrl: string) {
-    await db("UPDATE novelInfo SET novelPlatform2 = (?), novelUrl2 = (?) WHERE novelId = (?)", [
-      novelPlatform,
-      novelUrl,
-      novelId,
-    ]);
-  }
-  async function addPlatform3ToNovel(novelId: string, novelPlatform: string, novelUrl: string) {
-    await db("UPDATE novelInfo SET novelPlatform3 = (?), novelUrl3 = (?) WHERE novelId = (?)", [
-      novelPlatform,
-      novelUrl,
-      novelId,
-    ]);
-  }
-
   type NewNovelPages = Array<{
     platform: string;
     url: string;
@@ -297,11 +282,14 @@ export default async function weeklyKakape() {
 
   async function makeNovelOne(novelIDs: Array<string>, newNovelPages: NewNovelPages) {
     const novelIdForUpdate = novelIDs[0];
-    const novelIDsForDelete = novelIDs.splice(0, 1);
 
     await updateNovel(novelIdForUpdate, newNovelPages);
 
-    await deleteSameNovels(novelIDsForDelete);
+    if (novelIDs.length > 1) {
+      const novelIDsForDelete = novelIDs.splice(0, 1);
+
+      await deleteSameNovels(novelIDsForDelete);
+    }
 
     return novelIdForUpdate;
   }
@@ -328,107 +316,72 @@ export default async function weeklyKakape() {
     //
     // when novel is in db //
     //
-    // when novel is one and the one of the platforms is kakao
-    //  do not anything except returning novelId
-    if (
-      novelFromDB.length === 1 &&
-      [
-        novelFromDB[0].novelPlatform,
-        novelFromDB[0].novelPlatform2,
-        novelFromDB[0].novelPlatform3,
-      ].includes(targetPlatform)
-    ) {
-      return novelFromDB[0].novelId;
-    }
+    const novelPlatforms: Array<string> = [];
+    const novelUrls = [];
 
-    // when novel is one and the platform is not kakao
-    //  add platform and url to the novel and return novelId
-    if (
-      novelFromDB.length === 1 &&
-      ![
-        novelFromDB[0].novelPlatform,
-        novelFromDB[0].novelPlatform2,
-        novelFromDB[0].novelPlatform3,
-      ].includes(targetPlatform)
-    ) {
-      if (!novelFromDB[0].novelPlatform2) {
-        await addPlatform2ToNovel(novelFromDB[0].novelId, targetPlatform, novelUrl);
-      }
-
-      // consider novel platforms up to 3
-      // normally it won't be more than 3 platforms (카카오페이지, 네이버시리즈, 리디북스)
-      //  I didn't consider 조아라 in this case because that is popular as free platform
-      await addPlatform3ToNovel(novelFromDB[0].novelId, targetPlatform, novelUrl);
-
-      return novelFromDB[0].novelId;
-    }
-
-    // when novel is more than one
-    if (novelFromDB.length > 1) {
-      const novelPlatforms: Array<string> = [];
-      const novelUrls = [];
-
-      // check novels that has same title and author
-      for (const novelPlatformPage of novelFromDB) {
-        // get platform info that is not empty
-        for (const { platform, url } of [
-          { platform: novelPlatformPage.novelPlatform, url: novelPlatformPage.novelUrl },
-          { platform: novelPlatformPage.novelPlatform2, url: novelPlatformPage.novelUrl2 },
-          { platform: novelPlatformPage.novelPlatform3, url: novelPlatformPage.novelUrl3 },
-        ]) {
-          if (platform) {
-            novelPlatforms.push(platform);
-            novelUrls.push(url);
-          }
+    // check novels that has same title and author
+    for (const novelPlatformPage of novelFromDB) {
+      // get platform info that is not empty
+      for (const { platform, url } of [
+        { platform: novelPlatformPage.novelPlatform, url: novelPlatformPage.novelUrl },
+        { platform: novelPlatformPage.novelPlatform2, url: novelPlatformPage.novelUrl2 },
+        { platform: novelPlatformPage.novelPlatform3, url: novelPlatformPage.novelUrl3 },
+      ]) {
+        if (platform) {
+          novelPlatforms.push(platform);
+          novelUrls.push(url);
         }
       }
+    }
 
-      // remove duplicate platform info
-      const newNovelPages = novelPlatforms
-        .map((platform, index) => {
-          if (novelPlatforms.indexOf(platform) === index) {
-            return { platform, url: novelUrl[index] };
-          }
-          return undefined;
-        })
-        // remove undefined item from the array made by map function
-        .filter((platform) => !!platform) as NewNovelPages;
+    // remove duplicate platform info
+    const newNovelPages = novelPlatforms
+      .map((platform, index) => {
+        if (novelPlatforms.indexOf(platform) === index) {
+          return { platform, url: novelUrl[index] };
+        }
+        return undefined;
+      })
+      // remove undefined item from the array made by map function
+      .filter((platform) => !!platform) as NewNovelPages;
 
-      // add the platform kakao page if it is not in the novel info of DB
-      if (!novelPlatforms.includes(targetPlatform)) {
-        newNovelPages.push({ platform: targetPlatform, url: novelUrl });
-      }
+    // add the platform kakao page if it is not in the table novelInfo of DB
+    if (!novelPlatforms.includes(targetPlatform)) {
+      newNovelPages.push({ platform: targetPlatform, url: novelUrl });
+    }
 
-      // remove JOARA platform of the novel info if platform is more than 3
-      if (novelPlatforms.length > 3 && novelPlatforms.includes("조아라")) {
-        for (const [index, value] of newNovelPages.entries()) {
-          if (value?.platform === "조아라") {
-            newNovelPages.splice(index, 1);
-            break;
-          }
+    // remove JOARA platform of the novel info if platform is more than 3
+    //  typically I won't consider 조아라 in this case because that is popular as free platform
+    //   just consider novel platforms up to 3
+    if (novelPlatforms.length > 3 && novelPlatforms.includes("조아라")) {
+      for (const [index, value] of newNovelPages.entries()) {
+        if (value?.platform === "조아라") {
+          newNovelPages.splice(index, 1);
+          break;
         }
       }
-
-      // make newNovelPages array had 3 platforms and urls including empty string
-      //  to deal with db when updating novel
-      for (let i = newNovelPages.length; i < 3; i += 1) {
-        newNovelPages.push({ platform: "", url: "" });
-      }
-
-      //
-      // update one novel and remove other novel rows in DB
-      //
-      // make an array of novelID with the same novel
-      const novelIDsWithSameNovel: Array<string> = [];
-      for (const novel of novelFromDB) {
-        novelIDsWithSameNovel.push(novel.novelId);
-      }
-      //
-      // make same novels one and return the novel id
-      const novelId = await makeNovelOne(novelIDsWithSameNovel, newNovelPages);
-
-      return novelId;
     }
+
+    // make newNovelPages array had 3 platforms and urls including empty string
+    //  to deal with db when updating novel
+    for (let i = newNovelPages.length; i < 3; i += 1) {
+      newNovelPages.push({ platform: "", url: "" });
+    }
+
+    //
+    // update one novel
+    //  and remove other novel rows if there was more than one novel row in DB
+    //
+    // make an array of novelID with the same novel
+    const novelIDsWithSameNovel: Array<string> = [];
+    for (const novel of novelFromDB) {
+      novelIDsWithSameNovel.push(novel.novelId);
+    }
+    //
+    // make same novels one and return the novel id
+    const novelId = await makeNovelOne(novelIDsWithSameNovel, newNovelPages);
+
+    return novelId;
   }
 
   async function getNovel(novelPage: string) {
