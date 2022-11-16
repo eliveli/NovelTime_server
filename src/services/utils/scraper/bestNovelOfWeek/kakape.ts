@@ -267,7 +267,7 @@ export async function checkNovelInDB(page: puppeteer.Page, novelInfo: NovelInfo)
   // when novel is in db //
   //
   const novelPlatforms: Array<string> = [];
-  const novelUrls = [];
+  const novelUrls: Array<string> = [];
 
   // check novels that has same title and author
   for (const novelPlatformPage of novelFromDB) {
@@ -288,7 +288,7 @@ export async function checkNovelInDB(page: puppeteer.Page, novelInfo: NovelInfo)
   const newNovelPages = novelPlatforms
     .map((platform, index) => {
       if (novelPlatforms.indexOf(platform) === index) {
-        return { platform, url: novelUrl[index] };
+        return { platform, url: novelUrls[index] };
       }
       return undefined;
     })
