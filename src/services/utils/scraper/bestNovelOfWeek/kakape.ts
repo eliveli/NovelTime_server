@@ -80,7 +80,7 @@ const selectorsOfNovelPage = {
     "#__next > div > div.css-gqvt86-PcLayout > div.css-oezh2b-ContentMainPage > div.css-4z4dsn-ContentMainPcContainer > div.css-6wrvoh-ContentMainPcContainer > div.css-dwn26i > div > div.css-0 > div.css-6vpm3i-ContentOverviewInfo > div.css-484gjc-ContentOverviewInfo > div:nth-child(1) > span",
 };
 
-async function getNovelUrls(page: puppeteer.Page) {
+async function getPartialNovelUrls(page: puppeteer.Page) {
   let bestNo = 1;
   const novelUrls = [];
   while (bestNo < 21) {
@@ -170,7 +170,7 @@ async function getSameNovelFromDB(novelTitle: string, novelAuthor: string) {
 type NovelInfo = {
   novelTitle: string;
   novelAuthor: string;
-  someOfNovelUrl: string;
+  novelUrl: string;
 };
 
 async function addNewNovel(page: puppeteer.Page, novelInfo: NovelInfo) {
@@ -181,14 +181,14 @@ async function addNewNovel(page: puppeteer.Page, novelInfo: NovelInfo) {
   const novelGenre = await setGenre(page, novelInfo.novelTitle);
   const novelIsEnd = await setIsEnd(page);
   const novelPlatform = "카카오페이지";
-  const novelUrl = `page.kakao.com${novelInfo.someOfNovelUrl}`;
+  const { novelAuthor, novelTitle, novelUrl } = novelInfo;
 
   const novel = {
     novelId,
     novelImg,
-    novelTitle: novelInfo.novelTitle,
+    novelTitle,
     novelDesc,
-    novelAuthor: novelInfo.novelAuthor,
+    novelAuthor,
     novelAge,
     novelGenre,
     novelIsEnd,
@@ -246,9 +246,9 @@ async function makeNovelOne(novelIDs: Array<string>, newNovelPages: NewNovelPage
 
 export async function checkNovelInDB(page: puppeteer.Page, novelInfo: NovelInfo) {
   const targetPlatform = "카카오페이지";
-  const novelUrl = `page.kakao.com${novelInfo.someOfNovelUrl}`;
+  const { novelAuthor, novelTitle, novelUrl } = novelInfo;
 
-  const novelFromDB = await getSameNovelFromDB(novelInfo.novelTitle, novelInfo.novelAuthor);
+  const novelFromDB = await getSameNovelFromDB(novelTitle, novelAuthor);
 
   // update novelInfo table
   // - add new novel
@@ -334,13 +334,15 @@ export async function checkNovelInDB(page: puppeteer.Page, novelInfo: NovelInfo)
   return novelId;
 }
 
-async function getNovel(page: puppeteer.Page, someOfNovelUrl: string) {
-  await page.goto(`https://page.kakao.com${someOfNovelUrl}?tab_type=about`);
+async function getNovel(page: puppeteer.Page, partialNovelUrl: string) {
+  await page.goto(`https://page.kakao.com${partialNovelUrl}?tab_type=about`);
 
   // they are necessary to check whether the novel is in DB
   const novelTitle = await getInfo(page, selectorsOfNovelPage.title);
   const novelAuthor = await getInfo(page, selectorsOfNovelPage.author);
-  const novelInfo = { novelTitle, novelAuthor, someOfNovelUrl };
+  const novelUrl = `page.kakao.com${partialNovelUrl}`;
+
+  const novelInfo = { novelTitle, novelAuthor, novelUrl };
 
   // add the novel as new one or update novel in novelInfo table
   //  and get the novel id
@@ -349,20 +351,20 @@ async function getNovel(page: puppeteer.Page, someOfNovelUrl: string) {
   return novelId;
 }
 
-async function getNovels(page: puppeteer.Page, novelUrls: string[]) {
+async function getNovels(page: puppeteer.Page, partialNovelUrls: string[]) {
   const novelIDs: string[] = [];
 
-  while (novelUrls.length !== 0) {
-    const novelID = await getNovel(page, novelUrls[0]);
+  while (partialNovelUrls.length !== 0) {
+    const novelID = await getNovel(page, partialNovelUrls[0]);
 
     if (!novelID) {
-      novelUrls.shift();
+      partialNovelUrls.shift();
       continue;
     }
 
     novelIDs.push(novelID);
 
-    novelUrls.shift();
+    partialNovelUrls.shift();
   }
 
   return novelIDs;
@@ -456,8 +458,8 @@ export default async function weeklyKakape() {
 
   await waitForProfileIconAfterLogin(page);
 
-  const novelUrls = await getNovelUrls(page);
-  const novelIDs = await getNovels(page, novelUrls);
+  const partialNovelUrls = await getPartialNovelUrls(page);
+  const novelIDs = await getNovels(page, partialNovelUrls);
 
   // update new weekly novels to weeklyNovel table
   await addWeeklyNovels(novelIDs);
