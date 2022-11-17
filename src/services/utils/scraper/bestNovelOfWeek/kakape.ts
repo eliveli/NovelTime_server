@@ -163,7 +163,7 @@ type NovelForChecking = {
   novelUrl3: string;
 };
 
-async function getSameNovelFromDB(novelTitle: string, novelAuthor: string) {
+async function searchForNovelsByTitleAndAuthor(novelTitle: string, novelAuthor: string) {
   return (await db(
     `SELECT novelId, novelTitle, novelAuthor, novelPlatform, novelPlatform2, novelPlatform3, novelUrl, novelUrl2, novelUrl3 FROM novelInfo
   WHERE novelTitle = (?) AND novelAuthor = (?)`,
@@ -256,11 +256,11 @@ export async function addOrUpdateNovelInDB(page: puppeteer.Page, novelInfo: Nove
   const targetPlatform = "카카오페이지";
   const { novelAuthor, novelTitle, novelUrl } = novelInfo;
 
-  const novelFromDB = await getSameNovelFromDB(novelTitle, novelAuthor);
+  const novelsFromDB = await searchForNovelsByTitleAndAuthor(novelTitle, novelAuthor);
 
   // when the novel is not in db //
   //  add new novel to novelInfo table
-  if (novelFromDB.length === 0) {
+  if (novelsFromDB.length === 0) {
     const novelId = await addNewNovel(page, novelInfo);
     return novelId;
   }
@@ -271,7 +271,7 @@ export async function addOrUpdateNovelInDB(page: puppeteer.Page, novelInfo: Nove
   const novelUrls: Array<string> = [];
 
   // check novel rows that has same title and author
-  for (const novelPlatformPage of novelFromDB) {
+  for (const novelPlatformPage of novelsFromDB) {
     // get platform info that is not empty
     for (const { platform, url } of [
       { platform: novelPlatformPage.novelPlatform, url: novelPlatformPage.novelUrl },
@@ -324,7 +324,7 @@ export async function addOrUpdateNovelInDB(page: puppeteer.Page, novelInfo: Nove
   //
   // make an array of novelID with the same novel
   const novelIDsWithSameNovel: Array<string> = [];
-  for (const novel of novelFromDB) {
+  for (const novel of novelsFromDB) {
     novelIDsWithSameNovel.push(novel.novelId);
   }
   //
