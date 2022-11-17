@@ -8,6 +8,9 @@ dotenv.config();
 
 // 각 플랫폼에서 주간베스트 소설 20개 씩 가져오기
 
+const novelListUrl =
+  "https://page.kakao.com/menu/11/screen/16?subcategory_uid=0&ranking_type=weekly";
+
 async function login(page: puppeteer.Page) {
   // login for passing 15 age limitation
   const loginBtn = (await page.waitForSelector(
@@ -80,17 +83,19 @@ const selectorsOfNovelPage = {
     "#__next > div > div.css-gqvt86-PcLayout > div.css-oezh2b-ContentMainPage > div.css-4z4dsn-ContentMainPcContainer > div.css-6wrvoh-ContentMainPcContainer > div.css-dwn26i > div > div.css-0 > div.css-6vpm3i-ContentOverviewInfo > div.css-484gjc-ContentOverviewInfo > div:nth-child(1) > span",
 };
 
-async function getPartialNovelUrls(page: puppeteer.Page) {
+async function getNovelUrls(page: puppeteer.Page) {
   let bestNo = 1;
   const novelUrls = [];
   while (bestNo < 21) {
     const novelElement = await page.waitForSelector(
       `#__next > div > div.css-gqvt86-PcLayout > div.css-58idf7-Menu > div.css-1dqbyyp-Home > div > div > div.css-1k8yz4-StaticLandingRanking > div > div > div > div:nth-child(${bestNo}) > div > div > a`,
     );
-    const novelUrl: string = await page.evaluate(
+    const partialNovelUrl: string = await page.evaluate(
       (element) => element.getAttribute("href"),
       novelElement,
     );
+
+    const novelUrl = `page.kakao.com${partialNovelUrl}`;
 
     novelUrls.push(novelUrl);
 
@@ -244,17 +249,14 @@ async function makeNovelOne(novelIDs: Array<string>, newNovelPages: NewNovelPage
   return novelIdForUpdate;
 }
 
-export async function checkNovelInDB(page: puppeteer.Page, novelInfo: NovelInfo) {
+// check whether the novel is in novelInfo table or not
+// and add a new novel or update a novel as changing its platform and url info
+// finally get the novel id
+export async function addOrUpdateNovelInDB(page: puppeteer.Page, novelInfo: NovelInfo) {
   const targetPlatform = "카카오페이지";
   const { novelAuthor, novelTitle, novelUrl } = novelInfo;
 
   const novelFromDB = await getSameNovelFromDB(novelTitle, novelAuthor);
-
-  // update novelInfo table
-  // - add new novel
-  // - change existing novel : add platform and url
-  //                           delete duplicate
-  //                           make one novel from same novels with multiple platforms
 
   // when the novel is not in db //
   //  add new novel to novelInfo table
@@ -263,13 +265,12 @@ export async function checkNovelInDB(page: puppeteer.Page, novelInfo: NovelInfo)
     return novelId;
   }
 
-  //
   // when novel is in db //
-  //
+  // update the novel with its platform and url
   const novelPlatforms: Array<string> = [];
   const novelUrls: Array<string> = [];
 
-  // check novels that has same title and author
+  // check novel rows that has same title and author
   for (const novelPlatformPage of novelFromDB) {
     // get platform info that is not empty
     for (const { platform, url } of [
@@ -318,7 +319,6 @@ export async function checkNovelInDB(page: puppeteer.Page, novelInfo: NovelInfo)
     newNovelPages.push({ platform: "", url: "" });
   }
 
-  //
   // update one novel
   //  and remove other novel rows if there was more than one novel row in DB
   //
@@ -334,37 +334,36 @@ export async function checkNovelInDB(page: puppeteer.Page, novelInfo: NovelInfo)
   return novelId;
 }
 
-async function getNovel(page: puppeteer.Page, partialNovelUrl: string) {
-  await page.goto(`https://page.kakao.com${partialNovelUrl}?tab_type=about`);
+async function getNovelIdFromDB(page: puppeteer.Page, novelUrl: string) {
+  await page.goto(`https://${novelUrl}?tab_type=about`);
 
   // they are necessary to check whether the novel is in DB
   const novelTitle = await getInfo(page, selectorsOfNovelPage.title);
   const novelAuthor = await getInfo(page, selectorsOfNovelPage.author);
-  const novelUrl = `page.kakao.com${partialNovelUrl}`;
 
   const novelInfo = { novelTitle, novelAuthor, novelUrl };
 
   // add the novel as new one or update novel in novelInfo table
   //  and get the novel id
-  const novelId = await checkNovelInDB(page, novelInfo);
+  const novelId = await addOrUpdateNovelInDB(page, novelInfo);
 
   return novelId;
 }
 
-async function getNovels(page: puppeteer.Page, partialNovelUrls: string[]) {
+async function getNovelIDsFromDB(page: puppeteer.Page, novelUrls: string[]) {
   const novelIDs: string[] = [];
 
-  while (partialNovelUrls.length !== 0) {
-    const novelID = await getNovel(page, partialNovelUrls[0]);
+  while (novelUrls.length !== 0) {
+    const novelID = await getNovelIdFromDB(page, novelUrls[0]);
 
     if (!novelID) {
-      partialNovelUrls.shift();
+      novelUrls.shift();
       continue;
     }
 
     novelIDs.push(novelID);
 
-    partialNovelUrls.shift();
+    novelUrls.shift();
   }
 
   return novelIDs;
@@ -439,16 +438,13 @@ const minimalArgs = [
 
 export default async function weeklyKakape() {
   const browser = await puppeteer.launch({
-    headless: false, // 브라우저 화면 열려면 false
+    // headless: false, // 브라우저 화면 열려면 false
     args: minimalArgs,
   });
 
   const page = await browser.newPage();
 
   page.setDefaultTimeout(500000); // set timeout globally
-
-  const novelListUrl =
-    "https://page.kakao.com/menu/11/screen/16?subcategory_uid=0&ranking_type=weekly";
 
   await page.goto(novelListUrl);
   // await page.goto(novelListUrl, { waitUntil: "load", timeout: 500000 });
@@ -458,8 +454,8 @@ export default async function weeklyKakape() {
 
   await waitForProfileIconAfterLogin(page);
 
-  const partialNovelUrls = await getPartialNovelUrls(page);
-  const novelIDs = await getNovels(page, partialNovelUrls);
+  const novelUrls = await getNovelUrls(page);
+  const novelIDs = await getNovelIDsFromDB(page, novelUrls);
 
   // update new weekly novels to weeklyNovel table
   await addWeeklyNovels(novelIDs);
