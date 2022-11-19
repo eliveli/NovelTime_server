@@ -69,7 +69,11 @@ const selectorsOfNovelPage = {
   // need to remove a tag such as [독점]
   title: "#content > div.end_head > h2",
 
-  desc: "#content > div.end_dsc.open > div:nth-child(2)",
+  desc: {
+    parent: "#content > div.end_dsc",
+    child1: "#content > div.end_dsc > div:nth-child(1)",
+    child2: "#content > div.end_dsc > div:nth-child(2)",
+  },
 
   age: "#content > ul.end_info.NE\\=a\\:nvi > li > ul > li:nth-child(5)",
 
@@ -128,24 +132,21 @@ async function getInfo(
 }
 
 async function getDesc(page: puppeteer.Page) {
-  // click "더보기" to show all description
-  const descElement = await page.waitForSelector("#content > div.end_dsc");
+  const parentDescElement = await page.waitForSelector(selectorsOfNovelPage.desc.parent);
   const childrenLengthOfDesc = await page.evaluate(
     (element) => element.children.length,
-    descElement,
+    parentDescElement,
   );
 
-  // 더보기 버튼 없을 때
+  // if there is not a more button of desc
   if (childrenLengthOfDesc === 1) {
-    return await getInfo(page, "#content > div.end_dsc", "html");
+    return await getInfo(page, selectorsOfNovelPage.desc.child1, "html");
   }
 
-  // 더보기 버튼 있을 때
-  await page.click("#content > div.end_dsc > div:nth-child(1) > span > a");
+  // if there is a more button of desc
+  await page.waitForSelector(selectorsOfNovelPage.desc.child2);
 
-  await page.waitForSelector(selectorsOfNovelPage.desc);
-
-  const descriptionWithOtherTag = await getInfo(page, selectorsOfNovelPage.desc, "html");
+  const descriptionWithOtherTag = await getInfo(page, selectorsOfNovelPage.desc.child2, "html");
 
   const startIndexOfOtherTag = descriptionWithOtherTag.indexOf("<span");
 
