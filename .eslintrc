@@ -50,6 +50,8 @@
         "@typescript-eslint/no-unsafe-assignment": "warn",
         "@typescript-eslint/no-unsafe-call": "warn",
         "@typescript-eslint/no-unsafe-return": "warn",
+        "@typescript-eslint/no-unsafe-member-access": "warn",
+
 
         // it is necessary to run a scraper that doesn't need "await" keyword because of not being resolving something
         "@typescript-eslint/no-floating-promises": "warn",
