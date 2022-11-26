@@ -267,6 +267,33 @@ async function makeNovelOne(novelIDs: Array<string>, newNovelPages: NewNovelPage
   return novelIdForUpdate;
 }
 
+function removeStartLabels(novelTitle: string) {
+  for (const label of [")", ") ", "]", "] "]) {
+    const indexOfLabel = novelTitle.indexOf(label);
+    if (indexOfLabel === -1) continue;
+    if (indexOfLabel !== novelTitle.length - 1) {
+      return novelTitle.slice(indexOfLabel + label.length, novelTitle.length - 1);
+    }
+  }
+}
+function removeEndLabels(novelTitle: string) {
+  for (const label of ["(", " (", "[", " [", "외전", " 외전", "-외전", " -외전"]) {
+    const indexOfLabel = novelTitle.indexOf(label);
+    if (indexOfLabel === -1) continue;
+    if (indexOfLabel !== 0) {
+      return novelTitle.slice(0, indexOfLabel);
+    }
+  }
+}
+function removeLabelsFromTitle(novelTitle: string) {
+  const titleWithoutEndLabels = removeEndLabels(novelTitle);
+  if (titleWithoutEndLabels) return titleWithoutEndLabels;
+
+  const titleWithoutStartLabels = removeStartLabels(novelTitle);
+  if (titleWithoutStartLabels) return titleWithoutStartLabels;
+
+  return novelTitle;
+}
 // check whether the novel is in novelInfo table or not
 // and add a new novel or update a novel as changing its platform and url info
 // finally get the novel id
@@ -274,7 +301,9 @@ export async function addOrUpdateNovelInDB(page: puppeteer.Page, novelInfo: Nove
   const targetPlatform = "네이버 시리즈";
   const { novelAuthor, novelTitle, novelUrl } = novelInfo;
 
-  const novelsFromDB = await searchForNovelsByTitleAndAuthor(novelTitle, novelAuthor);
+  const novelTitleWithoutLabels = removeLabelsFromTitle(novelTitle);
+
+  const novelsFromDB = await searchForNovelsByTitleAndAuthor(novelTitleWithoutLabels, novelAuthor);
 
   // when the novel is not in db //
   //  add new novel to novelInfo table
