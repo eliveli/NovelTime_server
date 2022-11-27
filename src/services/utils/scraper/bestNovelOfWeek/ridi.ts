@@ -8,8 +8,8 @@ dotenv.config();
 
 // 각 플랫폼에서 주간베스트 소설 20개 씩 가져오기
 
-// 성인 작품 제외됨
-const novelListUrl = "https://ridibooks.com/bestsellers/romance?adult_exclude=y&page=1";
+// 로판 웹소설(장르불문 스크랩 불가) / 성인 작품 제외됨
+const novelListUrl = "https://ridibooks.com/category/bestsellers/6050?adult_exclude=y&page=1";
 
 async function login(page: puppeteer.Page) {
   // login for passing 15 age limitation
@@ -23,7 +23,9 @@ async function login(page: puppeteer.Page) {
     throw new Error("login 버튼 null 에러");
   }
 
-  await page.click("#gnb_login_button"); // click and go to the login page in a current tab/window
+  await page.click(
+    "#__next > div.fig-16izi9a > div.fig-fs8jml > div > ul.fig-1aswo17 > li:nth-child(2) > a",
+  ); // click and go to the login page in a current tab/window
 
   let ridiID: string;
   let ridiPW: string;
@@ -61,7 +63,7 @@ async function login(page: puppeteer.Page) {
 
 async function waitForProfileIconAfterLogin(page: puppeteer.Page) {
   await page.waitForSelector(
-    "#__next > div.fig-150a24d > div.fig-fs8jml > div > ul.fig-1aswo17 > li > a > span",
+    "#__next > div.fig-16izi9a > div.fig-fs8jml > div > ul.fig-1aswo17 > li > a > span",
   );
 }
 
@@ -89,11 +91,10 @@ const selectorsOfNovelPage = {
 export async function getNovelUrls(page: puppeteer.Page) {
   let bestNo = 1;
   const novelUrls = [];
+
   while (bestNo < 21) {
     const novelElement = await page.waitForSelector(
-      `#__next > main > section > ul.fig-1nfc3co > li:nth-child(${
-        bestNo + 1
-      }) > div > div.fig-jc2buj > div > h3 > a`,
+      `#__next > main > div > section > ul.fig-1nfc3co > li:nth-child(${bestNo}) > div > div.fig-jc2buj > div > h3 > a`,
     );
 
     const partialNovelUrl: string = await page.evaluate(
@@ -105,9 +106,7 @@ export async function getNovelUrls(page: puppeteer.Page) {
 
     const novelUrl = `ridibooks.com${partialNovelUrlCut}`;
 
-    console.log("novelUrl:", novelUrl);
     novelUrls.push(novelUrl);
-
     bestNo += 1;
   }
   return novelUrls;
@@ -201,10 +200,10 @@ async function getGenre(page: puppeteer.Page) {
 //
 
 async function getIsEnd(page: puppeteer.Page) {
-  const isEnd = await page.evaluate(() => {
-    const notEndElement = document.querySelector(selectorsOfNovelPage.isEnd);
+  const isEnd = await page.evaluate((selectorOfIsEnd) => {
+    const notEndElement = document.querySelector(selectorOfIsEnd);
     return notEndElement === null;
-  });
+  }, selectorsOfNovelPage.isEnd);
   return isEnd;
 }
 
@@ -539,6 +538,7 @@ export default async function weeklyRidi() {
   await waitForProfileIconAfterLogin(page);
 
   const novelUrls = await getNovelUrls(page);
+
   const novelIDs = await getNovelIDsFromDB(page, novelUrls);
 
   // update new weekly novels to weeklyNovel table
