@@ -3,6 +3,7 @@ import dotenv from "dotenv";
 import getCurrentTime from "../novel/getCurrentTime";
 import db from "../../db";
 import { setNovel } from "../../../novels";
+import { removeLabelsFromTitle } from "./utils";
 
 dotenv.config();
 
@@ -256,7 +257,9 @@ async function makeNovelOne(novelIDs: Array<string>, newNovelPages: NewNovelPage
 export async function addOrUpdateNovelInDB(page: puppeteer.Page, novelInfo: NovelInfo) {
   const { novelAuthor, novelTitle, novelUrl } = novelInfo;
 
-  const novelsFromDB = await searchForNovelsByTitleAndAuthor(novelTitle, novelAuthor);
+  const novelTitleWithoutLabels = removeLabelsFromTitle(novelTitle);
+
+  const novelsFromDB = await searchForNovelsByTitleAndAuthor(novelTitleWithoutLabels, novelAuthor);
 
   // when the novel is not in db //
   //  add new novel to novelInfo table

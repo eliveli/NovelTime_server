@@ -3,6 +3,7 @@ import dotenv from "dotenv";
 import getCurrentTime from "../novel/getCurrentTime";
 import db from "../../db";
 import { setNovel } from "../../../novels";
+import { removeLabelsFromTitle } from "./utils";
 
 dotenv.config();
 
@@ -313,33 +314,6 @@ async function makeNovelOne(novelIDs: Array<string>, newNovelPages: NewNovelPage
   return novelIdForUpdate;
 }
 
-function removeStartLabels(novelTitle: string) {
-  for (const label of [")", ") ", "]", "] "]) {
-    const indexOfLabel = novelTitle.indexOf(label);
-    if (indexOfLabel === -1) continue;
-    if (indexOfLabel !== novelTitle.length - 1) {
-      return novelTitle.slice(indexOfLabel + label.length, novelTitle.length - 1);
-    }
-  }
-}
-function removeEndLabels(novelTitle: string) {
-  for (const label of ["(", " (", "[", " [", "외전", " 외전", "-외전", " -외전"]) {
-    const indexOfLabel = novelTitle.indexOf(label);
-    if (indexOfLabel === -1) continue;
-    if (indexOfLabel !== 0) {
-      return novelTitle.slice(0, indexOfLabel);
-    }
-  }
-}
-function removeLabelsFromTitle(novelTitle: string) {
-  const titleWithoutEndLabels = removeEndLabels(novelTitle);
-  if (titleWithoutEndLabels) return titleWithoutEndLabels;
-
-  const titleWithoutStartLabels = removeStartLabels(novelTitle);
-  if (titleWithoutStartLabels) return titleWithoutStartLabels;
-
-  return novelTitle;
-}
 // check whether the novel is in novelInfo table or not
 // and add a new novel or update a novel as changing its platform and url info
 // finally get the novel id

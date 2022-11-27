@@ -45,6 +45,7 @@
         "operator-linebreak": "off",
         "no-continue": "off",
         "implicit-arrow-linebreak": "off",
+        "import/prefer-default-export": "off",
 
         "@typescript-eslint/no-var-requires": "warn",
         "@typescript-eslint/no-unsafe-assignment": "warn",
