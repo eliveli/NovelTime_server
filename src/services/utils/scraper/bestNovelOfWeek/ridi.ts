@@ -94,12 +94,14 @@ export async function getNovelUrls(page: puppeteer.Page) {
   let bestNo = 1;
   const novelUrls = [];
 
-  // without this I can't get novel urls more than 11
-  for (let i = 1; i < 9; i += 1) {
-    await page.keyboard.press("PageDown");
-  }
-
   while (bestNo < 21) {
+    // without this I can't get novel urls more than 11
+    if (bestNo === 12) {
+      for (let i = 1; i < 9; i += 1) {
+        await page.keyboard.press("PageDown");
+      }
+    }
+
     const novelElement = await page.waitForSelector(
       `#__next > main > div > section > ul.fig-1nfc3co > li:nth-child(${bestNo}) > div > div.fig-jc2buj > div > h3 > a`,
     );
