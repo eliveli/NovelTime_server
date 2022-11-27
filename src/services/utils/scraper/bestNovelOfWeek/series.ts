@@ -8,6 +8,8 @@ dotenv.config();
 
 // 각 플랫폼에서 주간베스트 소설 20개 씩 가져오기
 
+const novelPlatform = "네이버 시리즈";
+
 const novelListUrl =
   "https://series.naver.com/novel/top100List.series?rankingTypeCode=WEEKLY&categoryCode=ALL";
 
@@ -203,7 +205,6 @@ async function addNewNovel(page: puppeteer.Page, novelInfo: NovelInfo) {
   const novelAge = await getInfo(page, selectorsOfNovelPage.age);
   const novelGenre = await getInfo(page, selectorsOfNovelPage.genre);
   const novelIsEnd = await getIsEnd(page);
-  const novelPlatform = "네이버 시리즈";
   const { novelAuthor, novelTitle, novelUrl } = novelInfo;
 
   const novel = {
@@ -285,7 +286,7 @@ function removeEndLabels(novelTitle: string) {
     }
   }
 }
-function removeLabelsFromTitle(novelTitle: string) {
+export function removeLabelsFromTitle(novelTitle: string) {
   const titleWithoutEndLabels = removeEndLabels(novelTitle);
   if (titleWithoutEndLabels) return titleWithoutEndLabels;
 
@@ -298,7 +299,6 @@ function removeLabelsFromTitle(novelTitle: string) {
 // and add a new novel or update a novel as changing its platform and url info
 // finally get the novel id
 export async function addOrUpdateNovelInDB(page: puppeteer.Page, novelInfo: NovelInfo) {
-  const targetPlatform = "네이버 시리즈";
   const { novelAuthor, novelTitle, novelUrl } = novelInfo;
 
   const novelTitleWithoutLabels = removeLabelsFromTitle(novelTitle);
@@ -344,8 +344,8 @@ export async function addOrUpdateNovelInDB(page: puppeteer.Page, novelInfo: Nove
     .filter((platform) => !!platform) as NewNovelPages;
 
   // add the platform naver series if it is not in the table novelInfo of DB
-  if (!novelPlatforms.includes(targetPlatform)) {
-    newNovelPages.push({ platform: targetPlatform, url: novelUrl });
+  if (!novelPlatforms.includes(novelPlatform)) {
+    newNovelPages.push({ platform: novelPlatform, url: novelUrl });
   }
 
   // remove JOARA platform of the novel info if platform is more than 3
@@ -417,8 +417,6 @@ async function getNovelIDsFromDB(page: puppeteer.Page, novelUrls: string[]) {
 }
 
 async function addWeeklyNovel(novelId: string, novelRank: number, scrapeDate: string) {
-  const novelPlatform = "네이버 시리즈";
-
   await db(
     "INSERT INTO weeklyNovel SET novelId = (?), novelRank = (?), novelPlatform = (?), scrapeDate = (?),  isLatest = 1",
     [novelId, novelRank, novelPlatform, scrapeDate],
@@ -426,8 +424,6 @@ async function addWeeklyNovel(novelId: string, novelRank: number, scrapeDate: st
 }
 
 async function handlePreviousWeeklyNovels() {
-  const novelPlatform = "네이버 시리즈";
-
   await db("UPDATE weeklyNovel SET isLatest = 0 WHERE isLatest = 1 AND novelPlatform = (?)", [
     novelPlatform,
   ]);
@@ -498,8 +494,6 @@ export default async function weeklySeries() {
   await login(page);
 
   await waitForProfileIconAfterLogin(page);
-
-  // 여기까지 완료
 
   const novelUrls = await getNovelUrls(page);
   const novelIDs = await getNovelIDsFromDB(page, novelUrls);

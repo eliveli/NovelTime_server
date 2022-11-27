@@ -8,6 +8,8 @@ dotenv.config();
 
 // 각 플랫폼에서 주간베스트 소설 20개 씩 가져오기
 
+const novelPlatform = "카카오페이지";
+
 const novelListUrl =
   "https://page.kakao.com/menu/11/screen/16?subcategory_uid=0&ranking_type=weekly";
 
@@ -136,14 +138,14 @@ async function getInfo(
 //       to do remove the following in the end of the img src when needed : "&filename=th3"
 //
 
-async function setGenre(page: puppeteer.Page, novelTitle: string) {
+async function getGenre(page: puppeteer.Page, novelTitle: string) {
   if (novelTitle.includes("[BL]")) {
     return "BL";
   }
   return await getInfo(page, selectorsOfNovelPage.genre);
 }
 
-async function setIsEnd(page: puppeteer.Page) {
+async function getIsEnd(page: puppeteer.Page) {
   const checkingEnd = await getInfo(page, selectorsOfNovelPage.isEnd);
   if (checkingEnd.includes("완결")) {
     return true;
@@ -183,9 +185,8 @@ async function addNewNovel(page: puppeteer.Page, novelInfo: NovelInfo) {
   const novelImg = await getInfo(page, selectorsOfNovelPage.img, "attr", "src");
   const novelDesc = await getInfo(page, selectorsOfNovelPage.desc, "html");
   const novelAge = await getInfo(page, selectorsOfNovelPage.age);
-  const novelGenre = await setGenre(page, novelInfo.novelTitle);
-  const novelIsEnd = await setIsEnd(page);
-  const novelPlatform = "카카오페이지";
+  const novelGenre = await getGenre(page, novelInfo.novelTitle);
+  const novelIsEnd = await getIsEnd(page);
   const { novelAuthor, novelTitle, novelUrl } = novelInfo;
 
   const novel = {
@@ -253,7 +254,6 @@ async function makeNovelOne(novelIDs: Array<string>, newNovelPages: NewNovelPage
 // and add a new novel or update a novel as changing its platform and url info
 // finally get the novel id
 export async function addOrUpdateNovelInDB(page: puppeteer.Page, novelInfo: NovelInfo) {
-  const targetPlatform = "카카오페이지";
   const { novelAuthor, novelTitle, novelUrl } = novelInfo;
 
   const novelsFromDB = await searchForNovelsByTitleAndAuthor(novelTitle, novelAuthor);
@@ -297,8 +297,8 @@ export async function addOrUpdateNovelInDB(page: puppeteer.Page, novelInfo: Nove
     .filter((platform) => !!platform) as NewNovelPages;
 
   // add the platform kakao page if it is not in the table novelInfo of DB
-  if (!novelPlatforms.includes(targetPlatform)) {
-    newNovelPages.push({ platform: targetPlatform, url: novelUrl });
+  if (!novelPlatforms.includes(novelPlatform)) {
+    newNovelPages.push({ platform: novelPlatform, url: novelUrl });
   }
 
   // remove JOARA platform of the novel info if platform is more than 3
@@ -370,8 +370,6 @@ async function getNovelIDsFromDB(page: puppeteer.Page, novelUrls: string[]) {
 }
 
 async function addWeeklyNovel(novelId: string, novelRank: number, scrapeDate: string) {
-  const novelPlatform = "카카오페이지";
-
   await db(
     "INSERT INTO weeklyNovel SET novelId = (?), novelRank = (?), novelPlatform = (?), scrapeDate = (?),  isLatest = 1",
     [novelId, novelRank, novelPlatform, scrapeDate],
@@ -379,8 +377,6 @@ async function addWeeklyNovel(novelId: string, novelRank: number, scrapeDate: st
 }
 
 async function handlePreviousWeeklyNovels() {
-  const novelPlatform = "카카오페이지";
-
   await db("UPDATE weeklyNovel SET isLatest = 0 WHERE isLatest = 1 AND novelPlatform = (?)", [
     novelPlatform,
   ]);
