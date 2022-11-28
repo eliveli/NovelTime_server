@@ -4,12 +4,12 @@ if (process.env.NODE_ENV === "production") {
   require("dotenv").config({
     path: ".env.prod",
   });
-  console.log(`mode : ${process.env.NODE_ENV}`);
+  console.log("mode : ", process.env.NODE_ENV);
 } else {
   require("dotenv").config({
     path: ".env.dev",
   });
-  console.log(`mode : ${process.env.NODE_ENV}`);
+  console.log("mode : ", process.env.NODE_ENV);
 }
 
 // handle undefined env variable
@@ -22,7 +22,7 @@ if (process.env.DB_PORT) {
 
 const pool = mariadb.createPool({
   host: process.env.DB_HOST,
-  port: parseInt(DB_PORT),
+  port: Number(DB_PORT),
   user: process.env.DB_USER,
   password: process.env.DB_PW,
   connectionLimit: 10,
