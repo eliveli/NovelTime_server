@@ -17,7 +17,7 @@ function removeEndLabels(novelTitle: string) {
   }
 }
 
-export function removeLabelsFromTitle(novelTitle: string) {
+export default function removeLabelsFromTitle(novelTitle: string) {
   const titleWithoutEndLabels = removeEndLabels(novelTitle);
   if (titleWithoutEndLabels) return titleWithoutEndLabels;
 

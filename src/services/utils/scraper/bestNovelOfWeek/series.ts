@@ -3,7 +3,7 @@ import dotenv from "dotenv";
 import getCurrentTime from "../novel/getCurrentTime";
 import db from "../../db";
 import { setNovel } from "../../../novels";
-import { removeLabelsFromTitle } from "./utils";
+import removeLabelsFromTitle from "./utils/removeLabelsFromTitle";
 
 dotenv.config();
 
