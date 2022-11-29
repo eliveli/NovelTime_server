@@ -506,53 +506,59 @@ export async function scrapeRidi(genreNOs: string[]) {
   while (true) {
     const context = await browser.createIncognitoBrowserContext(); // 시크릿창 열기
     const page = await context.newPage();
-    page.setDefaultTimeout(15000); // 마지막번호+1 작품(없음) 조회 시 대기 시간 줄이기
+    page.setDefaultTimeout(30000); // 마지막번호+1 작품(없음) 조회 시 대기 시간 줄이기
 
-    // 카테고리 조회
+    // 카테고리별 조회
     categoryLoop: for (let ctgIdx = 0; ctgIdx < genreNOs.length; ctgIdx++) {
       // 카테고리별 목록 페이지 전체 조회 완료라면 다시 조회하지 않음 : 시크릿창 닫고 새로 열 때 표시 필요
       if (isCategoryLoopEnd) break;
 
-      // 목록페이지 url // with 최신순(최신화등록일)
-      const novelListUrl = `https://ridibooks.com/category/books/${genreNOs[ctgIdx]}?order=recent&page=`;
+      // 목록페이지 url // with 최신순(최신화등록일), 성인 제외
+      const novelListUrl = `https://ridibooks.com/category/books/${genreNOs[ctgIdx]}?order=recent&adult_exclude=y&page=`;
 
-      await page.goto(novelListUrl + currentPageNO); // 목록 페이지 이동
+      // 목록 페이지 이동
+      // 페이지 이동 후 대기 시간 필요. 소설 url을 읽어 올 dom이 load되어야 함
+      await page.goto(novelListUrl + currentPageNO, { waitUntil: "networkidle0" });
 
-      // 목록 페이지 조회 반복
+      // 소설 목록 카드형으로 보기
+      //  -> 페이지 별 모든 소설을 가능한 한 작은 화면에 보이기
+      //    -> PageDown 누르는 횟수 줄이기 && 줄어든 횟수만큼 다루기 쉽게 하기
+      if (currentPageNO === 1) {
+        await page.waitForSelector(
+          "#__next > main > div > section > div > ul > div > button:nth-child(2)",
+        ); // 꼭 필요함
+        await page.click("#__next > main > div > section > div > ul > div > button:nth-child(2)");
+      }
+
+      // 카테고리 내 목록 페이지 조회 반복
       while (true) {
         console.log(currentPageNO, "현재 페이지 번호");
 
-        // 목록에서 각 작품 url 가져오기
-        for (let novelNO = 1; novelNO < 21; novelNO++) {
+        // 각 페이지에서 작품 url 가져오기
+        for (let novelNO = 1; novelNO < 61; novelNO += 1) {
           try {
+            // in order to read dom elements from page
+            await page.waitForSelector(
+              "#__next > main > div > section > ul > li:nth-child(1) > div > div > div > h3 > a",
+            ); // 페이지의 첫번째 소설 element load 후
+
+            for (let i = 1; i < 16; i += 1) {
+              await page.keyboard.press("PageDown", { delay: 100 });
+            }
+
             const novelElHandle = await page.waitForSelector(
-              `#page_category > div.book_macro_wrapper.js_book_macro_wrapper > div:nth-child(${
-                novelNO * 2 - 1
-              }) > div.book_thumbnail_wrapper > div > a`,
+              `#__next > main > div > section > ul > li:nth-child(${novelNO}) > div > div > div > h3 > a`,
             );
-            // 작품 url 및 성인여부 저장
-            let novelURL = await page.evaluate(
-              (novelElHandle) => novelElHandle.getAttribute("href"),
+
+            const novelURLunClean = await page.evaluate(
+              (elHandle) => elHandle.getAttribute("href"),
               novelElHandle,
             );
             // url : "?" 부터 문자 제외
-            novelURL = novelURL.slice(0, novelURL.indexOf("?"));
+            const novelURL = novelURLunClean.slice(0, novelURLunClean.indexOf("?"));
 
-            // 성인 여부 : 비로그인 시 작품 표지가 19세 이용불가 이미지일 때 true
-            const adultElement = await page.waitForSelector(
-              `#page_category > div.book_macro_wrapper.js_book_macro_wrapper > div:nth-child(${
-                novelNO * 2 - 1
-              }) > div.book_thumbnail_wrapper > div > div > img`,
-            );
-            const isAdult = await page.evaluate(
-              (adultElement) =>
-                adultElement.getAttribute("src") ===
-                "https://static.ridicdn.net/books/dist/images/book_cover/cover_adult.png",
-              adultElement,
-            );
-
-            novelList.push({ url: novelURL, isAdult });
-            // console.log("noveNO: " + novelNO + " novelURL: " + novelURL);
+            novelList.push({ url: novelURL });
+            console.log(`noveNO: ${novelNO} novelURL: ${novelURL}`);
           } catch (err) {
             console.log(err, "읽어올 작품이 더 없을 확률 높음");
 
@@ -560,12 +566,12 @@ export async function scrapeRidi(genreNOs: string[]) {
             // 직전 페이지가 마지막 페이지일 때
             if (novelNO === 1) {
               totalPageNO.push(currentPageNO - 1); // 해당 필터의 전체 페이지 수 표시
-              totalNovelNO += (currentPageNO - 1) * 20; // 전체 작품 수에 해당 필터의 작품 수 추가
+              totalNovelNO += (currentPageNO - 1) * 60; // 전체 작품 수에 해당 필터의 작품 수 추가
             }
             // 현재 페이지가 마지막 페이지일 때
-            else if (novelNO !== 1) {
+            if (novelNO !== 1) {
               totalPageNO.push(currentPageNO); // 해당 필터의 전체 페이지 수 표시
-              totalNovelNO += (currentPageNO - 1) * 20 + (novelNO - 1); // 전체 작품 수에 해당 필터의 작품 수 추가
+              totalNovelNO += (currentPageNO - 1) * 60 + (novelNO - 1); // 전체 작품 수에 해당 필터의 작품 수 추가
             }
 
             console.log(`totalPageNO: ${totalPageNO}totalNovelNO: ${totalNovelNO}`);
@@ -576,7 +582,10 @@ export async function scrapeRidi(genreNOs: string[]) {
         }
         // 다음 페이지 이동
         currentPageNO += 1;
-        await page.goto(novelListUrl + currentPageNO);
+        await page.goto(novelListUrl + currentPageNO, { waitUntil: "networkidle0" });
+        await page.waitForSelector(
+          "#__next > main > div > section > ul > li:nth-child(1) > div > div > div > h3 > a",
+        ); // 페이지의 첫번째 소설 element load 후
       }
     }
 
@@ -735,15 +744,17 @@ export async function scrapeRidi(genreNOs: string[]) {
         );
         // get age
         const ageElement = await page.waitForSelector("#notice_component > ul > li");
-        const notification = await page.evaluate((ageElement) => ageElement.innerText, ageElement);
-        novelInfo.novelAge =
-          novelList[currentNovelNO - 1].isAdult === true
-            ? "청소년 이용불가"
-            : notification.includes("15세")
-            ? "15세 이용가"
-            : notification.includes("12세")
-            ? "12세 이용가"
-            : "전체 이용가";
+        const notification: string = await page.evaluate(
+          (ageElement) => ageElement.innerText,
+          ageElement,
+        );
+        function getAge(noti: string) {
+          if (noti.includes("15세")) return "15세 이용가";
+          if (noti.includes("12세")) return "12세 이용가";
+          return "전체 이용가";
+        }
+
+        novelInfo.novelAge = getAge(notification);
 
         // get genre
         const genreElement = await page.waitForSelector(
