@@ -18,13 +18,18 @@ export default function getCurrentTime(): string {
   let seconds: string | number = date.getSeconds();
   seconds = seconds < 10 ? `0${seconds.toString()}` : seconds.toString();
 
+  function setMilliseconds(inputMilliseconds: number) {
+    if (inputMilliseconds < 10) {
+      return `00${inputMilliseconds.toString()}`;
+    }
+    if (inputMilliseconds < 100) {
+      return `0${inputMilliseconds.toString()}`;
+    }
+    return inputMilliseconds.toString();
+  }
+
   let milliseconds: string | number = date.getMilliseconds();
-  milliseconds =
-    milliseconds < 10
-      ? `00${milliseconds.toString()}`
-      : milliseconds < 100
-      ? `0${milliseconds.toString()}`
-      : milliseconds.toString();
+  milliseconds = setMilliseconds(milliseconds);
 
   return year + month + day + hour + minites + seconds + milliseconds;
 }

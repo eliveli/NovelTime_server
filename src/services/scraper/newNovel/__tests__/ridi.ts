@@ -1,5 +1,7 @@
-import { scrapeKakape, scrapeSeries, scrapeRidi } from "./scraper";
-import { shareKakape, shareSeries, shareRidi, shareJoara } from "./sharer";
+import { scrapeRidi } from "../ridi";
+
+// increase time set to prevent scraper from stopping in the middle
+jest.setTimeout(60000000);
 
 // 플랫폼 및 장르별 카테고리 넘버
 const genreFilter = {
@@ -7,12 +9,16 @@ const genreFilter = {
   kakape: { RF: "117", F: "86" },
   // 시리즈 로판, 판타지 : 완결작 포함, 최신순(최신화등록일)
   series: { RF: "207", F: "202" },
-  // 리디 로판, 판타지 : 최신순(최신화등록일) :로맨스e북 로판, 로맨스웹소설 로판 & 판타지e북 정통,퓨전,대체역사, 판타지웹소설 정통,퓨전
-  ridi: { RF: ["1703", "1653"], F: ["1711", "1712", "1715", "1751", "1752"] },
+  // 리디 로판, 판타지 : 최신순(최신화등록일) :로판 웹소설, 로판 e북 & 판타지웹소설 정통,퓨전 & 판타지e북 정통,퓨전,대체역사
+  ridi: { RF: ["6050", "6000"], F1: ["1751", "1752"], F2: ["1711", "1712", "1715"] },
 };
 
+it("case to run a weekly scraper properly :", async () => {
+  await scrapeRidi(genreFilter.ridi.F1);
+});
+
 // 스크랩: 완료: 시리즈 로판, 시리즈 판타지(~7869), 리디 로판, 리디 판타지
-scrapeKakape(genreFilter.kakape.F, 4157);
+// scrapeKakape(genreFilter.kakape.F, 4157);
 
 // scrapeKakape(genreNO, currentOrder)
 // scrapeKakape(genreFilter.kakape.RF, 4255); // scrapeKakape(genreNO, currentOrder)

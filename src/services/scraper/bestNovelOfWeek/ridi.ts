@@ -1,107 +1,122 @@
 import puppeteer, { ElementHandle, SerializableOrJSHandle } from "puppeteer";
 import dotenv from "dotenv";
-import getCurrentTime from "../novel/getCurrentTime";
-import db from "../../db";
-import { setNovel } from "../../../novels";
+import getCurrentTime from "../utils/getCurrentTime";
+import db from "../../utils/db";
+import { setNovel } from "../../novels";
 import removeLabelsFromTitle from "./utils/removeLabelsFromTitle";
 
 dotenv.config();
 
 // 각 플랫폼에서 주간베스트 소설 20개 씩 가져오기
 
-const novelPlatform = "카카오페이지";
+const novelPlatform = "리디북스";
 
-const novelListUrl =
-  "https://page.kakao.com/menu/11/screen/16?subcategory_uid=0&ranking_type=weekly";
+// 로판 웹소설(장르불문 스크랩 불가) / 성인 작품 제외됨
+const novelListUrl = "https://ridibooks.com/category/bestsellers/6050?adult_exclude=y&page=1";
 
 async function login(page: puppeteer.Page) {
   // login for passing 15 age limitation
+
   const loginBtn = (await page.waitForSelector(
-    "#__next > div > div.css-1uny17z-Sticky-PcLayoutHeader > div > div.css-uhicds-PcHeader > div.css-8qyfof-PcHeader > img.css-dqete9-Icon-PcHeader",
-  )) as ElementHandle<HTMLDivElement>; // wait object load
+    "#__next > div.fig-16izi9a > div.fig-fs8jml > div > ul.fig-1aswo17 > li:nth-child(2) > a",
+  )) as ElementHandle<HTMLAnchorElement>; // wait object load
+
   // loginBtn null error handling
   if (!loginBtn) {
     throw new Error("login 버튼 null 에러");
   }
 
-  // declare promise for popup event
-  //  eslint-disable-next-line no-promise-executor-return
-  const newPagePromise = new Promise((x) => page.once("popup", x));
+  await page.click(
+    "#__next > div.fig-16izi9a > div.fig-fs8jml > div > ul.fig-1aswo17 > li:nth-child(2) > a",
+  ); // click and go to the login page in a current tab/window
 
-  await loginBtn.click(); // click, a new tab/window opens
-
-  // declare new tab/window, now you can work with it
-  const newPage = (await newPagePromise) as puppeteer.Page;
-
-  let kakaoID: string;
-  let kakaoPW: string;
+  let ridiID: string;
+  let ridiPW: string;
 
   // handle undefined env variable
-  if (process.env.KAKAO_ID) {
-    kakaoID = process.env.KAKAO_ID;
+  if (process.env.RIDI_ID) {
+    ridiID = process.env.RIDI_ID;
   } else {
-    throw new Error("KAKAO_ID env was not set");
+    throw new Error("RIDI_ID env was not set");
   }
-  if (process.env.KAKAO_PW) {
-    kakaoPW = process.env.KAKAO_PW;
+  if (process.env.RIDI_PW) {
+    ridiPW = process.env.RIDI_PW;
   } else {
-    throw new Error("KAKAO_PW env was not set");
+    throw new Error("RIDI_PW env was not set");
   }
 
-  // sometimes it can not work (when playing video or running DBeaver)
-  //  It seems to occur when there are many processes in my computer
-  await newPage.waitForSelector("#input-loginKey", { timeout: 50000 });
+  await page.waitForSelector("#__next > div > section > div > form > input.fig-w58liu.e1yjg41i0", {
+    timeout: 50000,
+  });
 
-  await newPage.type("#input-loginKey", kakaoID);
+  await page.type("#__next > div > section > div > form > input.fig-w58liu.e1yjg41i0", ridiID, {
+    delay: 100,
+  });
 
-  await newPage.waitForSelector("#input-password");
+  await page.waitForSelector("#__next > div > section > div > form > input.fig-7he7ta.e1yjg41i0");
 
-  await newPage.type("#input-password", kakaoPW);
+  await page.type("#__next > div > section > div > form > input.fig-7he7ta.e1yjg41i0", ridiPW, {
+    delay: 100,
+  });
 
-  await newPage.click(
-    "#mainContent > div > div > form > div.set_login > div > label > span.ico_comm.ico_check",
-  ); // click 로그인상태유지
+  await page.click("#__next > div > section > div > form > div > input"); // 로그인상태유지
 
-  // click login button
-  await newPage.click("#mainContent > div > div > form > div.confirm_btn > button.btn_g.highlight"); // submit
+  await page.click("#__next > div > section > div > form > button"); // click login button
 }
 
 async function waitForProfileIconAfterLogin(page: puppeteer.Page) {
   await page.waitForSelector(
-    "#__next > div > div.css-1uny17z-Sticky-PcLayoutHeader > div > div.css-uhicds-PcHeader > div.css-8qyfof-PcHeader > div",
+    "#__next > div.fig-16izi9a > div.fig-fs8jml > div > ul.fig-1aswo17 > li > a > span",
   );
 }
 
 const selectorsOfNovelPage = {
-  img: "#__next > div > div.css-gqvt86-PcLayout > div.css-oezh2b-ContentMainPage > div.css-4z4dsn-ContentMainPcContainer > div.css-6wrvoh-ContentMainPcContainer > div.css-dwn26i > div > div.css-0 > div.css-1p0xvye-ContentOverviewThumbnail > div > div > img",
+  img: "#page_detail > div.detail_wrap > div.detail_body_wrap > section > article.detail_header.trackable > div.header_thumbnail_wrap > div.header_thumbnail.book_macro_200.detail_scalable_thumbnail > div > div > div > img",
+
   title:
-    "#__next > div > div.css-gqvt86-PcLayout > div.css-oezh2b-ContentMainPage > div.css-4z4dsn-ContentMainPcContainer > div.css-6wrvoh-ContentMainPcContainer > div.css-dwn26i > div > div.css-0 > div.css-6vpm3i-ContentOverviewInfo > span",
-  desc: "#__next > div > div.css-gqvt86-PcLayout > div.css-oezh2b-ContentMainPage > div.css-1m11tvk-ContentMainPcContainer > div.css-1hq49jx-ContentDetailTabContainer > div.css-t3lp6q-ContentTitleSection-ContentDetailTabContainer > span",
-  age: "#__next > div > div.css-gqvt86-PcLayout > div.css-oezh2b-ContentMainPage > div.css-1m11tvk-ContentMainPcContainer > div.css-1hq49jx-ContentDetailTabContainer > div.css-9rge6r > div:nth-child(1) > div.css-1luchs4-ContentDetailTabContainer > div:nth-child(3) > div",
+    "#page_detail > div.detail_wrap > div.detail_body_wrap > section > article.detail_header.trackable > div.header_info_wrap > div.info_title_wrap > h3",
+
+  desc: "article.detail_box_module.detail_introduce_book #introduce_book > p",
+
+  // 성인 작품 제외
+  age: "#notice_component > ul > li",
+
   author:
-    "#__next > div > div.css-gqvt86-PcLayout > div.css-oezh2b-ContentMainPage > div.css-1m11tvk-ContentMainPcContainer > div.css-1hq49jx-ContentDetailTabContainer > div.css-9rge6r > div:nth-child(2) > div.css-1luchs4-ContentDetailTabContainer > div > div",
+    "#page_detail > div.detail_wrap > div.detail_body_wrap > section > article.detail_header.trackable > div.header_info_wrap > div:nth-child(4) > p.metadata.metadata_writer > span > a",
+
   genre:
-    "#__next > div > div.css-gqvt86-PcLayout > div.css-oezh2b-ContentMainPage > div.css-4z4dsn-ContentMainPcContainer > div.css-6wrvoh-ContentMainPcContainer > div.css-dwn26i > div > div.css-0 > div.css-6vpm3i-ContentOverviewInfo > div.css-1ao35gu-ContentOverviewInfo > span:nth-child(9)",
+    "#page_detail > div.detail_wrap > div.detail_body_wrap > section > article.detail_header.trackable > div.header_info_wrap > p",
+
   isEnd:
-    "#__next > div > div.css-gqvt86-PcLayout > div.css-oezh2b-ContentMainPage > div.css-4z4dsn-ContentMainPcContainer > div.css-6wrvoh-ContentMainPcContainer > div.css-dwn26i > div > div.css-0 > div.css-6vpm3i-ContentOverviewInfo > div.css-484gjc-ContentOverviewInfo > div:nth-child(1) > span",
+    "#page_detail > div.detail_wrap > div.detail_body_wrap > section > article.detail_header.trackable > div.header_info_wrap > div:nth-child(4) > p.metadata.metadata_info_series_complete_wrap > span.metadata_item.not_complete",
 };
 
-async function getNovelUrls(page: puppeteer.Page) {
+export async function getNovelUrls(page: puppeteer.Page) {
   let bestNo = 1;
   const novelUrls = [];
+
   while (bestNo < 21) {
+    // without this I can't get novel urls more than 11
+    if (bestNo === 12) {
+      for (let i = 1; i < 9; i += 1) {
+        await page.keyboard.press("PageDown");
+      }
+    }
+
     const novelElement = await page.waitForSelector(
-      `#__next > div > div.css-gqvt86-PcLayout > div.css-58idf7-Menu > div.css-1dqbyyp-Home > div > div > div.css-1k8yz4-StaticLandingRanking > div > div > div > div:nth-child(${bestNo}) > div > div > a`,
+      `#__next > main > div > section > ul.fig-1nfc3co > li:nth-child(${bestNo}) > div > div.fig-jc2buj > div > h3 > a`,
     );
+
     const partialNovelUrl: string = await page.evaluate(
       (element) => element.getAttribute("href"),
       novelElement,
     );
 
-    const novelUrl = `page.kakao.com${partialNovelUrl}`;
+    const partialNovelUrlCut = partialNovelUrl.slice(0, partialNovelUrl.indexOf("?"));
+
+    const novelUrl = `ridibooks.com${partialNovelUrlCut}`;
 
     novelUrls.push(novelUrl);
-
     bestNo += 1;
   }
   return novelUrls;
@@ -133,25 +148,73 @@ async function getInfo(
   return info;
 }
 
+async function getDesc(page: puppeteer.Page) {
+  const descElement = await page.waitForSelector(selectorsOfNovelPage.desc);
+
+  const desc: string = await page.evaluate((element) => {
+    // 첫 줄에 제목 + 로맨스 가이드 있을 때 그 부분 제외
+    if (
+      element.children[0].tagName === "SPAN" &&
+      element.innerText.includes(">\n로맨스 가이드\n\n")
+    ) {
+      const idxForRemoving: number = element.innerText.indexOf(">\n로맨스 가이드\n\n");
+      return element.innerText.slice(idxForRemoving + 11);
+    }
+    // 첫 줄 제목 제외
+    if (
+      element.children[0].tagName === "SPAN" &&
+      (element.children.length === 1 || element.children[1].tagName !== "IMG")
+    ) {
+      const idxForRemoving: number = element.innerText.indexOf(">\n");
+      return element.innerText.slice(idxForRemoving + 2);
+    }
+    // 첫 줄에 제목, 둘째 줄에 이미지, 셋째 넷째 비어있을 때 제외
+    if (
+      element.children[0].tagName === "SPAN" &&
+      element.children[1].tagName === "IMG" &&
+      element.children[2].tagName === "BR" &&
+      element.children[3].tagName === "BR"
+    ) {
+      const idxForRemoving: number = element.innerText.indexOf(">\n\n\n");
+      return element.innerText.slice(idxForRemoving + 4);
+    }
+  }, descElement);
+
+  return desc;
+}
+
+async function getAge(page: puppeteer.Page) {
+  const notification = await getInfo(page, selectorsOfNovelPage.age);
+
+  if (notification.includes("15세")) return "15세 이용가";
+  if (notification.includes("12세")) return "12세 이용가";
+  return "전체 이용가";
+}
+
+async function getGenre(page: puppeteer.Page) {
+  const genre = await getInfo(page, selectorsOfNovelPage.genre);
+  if (genre.includes("로판")) return "로판";
+  if (genre.includes("로맨스")) return "로맨스";
+  if (genre.includes("무협")) return "무협";
+  if (genre.includes("라이트노벨")) return "라이트노벨";
+  if (genre.includes("BL")) return "BL";
+  if (genre.includes("현대") || genre.includes("게임") || genre.includes("스포츠")) return "현판";
+  if (genre.includes("판타지")) return "판타지";
+  return "기타";
+}
+
 //  -- check novel image in db and make sure that img is saved as small size in DB
 //     to reduce time when downloading image
 //     only send image as big size when it is needed especially when showing the full image
 //       to do remove the following in the end of the img src when needed : "&filename=th3"
 //
 
-async function getGenre(page: puppeteer.Page, novelTitle: string) {
-  if (novelTitle.includes("[BL]")) {
-    return "BL";
-  }
-  return await getInfo(page, selectorsOfNovelPage.genre);
-}
-
 async function getIsEnd(page: puppeteer.Page) {
-  const checkingEnd = await getInfo(page, selectorsOfNovelPage.isEnd);
-  if (checkingEnd.includes("완결")) {
-    return true;
-  }
-  return false;
+  const isEnd = await page.evaluate((selectorOfIsEnd) => {
+    const notEndElement = document.querySelector(selectorOfIsEnd);
+    return notEndElement === null;
+  }, selectorsOfNovelPage.isEnd);
+  return isEnd;
 }
 
 type NovelForChecking = {
@@ -184,9 +247,9 @@ type NovelInfo = {
 async function addNewNovel(page: puppeteer.Page, novelInfo: NovelInfo) {
   const novelId = getCurrentTime();
   const novelImg = await getInfo(page, selectorsOfNovelPage.img, "attr", "src");
-  const novelDesc = await getInfo(page, selectorsOfNovelPage.desc, "html");
-  const novelAge = await getInfo(page, selectorsOfNovelPage.age);
-  const novelGenre = await getGenre(page, novelInfo.novelTitle);
+  const novelDesc = await getDesc(page);
+  const novelAge = await getAge(page);
+  const novelGenre = await getGenre(page);
   const novelIsEnd = await getIsEnd(page);
   const { novelAuthor, novelTitle, novelUrl } = novelInfo;
 
@@ -299,7 +362,7 @@ export async function addOrUpdateNovelInDB(page: puppeteer.Page, novelInfo: Nove
     // remove undefined item from the array made by map function
     .filter((platform) => !!platform) as NewNovelPages;
 
-  // add the platform kakao page if it is not in the table novelInfo of DB
+  // add the platform naver series if it is not in the table novelInfo of DB
   if (!novelPlatforms.includes(novelPlatform)) {
     newNovelPages.push({ platform: novelPlatform, url: novelUrl });
   }
@@ -337,8 +400,8 @@ export async function addOrUpdateNovelInDB(page: puppeteer.Page, novelInfo: Nove
   return novelId;
 }
 
-async function getNovelIdFromDB(page: puppeteer.Page, novelUrl: string) {
-  await page.goto(`https://${novelUrl}?tab_type=about`);
+export async function getNovelIdFromDB(page: puppeteer.Page, novelUrl: string) {
+  await page.goto(`https://${novelUrl}`);
 
   // they are necessary to check whether the novel is in DB
   const novelTitle = await getInfo(page, selectorsOfNovelPage.title);
@@ -435,9 +498,9 @@ const minimalArgs = [
   "--use-mock-keychain",
 ];
 
-export default async function weeklyKakape() {
+export default async function weeklyRidi() {
   const browser = await puppeteer.launch({
-    // headless: false, // 브라우저 화면 열려면 false
+    headless: false, // 브라우저 화면 열려면 false
     args: minimalArgs,
   });
 
@@ -446,14 +509,13 @@ export default async function weeklyKakape() {
   page.setDefaultTimeout(500000); // set timeout globally
 
   await page.goto(novelListUrl);
-  // await page.goto(novelListUrl, { waitUntil: "load", timeout: 500000 });
-  // set timeout specifically for navigational events such as page.waitForSelector
 
   await login(page);
 
   await waitForProfileIconAfterLogin(page);
 
   const novelUrls = await getNovelUrls(page);
+
   const novelIDs = await getNovelIDsFromDB(page, novelUrls);
 
   // update new weekly novels to weeklyNovel table
