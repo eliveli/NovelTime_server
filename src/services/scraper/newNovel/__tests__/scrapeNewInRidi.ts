@@ -1,4 +1,4 @@
-import { scrapeRidi } from "../ridi";
+import { scrapeRidi } from "../scrapeNewInRidi";
 
 // increase time set to prevent scraper from stopping in the middle
 jest.setTimeout(60000000);

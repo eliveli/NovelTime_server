@@ -1,5 +1,9 @@
 import puppeteer from "puppeteer";
-import weeklySeries, { addOrUpdateNovelInDB, getNovelIdFromDB, getNovelUrls } from "../series";
+import weeklySeries, {
+  addOrUpdateNovelInDB,
+  getNovelIdFromDB,
+  getNovelUrls,
+} from "../scrapeBestInSeries";
 
 jest.setTimeout(500000);
 

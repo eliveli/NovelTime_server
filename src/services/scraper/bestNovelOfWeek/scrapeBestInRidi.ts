@@ -229,11 +229,11 @@ type NovelForChecking = {
   novelUrl3: string;
 };
 
-async function searchForNovelsByTitleAndAuthor(novelTitle: string, novelAuthor: string) {
+export async function searchForNovelsByTitleAndAuthor(novelTitle: string, novelAuthor: string) {
   return (await db(
     `SELECT novelId, novelTitle, novelAuthor, novelPlatform, novelPlatform2, novelPlatform3, novelUrl, novelUrl2, novelUrl3 FROM novelInfo
-  WHERE novelTitle = (?) AND novelAuthor = (?)`,
-    [novelTitle, novelAuthor],
+  WHERE novelTitle LIKE (?) AND novelAuthor = (?)`,
+    [`%${novelTitle}%`, novelAuthor],
     "all",
   )) as Array<NovelForChecking>;
 }
