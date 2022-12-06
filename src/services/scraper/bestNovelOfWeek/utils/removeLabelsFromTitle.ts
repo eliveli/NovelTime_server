@@ -1,5 +1,5 @@
 function removeStartLabels(novelTitle: string) {
-  for (const label of [")", ") ", "]", "] "]) {
+  for (const label of [") ", ")", "] ", "]"]) {
     const indexOfLabel = novelTitle.indexOf(label);
     if (indexOfLabel === -1) continue;
     if (indexOfLabel !== novelTitle.length - 1) {
@@ -8,7 +8,7 @@ function removeStartLabels(novelTitle: string) {
   }
 }
 function removeEndLabels(novelTitle: string) {
-  for (const label of ["(", " (", "[", " [", "외전", " 외전", "-외전", " -외전"]) {
+  for (const label of [" (", "(", " [", "[", " 외전", "외전", " -외전", "-외전"]) {
     const indexOfLabel = novelTitle.indexOf(label);
     if (indexOfLabel === -1) continue;
     if (indexOfLabel !== 0) {
