@@ -276,10 +276,15 @@ type NewNovelPages = Array<{
   url: string;
 }>;
 
-async function updateNovel(novelId: string, newNovelPages: NewNovelPages) {
+async function updateNovel(
+  novelId: string,
+  newNovelPages: NewNovelPages,
+  novelTitleWithoutLabels: string,
+) {
   await db(
-    "UPDATE novelInfo SET novelPlatform = (?), novelUrl = (?), novelPlatform2 = (?), novelUrl2 = (?), novelPlatform3 = (?), novelUrl3 = (?) WHERE novelId = (?)",
+    "UPDATE novelInfo SET novelTitle = (?), novelPlatform = (?), novelUrl = (?), novelPlatform2 = (?), novelUrl2 = (?), novelPlatform3 = (?), novelUrl3 = (?) WHERE novelId = (?)",
     [
+      novelTitleWithoutLabels,
       newNovelPages[0].platform,
       newNovelPages[0].url,
       newNovelPages[1].platform,
@@ -300,10 +305,13 @@ async function deleteSameNovels(novelIDs: Array<string>) {
   }
 }
 
-async function makeNovelOne(novelIDs: Array<string>, newNovelPages: NewNovelPages) {
+async function makeNovelOne(
+  novelIDs: Array<string>,
+  newNovelPages: NewNovelPages,
+  novelTitleWithoutLabels: string,
+) {
   const novelIdForUpdate = novelIDs[0];
-
-  await updateNovel(novelIdForUpdate, newNovelPages);
+  await updateNovel(novelIdForUpdate, newNovelPages, novelTitleWithoutLabels);
 
   if (novelIDs.length > 1) {
     const novelIDsForDelete = novelIDs.slice(1, novelIDs.length);
@@ -317,17 +325,15 @@ async function makeNovelOne(novelIDs: Array<string>, newNovelPages: NewNovelPage
 // check whether the novel is in novelInfo table or not
 // and add a new novel or update a novel as changing its platform and url info
 // finally get the novel id
-export async function addOrUpdateNovelInDB(page: puppeteer.Page, novelInfo: NovelInfo) {
-  const { novelAuthor, novelTitle, novelUrl } = novelInfo;
-
-  const novelTitleWithoutLabels = removeLabelsFromTitle(novelTitle);
-
-  const novelsFromDB = await searchForNovelsByTitleAndAuthor(novelTitleWithoutLabels, novelAuthor);
-
+export async function addOrUpdateNovelInDB(
+  page: puppeteer.Page,
+  severalNovelInfo: NovelInfo,
+  novelsInDB: NovelForChecking[],
+) {
   // when the novel is not in db //
   //  add new novel to novelInfo table
-  if (novelsFromDB.length === 0) {
-    const novelId = await addNewNovel(page, novelInfo);
+  if (novelsInDB.length === 0) {
+    const novelId = await addNewNovel(page, severalNovelInfo);
     return novelId;
   }
 
@@ -337,8 +343,8 @@ export async function addOrUpdateNovelInDB(page: puppeteer.Page, novelInfo: Nove
   const novelUrls: Array<string> = [];
 
   // check novel rows that has same title and author
-  for (const novelPlatformPage of novelsFromDB) {
-    // get platform info that is not empty
+  // get platform info that is not empty
+  for (const novelPlatformPage of novelsInDB) {
     for (const { platform, url } of [
       { platform: novelPlatformPage.novelPlatform, url: novelPlatformPage.novelUrl },
       { platform: novelPlatformPage.novelPlatform2, url: novelPlatformPage.novelUrl2 },
@@ -362,9 +368,9 @@ export async function addOrUpdateNovelInDB(page: puppeteer.Page, novelInfo: Nove
     // remove undefined item from the array made by map function
     .filter((platform) => !!platform) as NewNovelPages;
 
-  // add the platform naver series if it is not in the table novelInfo of DB
+  // add the platform ridi if it is not in the table novelInfo of DB
   if (!novelPlatforms.includes(novelPlatform)) {
-    newNovelPages.push({ platform: novelPlatform, url: novelUrl });
+    newNovelPages.push({ platform: novelPlatform, url: severalNovelInfo.novelUrl });
   }
 
   // remove JOARA platform of the novel info if platform is more than 3
@@ -390,28 +396,63 @@ export async function addOrUpdateNovelInDB(page: puppeteer.Page, novelInfo: Nove
   //
   // make an array of novelID with the same novel
   const novelIDsWithSameNovel: Array<string> = [];
-  for (const novel of novelsFromDB) {
+  for (const novel of novelsInDB) {
     novelIDsWithSameNovel.push(novel.novelId);
   }
   //
-  // make same novels one and return the novel id
-  const novelId = await makeNovelOne(novelIDsWithSameNovel, newNovelPages);
+  // make same novels one and set title without labels and return the novel id
+  const novelId = await makeNovelOne(
+    novelIDsWithSameNovel,
+    newNovelPages,
+    severalNovelInfo.novelTitle,
+  );
 
   return novelId;
+}
+
+function findSameNovelsFromTitlesWithLabels(
+  existingNovelsInDB: NovelForChecking[],
+  novelTitleWithoutLabels: string,
+) {
+  const sameNovelsInDB = [];
+  // 찾은 소설을 조회하며 제목에서 라벨 떼고
+  //  현재 플랫폼에서 읽어 온 소설 제목에서 라벨 뗀 것과 일치하는 지 확인
+  //   일치할 경우 배열을 구성해 같은 소설의 정보로 취급
+  for (const existingNovel of existingNovelsInDB) {
+    const novelTitleWithoutLabelsInDB = removeLabelsFromTitle(existingNovel.novelTitle);
+    if (novelTitleWithoutLabels === novelTitleWithoutLabelsInDB) {
+      sameNovelsInDB.push(existingNovel);
+    }
+  }
+  return sameNovelsInDB;
 }
 
 export async function getNovelIdFromDB(page: puppeteer.Page, novelUrl: string) {
   await page.goto(`https://${novelUrl}`);
 
   // they are necessary to check whether the novel is in DB
-  const novelTitle = await getInfo(page, selectorsOfNovelPage.title);
+  const novelTitleFromPage = await getInfo(page, selectorsOfNovelPage.title);
+  const novelTitleWithoutLabels = removeLabelsFromTitle(novelTitleFromPage);
+
   const novelAuthor = await getInfo(page, selectorsOfNovelPage.author);
 
-  const novelInfo = { novelTitle, novelAuthor, novelUrl };
+  // 라벨 뗀 문구가 포함된 제목으로 소설 검색
+  // get novels that have titles including text without labels in them
+  const existingNovelsInDB = await searchForNovelsByTitleAndAuthor(
+    novelTitleWithoutLabels,
+    novelAuthor,
+  );
+
+  const sameNovelsInDB = findSameNovelsFromTitlesWithLabels(
+    existingNovelsInDB,
+    novelTitleWithoutLabels,
+  );
+
+  const severalNovelInfo = { novelTitle: novelTitleWithoutLabels, novelAuthor, novelUrl };
 
   // add the novel as new one or update novel in novelInfo table
   //  and get the novel id
-  const novelId = await addOrUpdateNovelInDB(page, novelInfo);
+  const novelId = await addOrUpdateNovelInDB(page, severalNovelInfo, sameNovelsInDB);
 
   return novelId;
 }
