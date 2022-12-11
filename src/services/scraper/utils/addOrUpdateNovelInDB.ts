@@ -5,10 +5,16 @@ import db from "../../utils/db";
 import removeLabelsFromTitle from "../bestNovelOfWeek/utils/removeLabelsFromTitle";
 import getCurrentTime from "./getCurrentTime";
 
-type NovelInfo = {
+type SeveralNovelInfo = {
   novelTitle: string;
   novelAuthor: string;
   novelUrl: string;
+  isBL: boolean;
+};
+
+type NovelUrlAndTitle = {
+  novelUrl: string;
+  novelTitle: string;
 };
 
 type NovelPlatform = "카카오페이지" | "네이버 시리즈" | "리디북스";
@@ -216,9 +222,9 @@ async function getAge(page: puppeteer.Page, novelPlatform: NovelPlatform) {
   }
 }
 
-async function getGenre(page: puppeteer.Page, novelPlatform: NovelPlatform, novelTitle: string) {
+async function getGenre(page: puppeteer.Page, novelPlatform: NovelPlatform, isBL: boolean) {
   if (novelPlatform === "카카오페이지") {
-    if (novelTitle.includes("[BL]")) {
+    if (isBL) {
       return "BL";
     }
     return await getInfo(page, selectorsOfNovelPage.kakape.genre);
@@ -282,7 +288,7 @@ export async function searchForNovelsByTitleAndAuthor(novelTitle: string, novelA
 
 async function addNewNovel(
   page: puppeteer.Page,
-  novelInfo: NovelInfo,
+  severalNovelInfo: SeveralNovelInfo,
   novelPlatform: NovelPlatform,
 ) {
   const novelId = getCurrentTime();
@@ -292,9 +298,9 @@ async function addNewNovel(
   const novelAge = await getAge(page, novelPlatform);
   // 제목에 [BL] 태그 포함되면 제목 라벨 제거할 때 예외 처리하기
   // 장르에 BL이 표시되지 않는 플랫폼 : 카카오페이지 -> 이 경우 다루기
-  const novelGenre = await getGenre(page, novelPlatform, novelInfo.novelTitle);
+  const novelGenre = await getGenre(page, novelPlatform, severalNovelInfo.isBL);
   const novelIsEnd = await getIsEnd(page, novelPlatform);
-  const { novelAuthor, novelTitle, novelUrl } = novelInfo;
+  const { novelAuthor, novelTitle, novelUrl } = severalNovelInfo;
 
   const novel = {
     novelId,
@@ -352,7 +358,14 @@ async function getSameNovelsAndSeveralInfo(page: puppeteer.Page, novelUrl: strin
     novelTitleWithoutLabels,
   );
 
-  const severalNovelInfo = { novelTitle: novelTitleWithoutLabels, novelAuthor, novelUrl };
+  const isBL = novelTitleFromPage.includes("[BL]"); // only for kakape platform
+
+  const severalNovelInfo = {
+    novelTitle: novelTitleWithoutLabels,
+    novelAuthor,
+    novelUrl,
+    isBL,
+  };
   return { sameNovelsInDB, severalNovelInfo };
 }
 
@@ -403,7 +416,7 @@ async function makeNovelOne(
 }
 
 async function updateNovelWithPlatform(
-  severalNovelInfo: NovelInfo,
+  novelUrlAndTitle: NovelUrlAndTitle,
   novelsInDB: NovelForChecking[],
   novelPlatform: NovelPlatform,
 ) {
@@ -438,7 +451,7 @@ async function updateNovelWithPlatform(
 
   // add the platform ridi if it is not in the table novelInfo of DB
   if (!novelPlatforms.includes(novelPlatform)) {
-    newNovelPages.push({ platform: novelPlatform, url: severalNovelInfo.novelUrl });
+    newNovelPages.push({ platform: novelPlatform, url: novelUrlAndTitle.novelUrl });
   }
 
   // remove JOARA platform of the novel info if platform is more than 3
@@ -472,7 +485,7 @@ async function updateNovelWithPlatform(
   const novelId = await makeNovelOne(
     novelIDsWithSameNovel,
     newNovelPages,
-    severalNovelInfo.novelTitle,
+    novelUrlAndTitle.novelTitle,
   );
 
   return novelId;
@@ -500,6 +513,7 @@ export default async function addOrUpdateNovelInDB(
 
   // when novel is in db //
   //  update the novel with its platform and url
-  const novelId = await updateNovelWithPlatform(severalNovelInfo, sameNovelsInDB, novelPlatform);
+  const novelUrlAndTitle = { novelUrl, novelTitle: severalNovelInfo.novelTitle };
+  const novelId = await updateNovelWithPlatform(novelUrlAndTitle, sameNovelsInDB, novelPlatform);
   return novelId;
 }
