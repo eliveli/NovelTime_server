@@ -34,24 +34,63 @@ type NovelForChecking = {
 // 플랫폼 구분
 // 아래는 리디용
 const selectorsOfNovelPage = {
-  img: "#page_detail > div.detail_wrap > div.detail_body_wrap > section > article.detail_header.trackable > div.header_thumbnail_wrap > div.header_thumbnail.book_macro_200.detail_scalable_thumbnail > div > div > div > img",
+  kakape: {
+    img: "#__next > div > div.css-gqvt86-PcLayout > div.css-oezh2b-ContentMainPage > div.css-4z4dsn-ContentMainPcContainer > div.css-6wrvoh-ContentMainPcContainer > div.css-dwn26i > div > div.css-0 > div.css-1p0xvye-ContentOverviewThumbnail > div > div > img",
+    title:
+      "#__next > div > div.css-gqvt86-PcLayout > div.css-oezh2b-ContentMainPage > div.css-4z4dsn-ContentMainPcContainer > div.css-6wrvoh-ContentMainPcContainer > div.css-dwn26i > div > div.css-0 > div.css-6vpm3i-ContentOverviewInfo > span",
+    desc: "#__next > div > div.css-gqvt86-PcLayout > div.css-oezh2b-ContentMainPage > div.css-1m11tvk-ContentMainPcContainer > div.css-1hq49jx-ContentDetailTabContainer > div.css-t3lp6q-ContentTitleSection-ContentDetailTabContainer > span",
+    age: "#__next > div > div.css-gqvt86-PcLayout > div.css-oezh2b-ContentMainPage > div.css-1m11tvk-ContentMainPcContainer > div.css-1hq49jx-ContentDetailTabContainer > div.css-9rge6r > div:nth-child(1) > div.css-1luchs4-ContentDetailTabContainer > div:nth-child(3) > div",
+    author:
+      "#__next > div > div.css-gqvt86-PcLayout > div.css-oezh2b-ContentMainPage > div.css-1m11tvk-ContentMainPcContainer > div.css-1hq49jx-ContentDetailTabContainer > div.css-9rge6r > div:nth-child(2) > div.css-1luchs4-ContentDetailTabContainer > div > div",
+    genre:
+      "#__next > div > div.css-gqvt86-PcLayout > div.css-oezh2b-ContentMainPage > div.css-4z4dsn-ContentMainPcContainer > div.css-6wrvoh-ContentMainPcContainer > div.css-dwn26i > div > div.css-0 > div.css-6vpm3i-ContentOverviewInfo > div.css-1ao35gu-ContentOverviewInfo > span:nth-child(9)",
+    isEnd:
+      "#__next > div > div.css-gqvt86-PcLayout > div.css-oezh2b-ContentMainPage > div.css-4z4dsn-ContentMainPcContainer > div.css-6wrvoh-ContentMainPcContainer > div.css-dwn26i > div > div.css-0 > div.css-6vpm3i-ContentOverviewInfo > div.css-484gjc-ContentOverviewInfo > div:nth-child(1) > span",
+  },
+  series: {
+    // use descendant selector (don't use ">" in front of "img")
+    // because there can be different selector
+    // such as "#container > div.aside.NE\\=a\\:nvi > span >  img"
+    //    and  "#container > div.aside.NE\\=a\\:nvi >   a  > img"
+    img: "#container > div.aside.NE\\=a\\:nvi   img",
 
-  title:
-    "#page_detail > div.detail_wrap > div.detail_body_wrap > section > article.detail_header.trackable > div.header_info_wrap > div.info_title_wrap > h3",
+    // need to remove a tag such as [독점]
+    title: "#content > div.end_head > h2",
 
-  desc: "article.detail_box_module.detail_introduce_book #introduce_book > p",
+    desc: {
+      parent: "#content > div.end_dsc",
+      child1: "#content > div.end_dsc > div:nth-child(1)",
+      child2: "#content > div.end_dsc > div:nth-child(2)",
+    },
 
-  // 성인 작품 제외
-  age: "#notice_component > ul > li",
+    age: "#content > ul.end_info.NE\\=a\\:nvi > li > ul > li:nth-child(5)",
 
-  author:
-    "#page_detail > div.detail_wrap > div.detail_body_wrap > section > article.detail_header.trackable > div.header_info_wrap > div:nth-child(4) > p.metadata.metadata_writer > span > a",
+    author: "#content > ul.end_info.NE\\=a\\:nvi > li > ul > li:nth-child(3) > a",
 
-  genre:
-    "#page_detail > div.detail_wrap > div.detail_body_wrap > section > article.detail_header.trackable > div.header_info_wrap > p",
+    genre: "#content > ul.end_info.NE\\=a\\:nvi > li > ul > li:nth-child(2) > span > a",
 
-  isEnd:
-    "#page_detail > div.detail_wrap > div.detail_body_wrap > section > article.detail_header.trackable > div.header_info_wrap > div:nth-child(4) > p.metadata.metadata_info_series_complete_wrap > span.metadata_item.not_complete",
+    isEnd: "#content > ul.end_info.NE\\=a\\:nvi > li > ul > li:nth-child(1) > span",
+  },
+  ridi: {
+    img: "#page_detail > div.detail_wrap > div.detail_body_wrap > section > article.detail_header.trackable > div.header_thumbnail_wrap > div.header_thumbnail.book_macro_200.detail_scalable_thumbnail > div > div > div > img",
+
+    title:
+      "#page_detail > div.detail_wrap > div.detail_body_wrap > section > article.detail_header.trackable > div.header_info_wrap > div.info_title_wrap > h3",
+
+    desc: "article.detail_box_module.detail_introduce_book #introduce_book > p",
+
+    // 성인 작품 제외
+    age: "#notice_component > ul > li",
+
+    author:
+      "#page_detail > div.detail_wrap > div.detail_body_wrap > section > article.detail_header.trackable > div.header_info_wrap > div:nth-child(4) > p.metadata.metadata_writer > span > a",
+
+    genre:
+      "#page_detail > div.detail_wrap > div.detail_body_wrap > section > article.detail_header.trackable > div.header_info_wrap > p",
+
+    isEnd:
+      "#page_detail > div.detail_wrap > div.detail_body_wrap > section > article.detail_header.trackable > div.header_info_wrap > div:nth-child(4) > p.metadata.metadata_info_series_complete_wrap > span.metadata_item.not_complete",
+  },
 };
 
 async function getInfo(
@@ -81,7 +120,7 @@ async function getInfo(
 }
 
 async function getDesc(page: puppeteer.Page) {
-  const descElement = await page.waitForSelector(selectorsOfNovelPage.desc);
+  const descElement = await page.waitForSelector(selectorsOfNovelPage.ridi.desc);
 
   const desc: string = await page.evaluate((element) => {
     // 첫 줄에 제목 + 로맨스 가이드 있을 때 그 부분 제외
@@ -116,7 +155,7 @@ async function getDesc(page: puppeteer.Page) {
 }
 
 async function getAge(page: puppeteer.Page) {
-  const notification = await getInfo(page, selectorsOfNovelPage.age);
+  const notification = await getInfo(page, selectorsOfNovelPage.ridi.age);
 
   if (notification.includes("15세")) return "15세 이용가";
   if (notification.includes("12세")) return "12세 이용가";
@@ -124,7 +163,7 @@ async function getAge(page: puppeteer.Page) {
 }
 
 async function getGenre(page: puppeteer.Page) {
-  const genre = await getInfo(page, selectorsOfNovelPage.genre);
+  const genre = await getInfo(page, selectorsOfNovelPage.ridi.genre);
   if (genre.includes("로판")) return "로판";
   if (genre.includes("로맨스")) return "로맨스";
   if (genre.includes("무협")) return "무협";
@@ -145,7 +184,7 @@ async function getIsEnd(page: puppeteer.Page) {
   const isEnd = await page.evaluate((selectorOfIsEnd) => {
     const notEndElement = document.querySelector(selectorOfIsEnd);
     return notEndElement === null;
-  }, selectorsOfNovelPage.isEnd);
+  }, selectorsOfNovelPage.ridi.isEnd);
   return isEnd;
 }
 
@@ -164,7 +203,7 @@ async function addNewNovel(
   novelPlatform: NovelPlatform,
 ) {
   const novelId = getCurrentTime();
-  const novelImg = await getInfo(page, selectorsOfNovelPage.img, "attr", "src");
+  const novelImg = await getInfo(page, selectorsOfNovelPage.ridi.img, "attr", "src");
   const novelDesc = await getDesc(page);
   const novelAge = await getAge(page);
   const novelGenre = await getGenre(page);
@@ -210,10 +249,10 @@ function findSameNovelsFromTitlesWithLabels(
 async function getSameNovelsAndSeveralInfo(page: puppeteer.Page, novelUrl: string) {
   await page.goto(`https://${novelUrl}`);
 
-  const novelTitleFromPage = await getInfo(page, selectorsOfNovelPage.title);
+  const novelTitleFromPage = await getInfo(page, selectorsOfNovelPage.ridi.title);
   const novelTitleWithoutLabels = removeLabelsFromTitle(novelTitleFromPage);
 
-  const novelAuthor = await getInfo(page, selectorsOfNovelPage.author);
+  const novelAuthor = await getInfo(page, selectorsOfNovelPage.ridi.author);
 
   // 라벨 뗀 문구가 포함된 제목으로 소설 검색
   // get novels that have titles including text without labels in them
