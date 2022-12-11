@@ -119,59 +119,124 @@ async function getInfo(
   return info;
 }
 
-async function getDesc(page: puppeteer.Page) {
-  const descElement = await page.waitForSelector(selectorsOfNovelPage.ridi.desc);
-
-  const desc: string = await page.evaluate((element) => {
-    // 첫 줄에 제목 + 로맨스 가이드 있을 때 그 부분 제외
-    if (
-      element.children[0].tagName === "SPAN" &&
-      element.innerText.includes(">\n로맨스 가이드\n\n")
-    ) {
-      const idxForRemoving: number = element.innerText.indexOf(">\n로맨스 가이드\n\n");
-      return element.innerText.slice(idxForRemoving + 11);
-    }
-    // 첫 줄 제목 제외
-    if (
-      element.children[0].tagName === "SPAN" &&
-      (element.children.length === 1 || element.children[1].tagName !== "IMG")
-    ) {
-      const idxForRemoving: number = element.innerText.indexOf(">\n");
-      return element.innerText.slice(idxForRemoving + 2);
-    }
-    // 첫 줄에 제목, 둘째 줄에 이미지, 셋째 넷째 비어있을 때 제외
-    if (
-      element.children[0].tagName === "SPAN" &&
-      element.children[1].tagName === "IMG" &&
-      element.children[2].tagName === "BR" &&
-      element.children[3].tagName === "BR"
-    ) {
-      const idxForRemoving: number = element.innerText.indexOf(">\n\n\n");
-      return element.innerText.slice(idxForRemoving + 4);
-    }
-  }, descElement);
-
-  return desc;
+async function getImg(page: puppeteer.Page, novelPlatform: NovelPlatform) {
+  if (novelPlatform === "카카오페이지") {
+    return await getInfo(page, selectorsOfNovelPage.kakape.img, "attr", "src");
+  }
+  if (novelPlatform === "네이버 시리즈") {
+    return await getInfo(page, selectorsOfNovelPage.series.img, "attr", "src");
+  }
+  if (novelPlatform === "리디북스") {
+    return await getInfo(page, selectorsOfNovelPage.ridi.img, "attr", "src");
+  }
 }
 
-async function getAge(page: puppeteer.Page) {
-  const notification = await getInfo(page, selectorsOfNovelPage.ridi.age);
+async function getDesc(page: puppeteer.Page, novelPlatform: NovelPlatform) {
+  if (novelPlatform === "카카오페이지") {
+    return await getInfo(page, selectorsOfNovelPage.kakape.desc, "html");
+  }
 
-  if (notification.includes("15세")) return "15세 이용가";
-  if (notification.includes("12세")) return "12세 이용가";
-  return "전체 이용가";
+  if (novelPlatform === "네이버 시리즈") {
+    const parentDescElement = await page.waitForSelector(selectorsOfNovelPage.series.desc.parent);
+    const childrenLengthOfDesc = await page.evaluate(
+      (element) => element.children.length,
+      parentDescElement,
+    );
+
+    // if there is not a more button of desc
+    if (childrenLengthOfDesc === 1) {
+      return await getInfo(page, selectorsOfNovelPage.series.desc.child1, "html");
+    }
+
+    // if there is a more button of desc
+    await page.waitForSelector(selectorsOfNovelPage.series.desc.child2);
+
+    const descriptionWithOtherTag = await getInfo(
+      page,
+      selectorsOfNovelPage.series.desc.child2,
+      "html",
+    );
+
+    const startIndexOfOtherTag = descriptionWithOtherTag.indexOf("<span");
+
+    const desc = descriptionWithOtherTag.slice(0, startIndexOfOtherTag);
+
+    return desc;
+  }
+
+  if (novelPlatform === "리디북스") {
+    const descElement = await page.waitForSelector(selectorsOfNovelPage.ridi.desc);
+
+    const desc: string = await page.evaluate((element) => {
+      // 첫 줄에 제목 + 로맨스 가이드 있을 때 그 부분 제외
+      if (
+        element.children[0].tagName === "SPAN" &&
+        element.innerText.includes(">\n로맨스 가이드\n\n")
+      ) {
+        const idxForRemoving: number = element.innerText.indexOf(">\n로맨스 가이드\n\n");
+        return element.innerText.slice(idxForRemoving + 11);
+      }
+      // 첫 줄 제목 제외
+      if (
+        element.children[0].tagName === "SPAN" &&
+        (element.children.length === 1 || element.children[1].tagName !== "IMG")
+      ) {
+        const idxForRemoving: number = element.innerText.indexOf(">\n");
+        return element.innerText.slice(idxForRemoving + 2);
+      }
+      // 첫 줄에 제목, 둘째 줄에 이미지, 셋째 넷째 비어있을 때 제외
+      if (
+        element.children[0].tagName === "SPAN" &&
+        element.children[1].tagName === "IMG" &&
+        element.children[2].tagName === "BR" &&
+        element.children[3].tagName === "BR"
+      ) {
+        const idxForRemoving: number = element.innerText.indexOf(">\n\n\n");
+        return element.innerText.slice(idxForRemoving + 4);
+      }
+    }, descElement);
+
+    return desc;
+  }
 }
 
-async function getGenre(page: puppeteer.Page) {
-  const genre = await getInfo(page, selectorsOfNovelPage.ridi.genre);
-  if (genre.includes("로판")) return "로판";
-  if (genre.includes("로맨스")) return "로맨스";
-  if (genre.includes("무협")) return "무협";
-  if (genre.includes("라이트노벨")) return "라이트노벨";
-  if (genre.includes("BL")) return "BL";
-  if (genre.includes("현대") || genre.includes("게임") || genre.includes("스포츠")) return "현판";
-  if (genre.includes("판타지")) return "판타지";
-  return "기타";
+async function getAge(page: puppeteer.Page, novelPlatform: NovelPlatform) {
+  if (novelPlatform === "카카오페이지") {
+    return await getInfo(page, selectorsOfNovelPage.kakape.age);
+  }
+  if (novelPlatform === "네이버 시리즈") {
+    return await getInfo(page, selectorsOfNovelPage.series.age);
+  }
+  if (novelPlatform === "리디북스") {
+    const notification = await getInfo(page, selectorsOfNovelPage.ridi.age);
+
+    if (notification.includes("15세")) return "15세 이용가";
+    if (notification.includes("12세")) return "12세 이용가";
+    return "전체 이용가";
+  }
+}
+
+async function getGenre(page: puppeteer.Page, novelPlatform: NovelPlatform, novelTitle: string) {
+  if (novelPlatform === "카카오페이지") {
+    if (novelTitle.includes("[BL]")) {
+      return "BL";
+    }
+    return await getInfo(page, selectorsOfNovelPage.kakape.genre);
+  }
+  if (novelPlatform === "네이버 시리즈") {
+    return await getInfo(page, selectorsOfNovelPage.series.genre);
+  }
+  if (novelPlatform === "리디북스") {
+    const genre = await getInfo(page, selectorsOfNovelPage.ridi.genre);
+    if (genre.includes("로판")) return "로판";
+    if (genre.includes("로맨스")) return "로맨스";
+    if (genre.includes("무협")) return "무협";
+    if (genre.includes("라이트노벨")) return "라이트노벨";
+    if (genre.includes("BL")) return "BL";
+    if (genre.includes("현대") || genre.includes("게임") || genre.includes("스포츠")) return "현판";
+    if (genre.includes("판타지")) return "판타지";
+    return "기타";
+  }
 }
 
 //  -- check novel image in db and make sure that img is saved as small size in DB
@@ -180,12 +245,30 @@ async function getGenre(page: puppeteer.Page) {
 //       to do remove the following in the end of the img src when needed : "&filename=th3"
 //
 
-async function getIsEnd(page: puppeteer.Page) {
-  const isEnd = await page.evaluate((selectorOfIsEnd) => {
-    const notEndElement = document.querySelector(selectorOfIsEnd);
-    return notEndElement === null;
-  }, selectorsOfNovelPage.ridi.isEnd);
-  return isEnd;
+async function getIsEnd(page: puppeteer.Page, novelPlatform: NovelPlatform) {
+  if (novelPlatform === "카카오페이지") {
+    const checkingEnd = await getInfo(page, selectorsOfNovelPage.kakape.isEnd);
+    if (checkingEnd.includes("완결")) {
+      return true;
+    }
+    return false;
+  }
+
+  if (novelPlatform === "네이버 시리즈") {
+    const checkingEnd = await getInfo(page, selectorsOfNovelPage.series.isEnd);
+    if (checkingEnd.includes("완결")) {
+      return true;
+    }
+    return false;
+  }
+
+  if (novelPlatform === "리디북스") {
+    const isEnd = await page.evaluate((selectorOfIsEnd) => {
+      const notEndElement = document.querySelector(selectorOfIsEnd);
+      return notEndElement === null;
+    }, selectorsOfNovelPage.ridi.isEnd);
+    return isEnd;
+  }
 }
 
 export async function searchForNovelsByTitleAndAuthor(novelTitle: string, novelAuthor: string) {
@@ -203,11 +286,14 @@ async function addNewNovel(
   novelPlatform: NovelPlatform,
 ) {
   const novelId = getCurrentTime();
-  const novelImg = await getInfo(page, selectorsOfNovelPage.ridi.img, "attr", "src");
-  const novelDesc = await getDesc(page);
-  const novelAge = await getAge(page);
-  const novelGenre = await getGenre(page);
-  const novelIsEnd = await getIsEnd(page);
+  // 각 get 함수에서 undefined return 다루기 -> 현재 setNovel에 undefined 못 넘겨줌
+  const novelImg = await getImg(page, novelPlatform);
+  const novelDesc = await getDesc(page, novelPlatform);
+  const novelAge = await getAge(page, novelPlatform);
+  // 제목에 [BL] 태그 포함되면 제목 라벨 제거할 때 예외 처리하기
+  // 장르에 BL이 표시되지 않는 플랫폼 : 카카오페이지 -> 이 경우 다루기
+  const novelGenre = await getGenre(page, novelPlatform, novelInfo.novelTitle);
+  const novelIsEnd = await getIsEnd(page, novelPlatform);
   const { novelAuthor, novelTitle, novelUrl } = novelInfo;
 
   const novel = {
