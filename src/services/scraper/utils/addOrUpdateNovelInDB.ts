@@ -149,12 +149,12 @@ async function getDesc(page: puppeteer.Page, novelPlatform: NovelPlatform) {
       parentDescElement,
     );
 
-    // if there is not a more button of desc
+    // if there is not a more-button of desc
     if (childrenLengthOfDesc === 1) {
       return await getInfo(page, selectorsOfNovelPage.series.desc.child1, "html");
     }
 
-    // if there is a more button of desc
+    // if there is a more-button of desc
     await page.waitForSelector(selectorsOfNovelPage.series.desc.child2);
 
     const descriptionWithOtherTag = await getInfo(
@@ -291,33 +291,47 @@ async function addNewNovel(
   severalNovelInfo: SeveralNovelInfo,
   novelPlatform: NovelPlatform,
 ) {
-  const novelId = getCurrentTime();
-  // 각 get 함수에서 undefined return 다루기 -> 현재 setNovel에 undefined 못 넘겨줌
-  const novelImg = await getImg(page, novelPlatform);
-  const novelDesc = await getDesc(page, novelPlatform);
-  const novelAge = await getAge(page, novelPlatform);
-  // 제목에 [BL] 태그 포함되면 제목 라벨 제거할 때 예외 처리하기
-  // 장르에 BL이 표시되지 않는 플랫폼 : 카카오페이지 -> 이 경우 다루기
-  const novelGenre = await getGenre(page, novelPlatform, severalNovelInfo.isBL);
-  const novelIsEnd = await getIsEnd(page, novelPlatform);
-  const { novelAuthor, novelTitle, novelUrl } = severalNovelInfo;
+  // don't add this novel into DB
+  //  if I can't get its certain info from detail page
+  //  just return undefined and continue loop for getting a next novel
+  try {
+    const novelImg = await getImg(page, novelPlatform);
+    if (novelImg === undefined) return undefined;
 
-  const novel = {
-    novelId,
-    novelImg,
-    novelTitle,
-    novelDesc,
-    novelAuthor,
-    novelAge,
-    novelGenre,
-    novelIsEnd,
-    novelPlatform,
-    novelUrl,
-  };
+    const novelDesc = await getDesc(page, novelPlatform);
+    if (novelDesc === undefined) return undefined;
 
-  await setNovel(novel);
+    const novelAge = await getAge(page, novelPlatform);
+    if (novelAge === undefined) return undefined;
 
-  return novelId;
+    const novelGenre = await getGenre(page, novelPlatform, severalNovelInfo.isBL);
+    if (novelGenre === undefined) return undefined;
+
+    const novelIsEnd = await getIsEnd(page, novelPlatform);
+    if (novelIsEnd === undefined) return undefined;
+
+    const novelId = getCurrentTime();
+    const { novelAuthor, novelTitle, novelUrl } = severalNovelInfo;
+
+    const novel = {
+      novelId,
+      novelImg,
+      novelTitle,
+      novelDesc,
+      novelAuthor,
+      novelAge,
+      novelGenre,
+      novelIsEnd,
+      novelPlatform,
+      novelUrl,
+    };
+
+    await setNovel(novel);
+
+    return novelId;
+  } catch {
+    return undefined;
+  }
 }
 
 function findSameNovelsFromTitlesWithLabels(
