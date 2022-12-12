@@ -352,13 +352,39 @@ function findSameNovelsFromTitlesWithLabels(
   return sameNovelsInDB;
 }
 
-async function getSameNovelsAndSeveralInfo(page: puppeteer.Page, novelUrl: string) {
+function getSelectorsByPlatform(novelPlatform: NovelPlatform) {
+  let selectorOfTitle;
+  let selectorOfAuthor;
+
+  if (novelPlatform === "카카오페이지") {
+    selectorOfTitle = selectorsOfNovelPage.kakape.title;
+    selectorOfAuthor = selectorsOfNovelPage.kakape.author;
+  }
+  if (novelPlatform === "네이버 시리즈") {
+    selectorOfTitle = selectorsOfNovelPage.series.title;
+    selectorOfAuthor = selectorsOfNovelPage.series.author;
+  }
+  if (novelPlatform === "리디북스") {
+    selectorOfTitle = selectorsOfNovelPage.ridi.title;
+    selectorOfAuthor = selectorsOfNovelPage.ridi.author;
+  }
+
+  return { selectorOfTitle, selectorOfAuthor };
+}
+async function getSameNovelsAndSeveralInfo(
+  page: puppeteer.Page,
+  novelUrl: string,
+  novelPlatform: NovelPlatform,
+) {
   await page.goto(`https://${novelUrl}`);
 
-  const novelTitleFromPage = await getInfo(page, selectorsOfNovelPage.ridi.title);
+  const { selectorOfTitle, selectorOfAuthor } = getSelectorsByPlatform(novelPlatform);
+  if (!(selectorOfTitle && selectorOfAuthor)) return undefined;
+
+  const novelTitleFromPage = await getInfo(page, selectorOfTitle);
   const novelTitleWithoutLabels = removeLabelsFromTitle(novelTitleFromPage);
 
-  const novelAuthor = await getInfo(page, selectorsOfNovelPage.ridi.author);
+  const novelAuthor = await getInfo(page, selectorOfAuthor);
 
   // 라벨 뗀 문구가 포함된 제목으로 소설 검색
   // get novels that have titles including text without labels in them
@@ -510,13 +536,14 @@ async function updateNovelWithPlatform(
 // finally get the novel id
 export default async function addOrUpdateNovelInDB(
   page: puppeteer.Page,
-  // 꼭 하기!!!!
-  // novelUrl에 값을 넣을 때 scraper에 따라 다르게 : weekly best or new
-  // new scraper에 사용할 때는 앞에 https 빼고 넣기. ridibooks.com${novelList[currentNovelNO - 1].url}
   novelUrl: string,
   novelPlatform: NovelPlatform,
 ) {
-  const { sameNovelsInDB, severalNovelInfo } = await getSameNovelsAndSeveralInfo(page, novelUrl);
+  const sameNovelsAndInfo = await getSameNovelsAndSeveralInfo(page, novelUrl, novelPlatform);
+
+  if (!sameNovelsAndInfo) return undefined;
+
+  const { sameNovelsInDB, severalNovelInfo } = sameNovelsAndInfo;
 
   // when the novel is not in db //
   //  add new novel to novelInfo table
