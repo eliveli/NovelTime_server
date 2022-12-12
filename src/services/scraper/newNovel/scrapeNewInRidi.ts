@@ -1,9 +1,10 @@
 import puppeteer from "puppeteer";
 import dotenv from "dotenv";
-import getCurrentTime from "../utils/getCurrentTime";
-import { setNovel } from "../../novels";
+import addOrUpdateNovelInDB from "../utils/addOrUpdateNovelInDB";
 
 dotenv.config(); // 여기(이 명령어를 실행한 파일)에서만 환경변수 사용 가능
+
+const novelPlatform = "리디북스";
 
 let isCategoryLoopEnd = false; // 전체 카테고리별 목록페이지 조회완료 여부
 
@@ -173,229 +174,26 @@ async function getNovelUrls(page: puppeteer.Page, genreNOs: string[]) {
   }
 }
 
-async function goToDetailPage(page: puppeteer.Page) {
-  // 로그인 후 페이지 리다이렉트 됨. 잠시 대기 후 상세페이지로 이동해야 에러 안 남.
-  await new Promise((resolve) => {
-    setTimeout(resolve, 500);
-  });
+// async function goToDetailPage(page: puppeteer.Page) {
+//   // 로그인 후 페이지 리다이렉트 됨. 잠시 대기 후 상세페이지로 이동해야 에러 안 남.
+//   // await new Promise((resolve) => {
+//   //   setTimeout(resolve, 500);
+//   // });
 
-  const novelDetailPage = `https://ridibooks.com${novelList[currentNovelNO - 1].url}`;
+//   const novelDetailPage = `ridibooks.com${novelList[currentNovelNO - 1].url}`;
 
-  await page.goto(novelDetailPage);
-}
+//   await page.goto(novelDetailPage);
+// }
 
-async function getImg(page: puppeteer.Page) {
-  const imgElement = await page.waitForSelector(
-    "#page_detail > div.detail_wrap > div.detail_body_wrap > section > article.detail_header.trackable > div.header_thumbnail_wrap > div.header_thumbnail.book_macro_200.detail_scalable_thumbnail > div > div > div > img",
-  );
-  const img: string = await page.evaluate((element) => element.getAttribute("src"), imgElement);
-  return img;
-}
-
-async function getTitle(page: puppeteer.Page) {
-  const titleElement = await page.waitForSelector(
-    "#page_detail > div.detail_wrap > div.detail_body_wrap > section > article.detail_header.trackable > div.header_info_wrap > div.info_title_wrap > h3",
-  );
-  const title: string = await page.evaluate((element) => element.innerText, titleElement);
-
-  return title;
-}
-
-async function getIsEnd(page: puppeteer.Page) {
-  // element의 class에 따라 완결/미완 다름. 표시 없는 작품은 완결로 표시.
-  const isEnd = await page.evaluate(() => {
-    const notEndElement = document.querySelector(
-      "#page_detail > div.detail_wrap > div.detail_body_wrap > section > article.detail_header.trackable > div.header_info_wrap > div:nth-child(4) > p.metadata.metadata_info_series_complete_wrap > span.metadata_item.not_complete",
-    );
-    return notEndElement === null;
-  });
-
-  return isEnd;
-}
-
-async function getDescFromPage(page: puppeteer.Page) {
-  const descElement = await page.waitForSelector(
-    "article.detail_box_module.detail_introduce_book #introduce_book > p",
-  );
-
-  return await page.evaluate((element) => {
-    // 첫 줄에 제목 + 로맨스 가이드 있을 때 그 부분 제외
-    if (
-      element.children[0].tagName === "SPAN" &&
-      element.innerText.includes(">\n로맨스 가이드\n\n")
-    ) {
-      const idxForSettingStart: number = element.innerText.indexOf(">\n로맨스 가이드\n\n");
-      return element.innerText.slice(idxForSettingStart + 11);
-    }
-    // 첫 줄 제목 제외
-    if (
-      element.children[0].tagName === "SPAN" &&
-      (element.children.length === 1 || element.children[1].tagName !== "IMG")
-    ) {
-      const idxForSettingStart: number = element.innerText.indexOf(">\n");
-      return element.innerText.slice(idxForSettingStart + 2);
-    }
-    // 첫 줄에 제목, 둘째 줄에 이미지, 셋째 넷째 비어있을 때 제외
-    if (
-      element.children[0].tagName === "SPAN" &&
-      element.children[1].tagName === "IMG" &&
-      element.children[2].tagName === "BR" &&
-      element.children[3].tagName === "BR"
-    ) {
-      const idxForSettingStart: number = element.innerText.indexOf(">\n\n\n");
-      return element.innerText.slice(idxForSettingStart + 4);
-    }
-    return "";
-  }, descElement);
-}
-
-async function getKeywords(page: puppeteer.Page) {
-  return await page.evaluate(() => {
-    const keywordList = document.querySelectorAll(
-      "#page_detail > div.detail_wrap > div.detail_body_wrap > section > article.detail_box_module.detail_keyword.js_detail_keyword_module > ul > li",
-    );
-    let keywordSet = "";
-
-    filterKeyword: for (let i = 0; i < keywordList.length; i += 1) {
-      const keyword = keywordList[i].textContent;
-      if (keyword === null) {
-        throw new Error("키워드가 없는데도 반복문 실행됨");
-      }
-      const exceptKeys = [
-        "만원",
-        "3000",
-        "리뷰",
-        "별점",
-        "평점",
-        "연재",
-        "단행본",
-        "무료",
-        "2013",
-        "2015",
-        "권이하",
-        "년출간",
-      ];
-      for (let j = 0; j < exceptKeys.length; j += 1) {
-        if (keyword.includes(exceptKeys[j])) continue filterKeyword;
-        if (exceptKeys[j] === exceptKeys[exceptKeys.length - 1]) {
-          keywordSet += `${keyword} `;
-        }
-      }
-    }
-    return keywordSet;
-  });
-}
-
-async function getDesc(page: puppeteer.Page) {
-  const desc: string = await getDescFromPage(page);
-
-  const keywords = await getKeywords(page);
-
-  // set desc only : 기존 작품소개에 키워드가 포함되어 있거나 받아온 키워드가 없다면
-  if (desc.includes("#") || desc.includes("키워드") || keywords === "") {
-    return desc;
-  }
-  // set desc with keywords
-  return `${keywords}\n\n${desc}`;
-}
-
-async function getAuthor(page: puppeteer.Page) {
-  const authorElement = await page.waitForSelector(
-    "#page_detail > div.detail_wrap > div.detail_body_wrap > section > article.detail_header.trackable > div.header_info_wrap > div:nth-child(4) > p.metadata.metadata_writer > span > a",
-  );
-
-  const author: string = await page.evaluate((element) => element.innerText, authorElement);
-
-  return author;
-}
-
-function divideAge(noti: string) {
-  if (noti.includes("15세")) return "15세 이용가";
-  if (noti.includes("12세")) return "12세 이용가";
-  return "전체 이용가";
-}
-
-async function getAge(page: puppeteer.Page) {
-  const ageElement = await page.waitForSelector("#notice_component > ul > li");
-  const notification: string = await page.evaluate((element) => element.innerText, ageElement);
-
-  const age = divideAge(notification);
-
-  return age;
-}
-
-function divideGenre(inputGenre: string) {
-  if (inputGenre.includes("로판")) return "로판";
-  if (inputGenre.includes("로맨스")) return "로맨스";
-  if (inputGenre.includes("무협")) return "무협";
-  if (inputGenre.includes("라이트노벨")) return "라이트노벨";
-  if (inputGenre.includes("BL")) return "BL";
-  if (inputGenre.includes("현대") || inputGenre.includes("게임") || inputGenre.includes("스포츠")) {
-    return "현판";
-  }
-  if (inputGenre.includes("판타지")) return "판타지";
-  return "기타";
-}
-
-async function getGenre(page: puppeteer.Page) {
-  const genreElement = await page.waitForSelector(
-    "#page_detail > div.detail_wrap > div.detail_body_wrap > section > article.detail_header.trackable > div.header_info_wrap > p",
-  );
-
-  const genre: string = await page.evaluate((element) => element.innerText, genreElement);
-
-  return divideGenre(genre);
-}
-
-async function getNovelFromDetailPage(page: puppeteer.Page) {
-  const novelImg = await getImg(page);
-
-  const novelTitle = await getTitle(page);
-
-  const novelIsEnd = await getIsEnd(page);
-
-  const novelDesc = await getDesc(page);
-
-  const novelAuthor = await getAuthor(page);
-
-  const novelAge = await getAge(page);
-
-  const novelGenre = await getGenre(page);
-
-  const novelPlatform = "리디북스";
-  const novelUrl = `https://ridibooks.com${novelList[currentNovelNO - 1].url}`;
-  const novelId = getCurrentTime();
-
-  return {
-    novelId,
-    novelImg,
-    novelTitle,
-    novelDesc,
-    novelAuthor,
-    novelAge,
-    novelGenre,
-    novelIsEnd,
-    novelPlatform,
-    novelUrl,
-  };
-}
-
-async function getNovels(page: puppeteer.Page) {
-  // visit detail pages
+async function setNovels(page: puppeteer.Page) {
   while (isCategoryLoopEnd && totalNovelNO >= currentNovelNO) {
     console.log(
       `currentNovelNO: ${currentNovelNO}, totalNovelNO: ${totalNovelNO}, totalPageNoList: `,
       totalPageNO,
     );
     try {
-      await goToDetailPage(page);
-
-      const novel = await getNovelFromDetailPage(page);
-
-      console.log(novel);
-
-      // save novel in DB
-      await setNovel(novel);
+      const currentNovelUrl = `ridibooks.com${novelList[currentNovelNO - 1].url}`;
+      await addOrUpdateNovelInDB(page, currentNovelUrl, novelPlatform);
 
       currentNovelNO += 1; // 작품 번호 +1
 
@@ -425,7 +223,7 @@ export async function scrapeRidi(genreNOs: string[]) {
 
     await getNovelUrls(page, genreNOs);
 
-    await getNovels(page);
+    await setNovels(page);
 
     // 카테고리 전체 조회 완료 시 표시 : 조회 완료 후 시크릿창 한 번 닫기 위해 이 위치에 넣음
     if (!isCategoryLoopEnd) {
