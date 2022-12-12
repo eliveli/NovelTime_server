@@ -137,6 +137,79 @@ async function getImg(page: puppeteer.Page, novelPlatform: NovelPlatform) {
   }
 }
 
+async function getDescFromPageForRidi(page: puppeteer.Page) {
+  const descElement = await page.waitForSelector(
+    "article.detail_box_module.detail_introduce_book #introduce_book > p",
+  );
+
+  return await page.evaluate((element) => {
+    // 첫 줄에 제목 + 로맨스 가이드 있을 때 그 부분 제외
+    if (
+      element.children[0].tagName === "SPAN" &&
+      element.innerText.includes(">\n로맨스 가이드\n\n")
+    ) {
+      const idxForSettingStart: number = element.innerText.indexOf(">\n로맨스 가이드\n\n");
+      return element.innerText.slice(idxForSettingStart + 11);
+    }
+    // 첫 줄 제목 제외
+    if (
+      element.children[0].tagName === "SPAN" &&
+      (element.children.length === 1 || element.children[1].tagName !== "IMG")
+    ) {
+      const idxForSettingStart: number = element.innerText.indexOf(">\n");
+      return element.innerText.slice(idxForSettingStart + 2);
+    }
+    // 첫 줄에 제목, 둘째 줄에 이미지, 셋째 넷째 비어있을 때 제외
+    if (
+      element.children[0].tagName === "SPAN" &&
+      element.children[1].tagName === "IMG" &&
+      element.children[2].tagName === "BR" &&
+      element.children[3].tagName === "BR"
+    ) {
+      const idxForSettingStart: number = element.innerText.indexOf(">\n\n\n");
+      return element.innerText.slice(idxForSettingStart + 4);
+    }
+    return "";
+  }, descElement);
+}
+
+async function getKeywordsForRidi(page: puppeteer.Page) {
+  return await page.evaluate(() => {
+    const keywordList = document.querySelectorAll(
+      "#page_detail > div.detail_wrap > div.detail_body_wrap > section > article.detail_box_module.detail_keyword.js_detail_keyword_module > ul > li",
+    );
+    let keywordSet = "";
+
+    filterKeyword: for (let i = 0; i < keywordList.length; i += 1) {
+      const keyword = keywordList[i].textContent;
+      if (keyword === null) {
+        throw new Error("키워드가 없는데도 반복문 실행됨");
+      }
+      const exceptKeys = [
+        "만원",
+        "3000",
+        "리뷰",
+        "별점",
+        "평점",
+        "연재",
+        "단행본",
+        "무료",
+        "2013",
+        "2015",
+        "권이하",
+        "년출간",
+      ];
+      for (let j = 0; j < exceptKeys.length; j += 1) {
+        if (keyword.includes(exceptKeys[j])) continue filterKeyword;
+        if (exceptKeys[j] === exceptKeys[exceptKeys.length - 1]) {
+          keywordSet += `${keyword} `;
+        }
+      }
+    }
+    return keywordSet;
+  });
+}
+
 async function getDesc(page: puppeteer.Page, novelPlatform: NovelPlatform) {
   if (novelPlatform === "카카오페이지") {
     return await getInfo(page, selectorsOfNovelPage.kakape.desc, "html");
@@ -171,38 +244,16 @@ async function getDesc(page: puppeteer.Page, novelPlatform: NovelPlatform) {
   }
 
   if (novelPlatform === "리디북스") {
-    const descElement = await page.waitForSelector(selectorsOfNovelPage.ridi.desc);
+    const desc: string = await getDescFromPageForRidi(page);
 
-    const desc: string = await page.evaluate((element) => {
-      // 첫 줄에 제목 + 로맨스 가이드 있을 때 그 부분 제외
-      if (
-        element.children[0].tagName === "SPAN" &&
-        element.innerText.includes(">\n로맨스 가이드\n\n")
-      ) {
-        const idxForRemoving: number = element.innerText.indexOf(">\n로맨스 가이드\n\n");
-        return element.innerText.slice(idxForRemoving + 11);
-      }
-      // 첫 줄 제목 제외
-      if (
-        element.children[0].tagName === "SPAN" &&
-        (element.children.length === 1 || element.children[1].tagName !== "IMG")
-      ) {
-        const idxForRemoving: number = element.innerText.indexOf(">\n");
-        return element.innerText.slice(idxForRemoving + 2);
-      }
-      // 첫 줄에 제목, 둘째 줄에 이미지, 셋째 넷째 비어있을 때 제외
-      if (
-        element.children[0].tagName === "SPAN" &&
-        element.children[1].tagName === "IMG" &&
-        element.children[2].tagName === "BR" &&
-        element.children[3].tagName === "BR"
-      ) {
-        const idxForRemoving: number = element.innerText.indexOf(">\n\n\n");
-        return element.innerText.slice(idxForRemoving + 4);
-      }
-    }, descElement);
+    const keywords = await getKeywordsForRidi(page);
 
-    return desc;
+    // set desc only : 기존 작품소개에 키워드가 포함되어 있거나 받아온 키워드가 없다면
+    if (desc.includes("#") || desc.includes("키워드") || keywords === "") {
+      return desc;
+    }
+    // set desc with keywords
+    return `${keywords}\n\n${desc}`;
   }
 }
 
