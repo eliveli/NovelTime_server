@@ -6,7 +6,7 @@ dotenv.config(); // 여기(이 명령어를 실행한 파일)에서만 환경변
 
 const novelPlatform = "리디북스";
 
-let isCategoryLoopEnd = false; // 전체 카테고리별 목록페이지 조회완료 여부
+let isGenreLoopEnd = false; // 전체 카테고리별 목록페이지 조회완료 여부
 
 const totalPageNO: number[] = []; // 필터 별 전체 페이지 수(참고용)
 let totalNovelNO = 0; // 전체 작품 수 : 0으로 해야 함. 필터 별 작품 수 추가하여 계산
@@ -134,9 +134,6 @@ function setTotalNOsOfPageAndNovel(novelNO: number) {
 async function getNovelUrls(page: puppeteer.Page, genreNOs: string[]) {
   // search from each category
   genreLoop: for (let ctgIdx = 0; ctgIdx < genreNOs.length; ctgIdx += 1) {
-    // 장르 별 목록 페이지 전체 조회 완료라면 다시 조회하지 않음 : 시크릿창 닫고 새로 열 때 표시 필요
-    if (isCategoryLoopEnd) break;
-
     await goToNovelListPageOfCurrentGenre(page, genreNOs[ctgIdx]);
 
     await seeListWithCard(page);
@@ -186,18 +183,19 @@ async function getNovelUrls(page: puppeteer.Page, genreNOs: string[]) {
 // }
 
 async function setNovels(page: puppeteer.Page) {
-  while (isCategoryLoopEnd && totalNovelNO >= currentNovelNO) {
+  while (totalNovelNO >= currentNovelNO) {
     console.log(
       `currentNovelNO: ${currentNovelNO}, totalNovelNO: ${totalNovelNO}, totalPageNoList: `,
       totalPageNO,
     );
+
     try {
       const currentNovelUrl = `ridibooks.com${novelList[currentNovelNO - 1].url}`;
       await addOrUpdateNovelInDB(page, currentNovelUrl, novelPlatform);
 
       currentNovelNO += 1; // 작품 번호 +1
 
-      if (currentNovelNO % 100 === 0) break; // 작품 100번째 마다 loop 탈출. 시크릿창 여닫기
+      if (currentNovelNO % 100 === 0) break; // 작품 100번째 마다 loop 탈출. for 시크릿창 여닫기
     } catch (err) {
       console.log(err, `\n 현재작품: ${currentNovelNO}, 마지막작품: ${totalNovelNO}`);
       // 에러 발생 시 해당 작품은 통과. 시크릿창 여닫으며 다음 작품으로 넘어감
@@ -209,7 +207,7 @@ async function setNovels(page: puppeteer.Page) {
 
 // 스크래퍼 리디용 (페이지네이션)-----------------------------------------------------------------------------//
 export async function scrapeRidi(genreNOs: string[]) {
-  const browser = await puppeteer.launch({ headless: true });
+  const browser = await puppeteer.launch({ headless: false });
 
   // 반복. 브라우저 컨텍스트 열고 닫기. out of memory 방지
   // 시크릿창. 캐시나 쿠키 등을 공유하지 않음.
@@ -221,13 +219,23 @@ export async function scrapeRidi(genreNOs: string[]) {
 
     await login(page);
 
-    await getNovelUrls(page, genreNOs);
+    // 장르 내 소설 목록 조회하며 소설 urls 받아 옴
+    //  반복문 1회차에만 실행
+    if (!isGenreLoopEnd) {
+      await getNovelUrls(page, genreNOs);
+    }
 
-    await setNovels(page);
+    // urls로 상세페이지 조회하며 소설 정보 db에 등록
+    //  장르 전체 조회 완료 후 반복문 2회차부터 실행(시크릿창 닫고 열며)
+    if (isGenreLoopEnd) {
+      await setNovels(page);
+    }
 
-    // 카테고리 전체 조회 완료 시 표시 : 조회 완료 후 시크릿창 한 번 닫기 위해 이 위치에 넣음
-    if (!isCategoryLoopEnd) {
-      isCategoryLoopEnd = true;
+    // params로 넘겨 준 목록의 장르를 모두 조회한 후 완료 표시
+    //  조회했다 함은 해당 장르의 소설 목록 페이지 조회를 말함
+    //  반복문 1회차에만 실행
+    if (!isGenreLoopEnd) {
+      isGenreLoopEnd = true;
     }
     await context.close(); // 시크릿창 닫기
     if (totalNovelNO < currentNovelNO) break; // 전체 작품 조회 완료 후 브라우저 닫기
