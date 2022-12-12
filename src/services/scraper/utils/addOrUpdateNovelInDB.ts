@@ -222,6 +222,19 @@ async function getAge(page: puppeteer.Page, novelPlatform: NovelPlatform) {
   }
 }
 
+function divideGenreForRidi(genre: string) {
+  if (genre.includes("로판")) return "로판";
+  if (genre.includes("로맨스")) return "로맨스";
+  if (genre.includes("무협")) return "무협";
+  if (genre.includes("라이트노벨")) return "라이트노벨";
+  if (genre.includes("BL")) return "BL";
+  if (genre.includes("현대") || genre.includes("게임") || genre.includes("스포츠")) {
+    return "현판";
+  }
+  if (genre.includes("판타지")) return "판타지";
+  return "기타";
+}
+
 async function getGenre(page: puppeteer.Page, novelPlatform: NovelPlatform, isBL: boolean) {
   if (novelPlatform === "카카오페이지") {
     if (isBL) {
@@ -234,14 +247,7 @@ async function getGenre(page: puppeteer.Page, novelPlatform: NovelPlatform, isBL
   }
   if (novelPlatform === "리디북스") {
     const genre = await getInfo(page, selectorsOfNovelPage.ridi.genre);
-    if (genre.includes("로판")) return "로판";
-    if (genre.includes("로맨스")) return "로맨스";
-    if (genre.includes("무협")) return "무협";
-    if (genre.includes("라이트노벨")) return "라이트노벨";
-    if (genre.includes("BL")) return "BL";
-    if (genre.includes("현대") || genre.includes("게임") || genre.includes("스포츠")) return "현판";
-    if (genre.includes("판타지")) return "판타지";
-    return "기타";
+    return divideGenreForRidi(genre);
   }
 }
 
