@@ -2,7 +2,7 @@ import puppeteer, { SerializableOrJSHandle } from "puppeteer";
 
 import { setNovel } from "../../novels";
 import db from "../../utils/db";
-import removeLabelsFromTitle from "../bestNovelOfWeek/utils/removeLabelsFromTitle";
+import removeLabelsFromTitle from "./removeLabelsFromTitle";
 import getCurrentTime from "./getCurrentTime";
 
 type SeveralNovelInfo = {
