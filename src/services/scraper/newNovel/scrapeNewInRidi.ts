@@ -52,11 +52,10 @@ async function typeLoginInfo(page: puppeteer.Page) {
 }
 
 async function login(page: puppeteer.Page) {
-  await typeLoginInfo(page);
-
   await page.goto(
     "https://ridibooks.com/account/login?return_url=https%3A%2F%2Fridibooks.com%2Fcategory%2Fbooks%2F1703%3Forder%3Drecent%26page%3D1",
   );
+  await typeLoginInfo(page);
 
   await page.click("#login > form > div > div > label > input[type=checkbox]"); // check 로그인상태유지
   await page.click("#login > form > button"); // submit
@@ -217,8 +216,6 @@ export async function scrapeRidi(genreNOs: string[]) {
     const page = await context.newPage();
     page.setDefaultTimeout(30000); // 마지막번호+1 작품(없음) 조회 시 대기 시간 줄이기
 
-    await login(page);
-
     // 장르 내 소설 목록 조회하며 소설 urls 받아 옴
     //  반복문 1회차에만 실행
     if (!isGenreLoopEnd) {
@@ -228,11 +225,13 @@ export async function scrapeRidi(genreNOs: string[]) {
     // urls로 상세페이지 조회하며 소설 정보 db에 등록
     //  장르 전체 조회 완료 후 반복문 2회차부터 실행(시크릿창 닫고 열며)
     if (isGenreLoopEnd) {
+      await login(page);
+
       await setNovels(page);
     }
 
     // params로 넘겨 준 목록의 장르를 모두 조회한 후 완료 표시
-    //  조회했다 함은 해당 장르의 소설 목록 페이지 조회를 말함
+    //   조회했다 함은 해당 장르의 소설 목록 페이지 조회를 말함
     //  반복문 1회차에만 실행
     if (!isGenreLoopEnd) {
       isGenreLoopEnd = true;
