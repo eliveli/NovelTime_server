@@ -3,7 +3,7 @@ import weeklySeries, {
   addOrUpdateNovelInDB,
   getNovelIdFromDB,
   getNovelUrls,
-} from "../scrapeBestInSeries";
+} from "../scrapeWeeklyInSeries";
 
 jest.setTimeout(500000);
 

@@ -1,5 +1,5 @@
 import puppeteer from "puppeteer";
-import weeklyKakape, { addOrUpdateNovelInDB } from "../kakape";
+import weeklyKakape, { addOrUpdateNovelInDB } from "../scrapeWeeklyInKakape";
 
 jest.setTimeout(500000);
 

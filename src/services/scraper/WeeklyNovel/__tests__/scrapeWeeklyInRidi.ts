@@ -4,7 +4,7 @@ import weeklyRidi, {
   getNovelIdFromDB,
   getNovelUrls,
   searchForNovelsByTitleAndAuthor,
-} from "../scrapeBestInRidi";
+} from "../scrapeWeeklyInRidi";
 
 jest.setTimeout(500000);
 
