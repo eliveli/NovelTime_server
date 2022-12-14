@@ -6,6 +6,7 @@ import removeLabelsFromTitle from "../utils/removeLabelsFromTitle";
 import minimalArgs from "../utils/minimalArgsToLaunch";
 import login from "../utils/login";
 import getNovelUrls from "./utils/getNovelUrls";
+import getNovelIDsFromDB from "./utils/getNovelIDsFromDB";
 
 // 각 플랫폼에서 주간베스트 소설 20개 씩 가져오기
 
@@ -299,25 +300,6 @@ export async function getNovelIdFromDB(page: puppeteer.Page, novelUrl: string) {
   return novelId;
 }
 
-async function getNovelIDsFromDB(page: puppeteer.Page, novelUrls: string[]) {
-  const novelIDs: string[] = [];
-
-  while (novelUrls.length !== 0) {
-    const novelID = await getNovelIdFromDB(page, novelUrls[0]);
-
-    if (!novelID) {
-      novelUrls.shift();
-      continue;
-    }
-
-    novelIDs.push(novelID);
-
-    novelUrls.shift();
-  }
-
-  return novelIDs;
-}
-
 async function addWeeklyNovel(novelId: string, novelRank: number, scrapeDate: string) {
   await db(
     "INSERT INTO weeklyNovel SET novelId = (?), novelRank = (?), novelPlatform = (?), scrapeDate = (?),  isLatest = 1",
@@ -359,7 +341,7 @@ export default async function weeklySeries() {
 
   if (!novelUrls) return;
 
-  const novelIDs = await getNovelIDsFromDB(page, novelUrls);
+  const novelIDs = await getNovelIDsFromDB(page, novelPlatform, novelUrls);
 
   // update new weekly novels to weeklyNovel table
   await addWeeklyNovels(novelIDs);

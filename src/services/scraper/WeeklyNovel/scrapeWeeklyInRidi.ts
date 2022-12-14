@@ -1,33 +1,14 @@
 import puppeteer from "puppeteer";
 import getCurrentTime from "../utils/getCurrentTime";
 import db from "../../utils/db";
-import addOrUpdateNovelInDB from "../utils/addOrUpdateNovelInDB";
 import minimalArgs from "../utils/minimalArgsToLaunch";
 import login from "../utils/login";
 import getNovelUrls from "./utils/getNovelUrls";
+import getNovelIDsFromDB from "./utils/getNovelIDsFromDB";
 
 // 각 플랫폼에서 주간베스트 소설 20개 씩 가져오기
 
 const novelPlatform = "리디북스";
-
-async function getNovelIDsFromDB(page: puppeteer.Page, novelUrls: string[]) {
-  const novelIDs: string[] = [];
-
-  while (novelUrls.length !== 0) {
-    const novelID = await addOrUpdateNovelInDB(page, novelUrls[0], novelPlatform);
-
-    if (!novelID) {
-      novelUrls.shift();
-      continue;
-    }
-
-    novelIDs.push(novelID);
-
-    novelUrls.shift();
-  }
-
-  return novelIDs;
-}
 
 async function addWeeklyNovel(novelId: string, novelRank: number, scrapeDate: string) {
   await db(
@@ -70,7 +51,7 @@ export default async function weeklyRidi() {
 
   if (!novelUrls) return;
 
-  const novelIDs = await getNovelIDsFromDB(page, novelUrls);
+  const novelIDs = await getNovelIDsFromDB(page, novelPlatform, novelUrls);
 
   // update new weekly novels to weeklyNovel table
   await addWeeklyNovels(novelIDs);
