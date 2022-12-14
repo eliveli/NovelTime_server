@@ -13,29 +13,10 @@ const genreFilter = {
   ridi: { RF: ["6050", "6000"], F1: ["1751", "1752"], F2: ["1711", "1712", "1715"] },
 };
 
+// 스크래퍼 실행 시 다른 작업(인터넷 브라우저, DBeaver 등) 다 종료한 상태에서 스크래퍼만 실행하기.
+//  그렇지 않으면 메모리 용량 차지를 많이 해서(참고: 작업관리자-성능-메모리)
+//   목록페이지에서 url을 읽어올 때 page down을 하더라도
+//   dom 로드가 느려 element를 제때 읽어오지 못함
 it("case to run a weekly scraper properly :", async () => {
   await scrapeRidi(genreFilter.ridi.F1);
 });
-
-// 스크랩: 완료: 시리즈 로판, 시리즈 판타지(~7869), 리디 로판, 리디 판타지
-// scrapeKakape(genreFilter.kakape.F, 4157);
-
-// scrapeKakape(genreNO, currentOrder)
-// scrapeKakape(genreFilter.kakape.RF, 4255); // scrapeKakape(genreNO, currentOrder)
-// scrapeKakape(genreFilter.kakape.F, 369); // scrapeKakape(genreNO, currentOrder)
-// scrapeSeries(genreFilter.series.F); // scrapeSeries(genreNO)
-// scrapeRidi(genreFilter.ridi.F); // scrapeRidi(genreNOs)
-
-//--------------------------------------------------------------------------
-// 공유하기
-// shareRidi("https://ridibooks.com/books/1250067763"); // shareRidi(inputUrl)
-
-// shareSeries(
-//   "던전 브레이크의 원인이 되어 버렸다 [선공개]출처 : 시리즈 완전판http://naver.me/GG4CxHtp"
-// ); // shareSeries(inputUrl)
-
-// shareKakape(
-//   "link-page.kakao.com/goto_view?series_id=58884103&referrer=utm_source%3Dsh_clip [카카오페이지 | 소설] 의무 결혼 "
-// ); //shareKakape(inputUrl)
-
-// shareJoara("https://www.joara.com/book/1601829");
