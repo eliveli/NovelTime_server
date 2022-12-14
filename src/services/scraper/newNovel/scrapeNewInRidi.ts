@@ -1,6 +1,7 @@
 import puppeteer from "puppeteer";
 import dotenv from "dotenv";
 import addOrUpdateNovelInDB from "../utils/addOrUpdateNovelInDB";
+import login from "../utils/login";
 
 dotenv.config(); // 여기(이 명령어를 실행한 파일)에서만 환경변수 사용 가능
 
@@ -16,50 +17,6 @@ let currentNovelNO = 1; // 현재 작품 넘버
 const novelList: Array<{ url: string }> = [
   // { url: "/books/777097927" },
 ];
-
-async function typeLoginInfo(page: puppeteer.Page) {
-  let ridiID: string;
-  let ridiPW: string;
-
-  // handle undefined env variable
-  if (process.env.RIDI_ID) {
-    ridiID = process.env.RIDI_ID;
-  } else {
-    throw new Error("RIDI_ID env is not set");
-  }
-  if (process.env.RIDI_PW) {
-    ridiPW = process.env.RIDI_PW;
-  } else {
-    throw new Error("RIDI_PW env is not set");
-  }
-
-  const idElement = await page.waitForSelector("#login_id");
-  await page.evaluate(
-    (platformID, element) => {
-      element.value = platformID;
-    },
-    ridiID,
-    idElement,
-  );
-  const pwElement = await page.waitForSelector("#login_pw");
-  await page.evaluate(
-    (platformPW, element) => {
-      element.value = platformPW;
-    },
-    ridiPW,
-    pwElement,
-  );
-}
-
-async function login(page: puppeteer.Page) {
-  await page.goto(
-    "https://ridibooks.com/account/login?return_url=https%3A%2F%2Fridibooks.com%2Fcategory%2Fbooks%2F1703%3Forder%3Drecent%26page%3D1",
-  );
-  await typeLoginInfo(page);
-
-  await page.click("#login > form > div > div > label > input[type=checkbox]"); // check 로그인상태유지
-  await page.click("#login > form > button"); // submit
-}
 
 // 소설 목록 카드형으로 보기
 //  -> 페이지 별 모든 소설을 가능한 한 작은 화면에 보이기
@@ -170,17 +127,6 @@ async function getNovelUrls(page: puppeteer.Page, genreNOs: string[]) {
   }
 }
 
-// async function goToDetailPage(page: puppeteer.Page) {
-//   // 로그인 후 페이지 리다이렉트 됨. 잠시 대기 후 상세페이지로 이동해야 에러 안 남.
-//   // await new Promise((resolve) => {
-//   //   setTimeout(resolve, 500);
-//   // });
-
-//   const novelDetailPage = `ridibooks.com${novelList[currentNovelNO - 1].url}`;
-
-//   await page.goto(novelDetailPage);
-// }
-
 async function setNovels(page: puppeteer.Page) {
   while (totalNovelNO >= currentNovelNO) {
     console.log(
@@ -225,7 +171,7 @@ export async function scrapeRidi(genreNOs: string[]) {
     // urls로 상세페이지 조회하며 소설 정보 db에 등록
     //  장르 전체 조회 완료 후 반복문 2회차부터 실행(시크릿창 닫고 열며)
     if (isGenreLoopEnd) {
-      await login(page);
+      await login(page, novelPlatform, "new");
 
       await setNovels(page);
     }

@@ -1,74 +1,16 @@
-import puppeteer, { ElementHandle } from "puppeteer";
+import puppeteer from "puppeteer";
 import dotenv from "dotenv";
 import getCurrentTime from "../utils/getCurrentTime";
 import db from "../../utils/db";
 import addOrUpdateNovelInDB from "../utils/addOrUpdateNovelInDB";
 import minimalArgs from "../utils/minimalArgsToLaunch";
+import login from "../utils/login";
 
 dotenv.config();
 
 // 각 플랫폼에서 주간베스트 소설 20개 씩 가져오기
 
 const novelPlatform = "리디북스";
-
-// 로판 웹소설(장르불문 스크랩 불가) / 성인 작품 제외됨
-const novelListUrl = "https://ridibooks.com/category/bestsellers/6050?adult_exclude=y&page=1";
-
-async function login(page: puppeteer.Page) {
-  // login for passing 15 age limitation
-
-  const loginBtn = (await page.waitForSelector(
-    "#__next > div.fig-16izi9a > div.fig-fs8jml > div > ul.fig-1aswo17 > li:nth-child(2) > a",
-  )) as ElementHandle<HTMLAnchorElement>; // wait object load
-
-  // loginBtn null error handling
-  if (!loginBtn) {
-    throw new Error("login 버튼 null 에러");
-  }
-
-  await page.click(
-    "#__next > div.fig-16izi9a > div.fig-fs8jml > div > ul.fig-1aswo17 > li:nth-child(2) > a",
-  ); // click and go to the login page in a current tab/window
-
-  let ridiID: string;
-  let ridiPW: string;
-
-  // handle undefined env variable
-  if (process.env.RIDI_ID) {
-    ridiID = process.env.RIDI_ID;
-  } else {
-    throw new Error("RIDI_ID env was not set");
-  }
-  if (process.env.RIDI_PW) {
-    ridiPW = process.env.RIDI_PW;
-  } else {
-    throw new Error("RIDI_PW env was not set");
-  }
-
-  await page.waitForSelector("#__next > div > section > div > form > input.fig-w58liu.e1yjg41i0", {
-    timeout: 50000,
-  });
-
-  await page.type("#__next > div > section > div > form > input.fig-w58liu.e1yjg41i0", ridiID, {
-    delay: 100,
-  });
-
-  await page.waitForSelector("#__next > div > section > div > form > input.fig-7he7ta.e1yjg41i0");
-
-  await page.type("#__next > div > section > div > form > input.fig-7he7ta.e1yjg41i0", ridiPW, {
-    delay: 100,
-  });
-
-  await page.click("#__next > div > section > div > form > div > input"); // 로그인상태유지
-
-  await page.click("#__next > div > section > div > form > button"); // click login button
-}
-
-async function waitForProfileIconAfterLogin(page: puppeteer.Page) {
-  await page.waitForSelector(
-    "#__next > div.fig-16izi9a > div.fig-fs8jml > div > ul.fig-1aswo17 > li > a > span",
-  );
-}
 
 export async function getNovelUrls(page: puppeteer.Page) {
   let bestNo = 1;
@@ -155,11 +97,7 @@ export default async function weeklyRidi() {
 
   page.setDefaultTimeout(500000); // set timeout globally
 
-  await page.goto(novelListUrl);
-
-  await login(page);
-
-  await waitForProfileIconAfterLogin(page);
+  await login(page, novelPlatform, "weekly");
 
   const novelUrls = await getNovelUrls(page);
 
