@@ -4,41 +4,11 @@ import db from "../../utils/db";
 import addOrUpdateNovelInDB from "../utils/addOrUpdateNovelInDB";
 import minimalArgs from "../utils/minimalArgsToLaunch";
 import login from "../utils/login";
+import getNovelUrls from "./utils/getNovelUrls";
 
 // 각 플랫폼에서 주간베스트 소설 20개 씩 가져오기
 
 const novelPlatform = "리디북스";
-
-export async function getNovelUrls(page: puppeteer.Page) {
-  let bestNo = 1;
-  const novelUrls = [];
-
-  while (bestNo < 21) {
-    // without this I can't get novel urls more than 11
-    if (bestNo === 12) {
-      for (let i = 1; i < 9; i += 1) {
-        await page.keyboard.press("PageDown");
-      }
-    }
-
-    const novelElement = await page.waitForSelector(
-      `#__next > main > div > section > ul.fig-1nfc3co > li:nth-child(${bestNo}) > div > div.fig-jc2buj > div > h3 > a`,
-    );
-
-    const partialNovelUrl: string = await page.evaluate(
-      (element) => element.getAttribute("href"),
-      novelElement,
-    );
-
-    const partialNovelUrlCut = partialNovelUrl.slice(0, partialNovelUrl.indexOf("?"));
-
-    const novelUrl = `ridibooks.com${partialNovelUrlCut}`;
-
-    novelUrls.push(novelUrl);
-    bestNo += 1;
-  }
-  return novelUrls;
-}
 
 async function getNovelIDsFromDB(page: puppeteer.Page, novelUrls: string[]) {
   const novelIDs: string[] = [];
@@ -96,7 +66,9 @@ export default async function weeklyRidi() {
 
   await login(page, novelPlatform, "weekly");
 
-  const novelUrls = await getNovelUrls(page);
+  const novelUrls = await getNovelUrls(page, novelPlatform);
+
+  if (!novelUrls) return;
 
   const novelIDs = await getNovelIDsFromDB(page, novelUrls);
 

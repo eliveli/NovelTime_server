@@ -1,10 +1,11 @@
-import puppeteer, { ElementHandle, SerializableOrJSHandle } from "puppeteer";
+import puppeteer, { SerializableOrJSHandle } from "puppeteer";
 import getCurrentTime from "../utils/getCurrentTime";
 import db from "../../utils/db";
 import { setNovel } from "../../novels";
-import removeLabelsFromTitle from "../utils/removeLabelsFromTitle";
 import minimalArgs from "../utils/minimalArgsToLaunch";
 import login from "../utils/login";
+import addOrUpdateNovelInDB from "../utils/addOrUpdateNovelInDB";
+import getNovelUrls from "./utils/getNovelUrls";
 
 // 각 플랫폼에서 주간베스트 소설 20개 씩 가져오기
 
@@ -23,27 +24,6 @@ const selectorsOfNovelPage = {
   isEnd:
     "#__next > div > div.css-gqvt86-PcLayout > div.css-oezh2b-ContentMainPage > div.css-4z4dsn-ContentMainPcContainer > div.css-6wrvoh-ContentMainPcContainer > div.css-dwn26i > div > div.css-0 > div.css-6vpm3i-ContentOverviewInfo > div.css-484gjc-ContentOverviewInfo > div:nth-child(1) > span",
 };
-
-async function getNovelUrls(page: puppeteer.Page) {
-  let bestNo = 1;
-  const novelUrls = [];
-  while (bestNo < 21) {
-    const novelElement = await page.waitForSelector(
-      `#__next > div > div.css-gqvt86-PcLayout > div.css-58idf7-Menu > div.css-1dqbyyp-Home > div > div > div.css-1k8yz4-StaticLandingRanking > div > div > div > div:nth-child(${bestNo}) > div > div > a`,
-    );
-    const partialNovelUrl: string = await page.evaluate(
-      (element) => element.getAttribute("href"),
-      novelElement,
-    );
-
-    const novelUrl = `page.kakao.com${partialNovelUrl}`;
-
-    novelUrls.push(novelUrl);
-
-    bestNo += 1;
-  }
-  return novelUrls;
-}
 
 async function getInfo(
   page: puppeteer.Page,
@@ -189,113 +169,11 @@ async function makeNovelOne(novelIDs: Array<string>, newNovelPages: NewNovelPage
   return novelIdForUpdate;
 }
 
-// check whether the novel is in novelInfo table or not
-// and add a new novel or update a novel as changing its platform and url info
-// finally get the novel id
-export async function addOrUpdateNovelInDB(page: puppeteer.Page, novelInfo: NovelInfo) {
-  const { novelAuthor, novelTitle, novelUrl } = novelInfo;
-
-  const novelTitleWithoutLabels = removeLabelsFromTitle(novelTitle);
-
-  const novelsFromDB = await searchForNovelsByTitleAndAuthor(novelTitleWithoutLabels, novelAuthor);
-
-  // when the novel is not in db //
-  //  add new novel to novelInfo table
-  if (novelsFromDB.length === 0) {
-    const novelId = await addNewNovel(page, novelInfo);
-    return novelId;
-  }
-
-  // when novel is in db //
-  // update the novel with its platform and url
-  const novelPlatforms: Array<string> = [];
-  const novelUrls: Array<string> = [];
-
-  // check novel rows that has same title and author
-  for (const novelPlatformPage of novelsFromDB) {
-    // get platform info that is not empty
-    for (const { platform, url } of [
-      { platform: novelPlatformPage.novelPlatform, url: novelPlatformPage.novelUrl },
-      { platform: novelPlatformPage.novelPlatform2, url: novelPlatformPage.novelUrl2 },
-      { platform: novelPlatformPage.novelPlatform3, url: novelPlatformPage.novelUrl3 },
-    ]) {
-      if (platform) {
-        novelPlatforms.push(platform);
-        novelUrls.push(url);
-      }
-    }
-  }
-
-  // remove duplicate platform info
-  const newNovelPages = novelPlatforms
-    .map((platform, index) => {
-      if (novelPlatforms.indexOf(platform) === index) {
-        return { platform, url: novelUrls[index] };
-      }
-      return undefined;
-    })
-    // remove undefined item from the array made by map function
-    .filter((platform) => !!platform) as NewNovelPages;
-
-  // add the platform kakao page if it is not in the table novelInfo of DB
-  if (!novelPlatforms.includes(novelPlatform)) {
-    newNovelPages.push({ platform: novelPlatform, url: novelUrl });
-  }
-
-  // remove JOARA platform of the novel info if platform is more than 3
-  //  typically I won't consider 조아라 in this case because that is popular as free platform
-  //   just consider novel platforms up to 3
-  if (novelPlatforms.length > 3 && novelPlatforms.includes("조아라")) {
-    for (const [index, value] of newNovelPages.entries()) {
-      if (value?.platform === "조아라") {
-        newNovelPages.splice(index, 1);
-        break;
-      }
-    }
-  }
-
-  // make newNovelPages array had 3 platforms and urls including empty string
-  //  to deal with db when updating novel
-  for (let i = newNovelPages.length; i < 3; i += 1) {
-    newNovelPages.push({ platform: "", url: "" });
-  }
-
-  // update one novel
-  //  and remove other novel rows if there was more than one novel row in DB
-  //
-  // make an array of novelID with the same novel
-  const novelIDsWithSameNovel: Array<string> = [];
-  for (const novel of novelsFromDB) {
-    novelIDsWithSameNovel.push(novel.novelId);
-  }
-  //
-  // make same novels one and return the novel id
-  const novelId = await makeNovelOne(novelIDsWithSameNovel, newNovelPages);
-
-  return novelId;
-}
-
-async function getNovelIdFromDB(page: puppeteer.Page, novelUrl: string) {
-  await page.goto(`https://${novelUrl}?tab_type=about`);
-
-  // they are necessary to check whether the novel is in DB
-  const novelTitle = await getInfo(page, selectorsOfNovelPage.title);
-  const novelAuthor = await getInfo(page, selectorsOfNovelPage.author);
-
-  const novelInfo = { novelTitle, novelAuthor, novelUrl };
-
-  // add the novel as new one or update novel in novelInfo table
-  //  and get the novel id
-  const novelId = await addOrUpdateNovelInDB(page, novelInfo);
-
-  return novelId;
-}
-
 async function getNovelIDsFromDB(page: puppeteer.Page, novelUrls: string[]) {
   const novelIDs: string[] = [];
 
   while (novelUrls.length !== 0) {
-    const novelID = await getNovelIdFromDB(page, novelUrls[0]);
+    const novelID = await addOrUpdateNovelInDB(page, novelUrls[0], novelPlatform);
 
     if (!novelID) {
       novelUrls.shift();
@@ -347,7 +225,9 @@ export default async function weeklyKakape() {
 
   await login(page, novelPlatform, "weekly");
 
-  const novelUrls = await getNovelUrls(page);
+  const novelUrls = await getNovelUrls(page, novelPlatform);
+  if (!novelUrls) return;
+
   const novelIDs = await getNovelIDsFromDB(page, novelUrls);
 
   // update new weekly novels to weeklyNovel table

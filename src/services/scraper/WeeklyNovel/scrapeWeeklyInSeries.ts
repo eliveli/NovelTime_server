@@ -5,6 +5,7 @@ import { setNovel } from "../../novels";
 import removeLabelsFromTitle from "../utils/removeLabelsFromTitle";
 import minimalArgs from "../utils/minimalArgsToLaunch";
 import login from "../utils/login";
+import getNovelUrls from "./utils/getNovelUrls";
 
 // 각 플랫폼에서 주간베스트 소설 20개 씩 가져오기
 
@@ -34,27 +35,6 @@ const selectorsOfNovelPage = {
 
   isEnd: "#content > ul.end_info.NE\\=a\\:nvi > li > ul > li:nth-child(1) > span",
 };
-
-export async function getNovelUrls(page: puppeteer.Page) {
-  let bestNo = 1;
-  const novelUrls = [];
-  while (bestNo < 21) {
-    const novelElement = await page.waitForSelector(
-      `#content > div > ul > li:nth-child(${bestNo}) > a`,
-    );
-    const partialNovelUrl: string = await page.evaluate(
-      (element) => element.getAttribute("href"),
-      novelElement,
-    );
-
-    const novelUrl = `series.naver.com${partialNovelUrl}`;
-
-    novelUrls.push(novelUrl);
-
-    bestNo += 1;
-  }
-  return novelUrls;
-}
 
 async function getInfo(
   page: puppeteer.Page,
@@ -375,7 +355,10 @@ export default async function weeklySeries() {
 
   await login(page, novelPlatform, "weekly");
 
-  const novelUrls = await getNovelUrls(page);
+  const novelUrls = await getNovelUrls(page, novelPlatform);
+
+  if (!novelUrls) return;
+
   const novelIDs = await getNovelIDsFromDB(page, novelUrls);
 
   // update new weekly novels to weeklyNovel table
