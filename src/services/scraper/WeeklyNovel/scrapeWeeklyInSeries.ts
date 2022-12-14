@@ -1,67 +1,14 @@
-import puppeteer, { ElementHandle, SerializableOrJSHandle } from "puppeteer";
-import dotenv from "dotenv";
+import puppeteer, { SerializableOrJSHandle } from "puppeteer";
 import getCurrentTime from "../utils/getCurrentTime";
 import db from "../../utils/db";
 import { setNovel } from "../../novels";
 import removeLabelsFromTitle from "../utils/removeLabelsFromTitle";
 import minimalArgs from "../utils/minimalArgsToLaunch";
-
-dotenv.config();
+import login from "../utils/login";
 
 // 각 플랫폼에서 주간베스트 소설 20개 씩 가져오기
 
 const novelPlatform = "네이버 시리즈";
-
-const novelListUrl =
-  "https://series.naver.com/novel/top100List.series?rankingTypeCode=WEEKLY&categoryCode=ALL";
-
-async function login(page: puppeteer.Page) {
-  // login for passing 15 age limitation
-  const loginBtn = (await page.waitForSelector(
-    "#gnb_login_button",
-  )) as ElementHandle<HTMLAnchorElement>; // wait object load
-
-  // loginBtn null error handling
-  if (!loginBtn) {
-    throw new Error("login 버튼 null 에러");
-  }
-
-  await page.click("#gnb_login_button"); // click and go to the login page in a current tab/window
-
-  let seriesID: string;
-  let seriesPW: string;
-
-  // handle undefined env variable
-  if (process.env.SERIES_ID) {
-    seriesID = process.env.SERIES_ID;
-  } else {
-    throw new Error("SERIES_ID env was not set");
-  }
-  if (process.env.SERIES_PW) {
-    seriesPW = process.env.SERIES_PW;
-  } else {
-    throw new Error("SERIES_PW env was not set");
-  }
-
-  await page.waitForSelector("#id", { timeout: 50000 });
-
-  await page.type("#id", seriesID, { delay: 100 });
-
-  await page.waitForSelector("#pw");
-
-  await page.type("#pw", seriesPW, { delay: 100 });
-
-  await page.click("#keep"); // 로그인상태유지
-
-  await page.click("#log\\.login"); // click login button
-
-  await page.waitForSelector("#new\\.save");
-  await page.click("#new\\.save"); // 자주 사용하는 기기 등록
-}
-
-async function waitForProfileIconAfterLogin(page: puppeteer.Page) {
-  await page.waitForSelector("#gnb_my_namebox");
-}
 
 const selectorsOfNovelPage = {
   // use descendant selector (don't use ">" in front of "img")
@@ -426,11 +373,7 @@ export default async function weeklySeries() {
 
   page.setDefaultTimeout(500000); // set timeout globally
 
-  await page.goto(novelListUrl);
-
-  await login(page);
-
-  await waitForProfileIconAfterLogin(page);
+  await login(page, novelPlatform, "weekly");
 
   const novelUrls = await getNovelUrls(page);
   const novelIDs = await getNovelIDsFromDB(page, novelUrls);

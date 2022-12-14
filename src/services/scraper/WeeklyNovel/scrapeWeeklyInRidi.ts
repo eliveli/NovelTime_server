@@ -1,12 +1,9 @@
 import puppeteer from "puppeteer";
-import dotenv from "dotenv";
 import getCurrentTime from "../utils/getCurrentTime";
 import db from "../../utils/db";
 import addOrUpdateNovelInDB from "../utils/addOrUpdateNovelInDB";
 import minimalArgs from "../utils/minimalArgsToLaunch";
 import login from "../utils/login";
-
-dotenv.config();
 
 // 각 플랫폼에서 주간베스트 소설 20개 씩 가져오기
 

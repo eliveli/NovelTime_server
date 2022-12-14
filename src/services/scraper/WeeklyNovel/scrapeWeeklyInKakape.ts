@@ -1,77 +1,14 @@
 import puppeteer, { ElementHandle, SerializableOrJSHandle } from "puppeteer";
-import dotenv from "dotenv";
 import getCurrentTime from "../utils/getCurrentTime";
 import db from "../../utils/db";
 import { setNovel } from "../../novels";
 import removeLabelsFromTitle from "../utils/removeLabelsFromTitle";
 import minimalArgs from "../utils/minimalArgsToLaunch";
-
-dotenv.config();
+import login from "../utils/login";
 
 // 각 플랫폼에서 주간베스트 소설 20개 씩 가져오기
 
 const novelPlatform = "카카오페이지";
-
-const novelListUrl =
-  "https://page.kakao.com/menu/11/screen/16?subcategory_uid=0&ranking_type=weekly";
-
-async function login(page: puppeteer.Page) {
-  // login for passing 15 age limitation
-  const loginBtn = (await page.waitForSelector(
-    "#__next > div > div.css-1uny17z-Sticky-PcLayoutHeader > div > div.css-uhicds-PcHeader > div.css-8qyfof-PcHeader > img.css-dqete9-Icon-PcHeader",
-  )) as ElementHandle<HTMLDivElement>; // wait object load
-  // loginBtn null error handling
-  if (!loginBtn) {
-    throw new Error("login 버튼 null 에러");
-  }
-
-  // declare promise for popup event
-  //  eslint-disable-next-line no-promise-executor-return
-  const newPagePromise = new Promise((x) => page.once("popup", x));
-
-  await loginBtn.click(); // click, a new tab/window opens
-
-  // declare new tab/window, now you can work with it
-  const newPage = (await newPagePromise) as puppeteer.Page;
-
-  let kakaoID: string;
-  let kakaoPW: string;
-
-  // handle undefined env variable
-  if (process.env.KAKAO_ID) {
-    kakaoID = process.env.KAKAO_ID;
-  } else {
-    throw new Error("KAKAO_ID env was not set");
-  }
-  if (process.env.KAKAO_PW) {
-    kakaoPW = process.env.KAKAO_PW;
-  } else {
-    throw new Error("KAKAO_PW env was not set");
-  }
-
-  // sometimes it can not work (when playing video or running DBeaver)
-  //  It seems to occur when there are many processes in my computer
-  await newPage.waitForSelector("#input-loginKey", { timeout: 50000 });
-
-  await newPage.type("#input-loginKey", kakaoID);
-
-  await newPage.waitForSelector("#input-password");
-
-  await newPage.type("#input-password", kakaoPW);
-
-  await newPage.click(
-    "#mainContent > div > div > form > div.set_login > div > label > span.ico_comm.ico_check",
-  ); // click 로그인상태유지
-
-  // click login button
-  await newPage.click("#mainContent > div > div > form > div.confirm_btn > button.btn_g.highlight"); // submit
-}
-
-async function waitForProfileIconAfterLogin(page: puppeteer.Page) {
-  await page.waitForSelector(
-    "#__next > div > div.css-1uny17z-Sticky-PcLayoutHeader > div > div.css-uhicds-PcHeader > div.css-8qyfof-PcHeader > div",
-  );
-}
 
 const selectorsOfNovelPage = {
   img: "#__next > div > div.css-gqvt86-PcLayout > div.css-oezh2b-ContentMainPage > div.css-4z4dsn-ContentMainPcContainer > div.css-6wrvoh-ContentMainPcContainer > div.css-dwn26i > div > div.css-0 > div.css-1p0xvye-ContentOverviewThumbnail > div > div > img",
@@ -408,13 +345,7 @@ export default async function weeklyKakape() {
 
   page.setDefaultTimeout(500000); // set timeout globally
 
-  await page.goto(novelListUrl);
-  // await page.goto(novelListUrl, { waitUntil: "load", timeout: 500000 });
-  // set timeout specifically for navigational events such as page.waitForSelector
-
-  await login(page);
-
-  await waitForProfileIconAfterLogin(page);
+  await login(page, novelPlatform, "weekly");
 
   const novelUrls = await getNovelUrls(page);
   const novelIDs = await getNovelIDsFromDB(page, novelUrls);
