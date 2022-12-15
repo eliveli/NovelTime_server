@@ -426,12 +426,26 @@ function getSelectorsByPlatform(novelPlatform: NovelPlatform) {
 
   return { selectorOfTitle, selectorOfAuthor };
 }
+
+export async function goToDetailPage(
+  page: puppeteer.Page,
+  novelUrl: string,
+  novelPlatform: NovelPlatform,
+) {
+  if (novelPlatform === "카카오페이지") {
+    await page.goto(`https://${novelUrl}?tab_type=about`); // 상세페이지의 '작품소개' 탭에서 정보 읽기
+    return;
+  }
+
+  await page.goto(`https://${novelUrl}`);
+}
+
 async function getSameNovelsAndSeveralInfo(
   page: puppeteer.Page,
   novelUrl: string,
   novelPlatform: NovelPlatform,
 ) {
-  await page.goto(`https://${novelUrl}`);
+  await goToDetailPage(page, novelUrl, novelPlatform);
 
   const { selectorOfTitle, selectorOfAuthor } = getSelectorsByPlatform(novelPlatform);
   if (!(selectorOfTitle && selectorOfAuthor)) return undefined;
