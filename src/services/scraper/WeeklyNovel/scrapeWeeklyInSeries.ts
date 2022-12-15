@@ -7,6 +7,7 @@ import minimalArgs from "../utils/minimalArgsToLaunch";
 import login from "../utils/login";
 import getNovelUrls from "./utils/getNovelUrls";
 import getNovelIDsFromDB from "./utils/getNovelIDsFromDB";
+import addWeeklyNovels from "./utils/addWeeklyNovels";
 
 // 각 플랫폼에서 주간베스트 소설 20개 씩 가져오기
 
@@ -300,31 +301,6 @@ export async function getNovelIdFromDB(page: puppeteer.Page, novelUrl: string) {
   return novelId;
 }
 
-async function addWeeklyNovel(novelId: string, novelRank: number, scrapeDate: string) {
-  await db(
-    "INSERT INTO weeklyNovel SET novelId = (?), novelRank = (?), novelPlatform = (?), scrapeDate = (?),  isLatest = 1",
-    [novelId, novelRank, novelPlatform, scrapeDate],
-  );
-}
-
-async function handlePreviousWeeklyNovels() {
-  await db("UPDATE weeklyNovel SET isLatest = 0 WHERE isLatest = 1 AND novelPlatform = (?)", [
-    novelPlatform,
-  ]);
-}
-async function addWeeklyNovels(novelIDs: Array<string>) {
-  const scrapeDate = getCurrentTime();
-
-  // make isLatest value 0 that means false of previous weekly novels
-  await handlePreviousWeeklyNovels();
-
-  for (const [index, novelId] of novelIDs.entries()) {
-    await addWeeklyNovel(novelId, index + 1, scrapeDate);
-  }
-
-  // later I will get weekly novels from DB where isLatest is 1 and platform is 카카오페이지
-}
-
 export default async function weeklySeries() {
   const browser = await puppeteer.launch({
     headless: false, // 브라우저 화면 열려면 false
@@ -344,7 +320,7 @@ export default async function weeklySeries() {
   const novelIDs = await getNovelIDsFromDB(page, novelPlatform, novelUrls);
 
   // update new weekly novels to weeklyNovel table
-  await addWeeklyNovels(novelIDs);
+  await addWeeklyNovels(novelIDs, novelPlatform);
 
   await browser.close();
 
