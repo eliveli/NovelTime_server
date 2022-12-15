@@ -4,12 +4,10 @@ import login from "../utils/login";
 import getNovelUrls from "./utils/getNovelUrls";
 import getNovelIDsFromDB from "./utils/getNovelIDsFromDB";
 import addWeeklyNovels from "./utils/addWeeklyNovels";
+import { NovelPlatform } from "../utils/types";
 
 // 각 플랫폼에서 주간베스트 소설 20개 씩 가져오기
-
-const novelPlatform = "리디북스";
-
-export default async function weeklyRidi() {
+export default async function weeklyScraper(novelPlatform: NovelPlatform) {
   const browser = await puppeteer.launch({
     headless: false, // 브라우저 화면 열려면 false
     args: minimalArgs,
