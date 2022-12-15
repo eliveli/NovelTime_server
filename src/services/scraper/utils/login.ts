@@ -1,9 +1,8 @@
 import puppeteer, { ElementHandle } from "puppeteer";
 import dotenv from "dotenv";
+import { NovelPlatform } from "./types";
 
 dotenv.config();
-
-type NovelPlatform = "카카오페이지" | "네이버 시리즈" | "리디북스";
 
 type ScraperType = "new" | "weekly";
 
@@ -152,6 +151,7 @@ async function typeLoginInfo(
 
 const novelListUrl = {
   kakape: {
+    // genreNO 변수를 받아와 쓰려면 함수로 바꿔야 할 듯
     // new: `https://page.kakao.com/genre-total?categoryUid=11&subCategoryUid=${genreNO}`,
     weekly: "https://page.kakao.com/menu/11/screen/16?subcategory_uid=0&ranking_type=weekly",
   },

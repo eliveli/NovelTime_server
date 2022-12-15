@@ -1,7 +1,6 @@
 import db from "../../../utils/db";
 import getCurrentTime from "../../utils/getCurrentTime";
-
-type NovelPlatform = "카카오페이지" | "네이버 시리즈" | "리디북스";
+import { NovelPlatform } from "../../utils/types";
 
 async function addWeeklyNovel(
   novelId: string,

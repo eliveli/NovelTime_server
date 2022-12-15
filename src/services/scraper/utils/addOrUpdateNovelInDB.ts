@@ -1,9 +1,9 @@
 import puppeteer, { SerializableOrJSHandle } from "puppeteer";
-
 import { setNovel } from "../../novels";
 import db from "../../utils/db";
 import removeLabelsFromTitle from "./removeLabelsFromTitle";
 import getCurrentTime from "./getCurrentTime";
+import { NovelPlatform } from "./types";
 
 type SeveralNovelInfo = {
   novelTitle: string;
@@ -16,8 +16,6 @@ type NovelUrlAndTitle = {
   novelUrl: string;
   novelTitle: string;
 };
-
-type NovelPlatform = "카카오페이지" | "네이버 시리즈" | "리디북스";
 
 type NewNovelPages = Array<{
   platform: string;

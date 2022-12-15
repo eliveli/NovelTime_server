@@ -1,6 +1,5 @@
 import puppeteer from "puppeteer";
-
-type NovelPlatform = "카카오페이지" | "네이버 시리즈" | "리디북스";
+import { NovelPlatform } from "../../utils/types";
 
 export default async function getNovelUrls(page: puppeteer.Page, novelPlatform: NovelPlatform) {
   let bestNo = 1;
