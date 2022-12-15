@@ -11,7 +11,7 @@ async function loadElementsForRidi(page: puppeteer.Page) {
   );
 
   // load novel elements as scrolling down
-  for (let i = 1; i < 6; i += 1) {
+  for (let i = 1; i < 7; i += 1) {
     await page.keyboard.press("PageDown", { delay: 300 });
   }
 }
