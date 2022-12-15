@@ -2,6 +2,7 @@ import puppeteer from "puppeteer";
 import dotenv from "dotenv";
 import addOrUpdateNovelInDB from "../utils/addOrUpdateNovelInDB";
 import login from "../utils/login";
+import seeNovelListWithCardForRidi from "../utils/seeNovelListWithCardForRidi";
 
 dotenv.config(); // 여기(이 명령어를 실행한 파일)에서만 환경변수 사용 가능
 
@@ -17,18 +18,6 @@ let currentNovelNO = 1; // 현재 작품 넘버
 const novelList: Array<{ url: string }> = [
   // { url: "/books/777097927" },
 ];
-
-// 소설 목록 카드형으로 보기
-//  -> 페이지 별 모든 소설을 가능한 한 작은 화면에 보이기
-//    -> PageDown 누르는 횟수 줄이기 && 줄어든 횟수만큼 다루기 쉽게 하기
-async function seeListWithCard(page: puppeteer.Page) {
-  if (currentPageNO === 1) {
-    await page.waitForSelector(
-      "#__next > main > div > section > div > ul > div > button:nth-child(2)",
-    ); // 꼭 필요함
-    await page.click("#__next > main > div > section > div > ul > div > button:nth-child(2)");
-  }
-}
 
 async function goToNovelListPageOfCurrentGenre(page: puppeteer.Page, genreNo: string) {
   // 목록페이지 url // with 최신순(최신화등록일), 성인 제외
@@ -92,7 +81,9 @@ async function getNovelUrls(page: puppeteer.Page, genreNOs: string[]) {
   genreLoop: for (let ctgIdx = 0; ctgIdx < genreNOs.length; ctgIdx += 1) {
     await goToNovelListPageOfCurrentGenre(page, genreNOs[ctgIdx]);
 
-    await seeListWithCard(page);
+    if (currentPageNO === 1) {
+      await seeNovelListWithCardForRidi(page);
+    }
 
     // 장르 내 목록 페이지 조회 반복
     while (true) {

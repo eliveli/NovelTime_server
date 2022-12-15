@@ -1,5 +1,20 @@
 import puppeteer from "puppeteer";
+import seeNovelListWithCardForRidi from "../../utils/seeNovelListWithCardForRidi";
 import { NovelPlatform } from "../../utils/types";
+
+async function loadElementsForRidi(page: puppeteer.Page) {
+  await seeNovelListWithCardForRidi(page);
+
+  // wait for loading first novel element
+  await page.waitForSelector(
+    "#__next > main > div > section > ul.fig-1o0lea8 > li:nth-child(1) > div > div.fig-7p4nhu > a",
+  );
+
+  // load novel elements as scrolling down
+  for (let i = 1; i < 6; i += 1) {
+    await page.keyboard.press("PageDown", { delay: 300 });
+  }
+}
 
 export default async function getNovelUrls(page: puppeteer.Page, novelPlatform: NovelPlatform) {
   let bestNo = 1;
@@ -34,15 +49,12 @@ export default async function getNovelUrls(page: puppeteer.Page, novelPlatform: 
     }
 
     if (novelPlatform === "리디북스") {
-      // without this I can't get novel urls more than 11
-      if (bestNo === 12) {
-        for (let i = 1; i < 9; i += 1) {
-          await page.keyboard.press("PageDown");
-        }
+      if (bestNo === 1) {
+        await loadElementsForRidi(page);
       }
 
       const novelElement = await page.waitForSelector(
-        `#__next > main > div > section > ul.fig-1nfc3co > li:nth-child(${bestNo}) > div > div.fig-jc2buj > div > h3 > a`,
+        `#__next > main > div > section > ul.fig-1o0lea8 > li:nth-child(${bestNo}) > div > div.fig-7p4nhu > a`,
       );
 
       const partialNovelUrl: string = await page.evaluate(
