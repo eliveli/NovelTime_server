@@ -12,9 +12,9 @@ async function waitAndClickLoginBtn(
   scraperType?: ScraperType,
 ) {
   if (novelPlatform === "카카오페이지" && scraperType === "weekly") {
-    const loginBtn = (await page.waitForSelector(
+    const loginBtn = await page.waitForSelector(
       "#__next > div > div.css-1uny17z-Sticky-PcLayoutHeader > div > div.css-uhicds-PcHeader > div.css-8qyfof-PcHeader > img.css-dqete9-Icon-PcHeader",
-    )) as ElementHandle<HTMLDivElement>; // wait object load
+    ); // wait object load
     // loginBtn null error handling
     if (!loginBtn) {
       throw new Error("login 버튼 null 에러");
@@ -31,9 +31,7 @@ async function waitAndClickLoginBtn(
     return newPage;
   }
   if (novelPlatform === "네이버 시리즈" && scraperType === "weekly") {
-    const loginBtn = (await page.waitForSelector(
-      "#gnb_login_button",
-    )) as ElementHandle<HTMLAnchorElement>; // wait object load
+    const loginBtn = await page.waitForSelector("#gnb_login_button"); // wait object load
 
     // loginBtn null error handling
     if (!loginBtn) {
@@ -43,9 +41,9 @@ async function waitAndClickLoginBtn(
     await page.click("#gnb_login_button"); // click and go to the login page in a current tab/window
   }
   if (novelPlatform === "리디북스") {
-    const loginBtn = (await page.waitForSelector(
+    const loginBtn = await page.waitForSelector(
       "#__next > div.fig-16izi9a > div.fig-fs8jml > div > ul.fig-1aswo17 > li:nth-child(2) > a",
-    )) as ElementHandle<HTMLAnchorElement>; // wait object load
+    ); // wait object load
 
     // loginBtn null error handling
     if (!loginBtn) {
