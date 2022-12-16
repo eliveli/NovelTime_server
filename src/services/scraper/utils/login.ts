@@ -1,4 +1,4 @@
-import puppeteer, { ElementHandle } from "puppeteer";
+import puppeteer from "puppeteer";
 import dotenv from "dotenv";
 import { NovelPlatform } from "./types";
 
@@ -105,6 +105,8 @@ async function typeLoginInfo(
 
     await page.waitForSelector("#id", { timeout: 50000 });
 
+    // sometimes not all characters of login id is typed
+    //  I guess it's because there are many other process (but I'm not sure)
     await page.type("#id", seriesID, { delay: 100 });
 
     await page.waitForSelector("#pw");
