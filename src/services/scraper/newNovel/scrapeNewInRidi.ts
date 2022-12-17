@@ -3,6 +3,7 @@ import dotenv from "dotenv";
 import addOrUpdateNovelInDB from "../utils/addOrUpdateNovelInDB";
 import login from "../utils/login";
 import seeNovelListWithCardForRidi from "../utils/seeNovelListWithCardForRidi";
+import goToNewNovelListPage from "./utils/goToNewNovelListPage";
 
 dotenv.config(); // 여기(이 명령어를 실행한 파일)에서만 환경변수 사용 가능
 
@@ -18,14 +19,6 @@ let currentNovelNO = 1; // 현재 작품 넘버
 const novelList: Array<{ url: string }> = [
   // { url: "/books/777097927" },
 ];
-
-async function goToNovelListPageOfCurrentGenre(page: puppeteer.Page, genreNo: string) {
-  // 목록페이지 url // with 최신순(최신화등록일), 성인 제외
-  const novelListUrl = `https://ridibooks.com/category/books/${genreNo}?order=recent&adult_exclude=y&page=`;
-
-  // 목록 페이지 이동 & 페이지 이동 후 대기. 소설 url을 읽어 올 dom이 load되어야 함
-  await page.goto(novelListUrl + String(currentPageNO), { waitUntil: "networkidle0" });
-}
 
 // in order to read dom elements from page
 async function waitForFirstNovelElementFromList(page: puppeteer.Page) {
@@ -79,7 +72,7 @@ function setTotalNOsOfPageAndNovel(novelNO: number) {
 async function getNovelUrls(page: puppeteer.Page, genreNOs: string[]) {
   // search from each category
   genreLoop: for (let ctgIdx = 0; ctgIdx < genreNOs.length; ctgIdx += 1) {
-    await goToNovelListPageOfCurrentGenre(page, genreNOs[ctgIdx]);
+    await goToNewNovelListPage(page, novelPlatform, genreNOs[ctgIdx], currentPageNO);
 
     if (currentPageNO === 1) {
       await seeNovelListWithCardForRidi(page);
@@ -112,7 +105,7 @@ async function getNovelUrls(page: puppeteer.Page, genreNOs: string[]) {
       }
       // 다음 페이지 이동
       currentPageNO += 1;
-      await goToNovelListPageOfCurrentGenre(page, genreNOs[ctgIdx]);
+      await goToNewNovelListPage(page, novelPlatform, genreNOs[ctgIdx], currentPageNO);
       await waitForFirstNovelElementFromList(page);
     }
   }
@@ -162,7 +155,7 @@ export async function scrapeRidi(genreNOs: string[]) {
     // urls로 상세페이지 조회하며 소설 정보 db에 등록
     //  장르 전체 조회 완료 후 반복문 2회차부터 실행(시크릿창 닫고 열며)
     if (isGenreLoopEnd) {
-      await login(page, novelPlatform, "new");
+      await login(page, novelPlatform);
 
       await setNovels(page);
     }
