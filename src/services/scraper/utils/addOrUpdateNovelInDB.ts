@@ -135,6 +135,30 @@ async function getImg(page: puppeteer.Page, novelPlatform: NovelPlatform) {
   }
 }
 
+async function getTitle(
+  page: puppeteer.Page,
+  novelPlatform: NovelPlatform,
+  selectorOfTitle: string,
+) {
+  if (novelPlatform === "카카오페이지") {
+    return await getInfo(page, selectorOfTitle);
+  }
+  if (novelPlatform === "네이버 시리즈") {
+    // 제목 앞에 추가정보(from some icon) 붙은 경우 제외하고 가져오기
+    const titleElement = await page.waitForSelector(selectorOfTitle);
+
+    return (await page.evaluate((element) => {
+      if (element.childNodes.length !== 1) {
+        const beforeTitle = element.children[0].innerText;
+        return element.innerText.slice(beforeTitle.length);
+      }
+      return element.innerText;
+    }, titleElement)) as string;
+  }
+  if (novelPlatform === "리디북스") {
+    return await getInfo(page, selectorOfTitle);
+  }
+}
 async function getDescFromPageForRidi(page: puppeteer.Page) {
   const descElement = await page.waitForSelector(
     "article.detail_box_module.detail_introduce_book #introduce_book > p",
@@ -239,6 +263,28 @@ async function getDesc(page: puppeteer.Page, novelPlatform: NovelPlatform) {
     const desc = descriptionWithOtherTag.slice(0, startIndexOfOtherTag);
 
     return desc;
+
+    // this is the old way I used before how to get desc info //
+    // // get desc : [더보기] 여부에 따라
+    // const descElement = await page.waitForSelector("#content > div.end_dsc > div:nth-child(1)");
+    // const _desc = await page.evaluate((descElement) => descElement.innerText, descElement);
+    // // [더보기] 버튼 있을 때 상세정보 받아오기
+    // if (_desc.slice(-3) === "더보기") {
+    //   await page.click("#content > div.end_dsc > div:nth-child(1) span > a");
+    //   await page.waitForSelector("#content > div.end_dsc.open > div:nth-last-child(1)");
+    //   const moreDescElement = await page.waitForSelector(
+    //     "#content > div.end_dsc > div:nth-last-child(1)",
+    //   );
+    //   const desc = await page.evaluate(
+    //     (moreDescElement) => moreDescElement.innerText,
+    //     moreDescElement,
+    //   );
+    //   novelInfo.novelDesc = desc.slice(0, -3); // '접기' 글자 제외
+    // }
+    // // [더보기] 없을 때 기존 정보 할당
+    // else {
+    //   novelInfo.novelDesc = _desc;
+    // }
   }
 
   if (novelPlatform === "리디북스") {
@@ -450,7 +496,10 @@ async function getSameNovelsAndSeveralInfo(
   const { selectorOfTitle, selectorOfAuthor } = getSelectorsByPlatform(novelPlatform);
   if (!(selectorOfTitle && selectorOfAuthor)) return undefined;
 
-  const novelTitleFromPage = await getInfo(page, selectorOfTitle);
+  const novelTitleFromPage = await getTitle(page, novelPlatform, selectorOfTitle);
+
+  if (!novelTitleFromPage) return;
+
   const novelTitleWithoutLabels = removeLabelsFromTitle(novelTitleFromPage);
 
   const novelAuthor = await getInfo(page, selectorOfAuthor);
