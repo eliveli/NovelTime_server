@@ -1,10 +1,8 @@
 import puppeteer from "puppeteer";
 import dotenv from "dotenv";
-import { NovelPlatform } from "./types";
+import { NovelPlatform, ScraperType } from "./types";
 
 dotenv.config();
-
-type ScraperType = "new" | "weekly";
 
 async function waitAndClickLoginBtn(
   page: puppeteer.Page,
@@ -149,31 +147,13 @@ async function typeLoginInfo(
   }
 }
 
-const novelListUrl = {
-  kakape: {
-    // genreNO 변수를 받아와 쓰려면 함수로 바꿔야 할 듯
-    // new: `https://page.kakao.com/genre-total?categoryUid=11&subCategoryUid=${genreNO}`,
-    weekly: "https://page.kakao.com/menu/11/screen/16?subcategory_uid=0&ranking_type=weekly",
-  },
-  series: {
-    new: "",
-    weekly:
-      "https://series.naver.com/novel/top100List.series?rankingTypeCode=WEEKLY&categoryCode=ALL",
-  },
-  // this is for weekly scraper
-  //  and use it for new scraper
-  //  because any page in ridi is okay for it
-  //   로판 웹소설(장르불문 스크랩 불가) / 성인 작품 제외됨
-  ridi: "https://ridibooks.com/category/bestsellers/6050?adult_exclude=y&page=1",
-};
-
 const selectorProfileIcon = {
-  ridi: "#__next > div.fig-16izi9a > div.fig-fs8jml > div > ul.fig-1aswo17 > li > a > span",
   // following is for weekly scraper
   kakape:
     "#__next > div > div.css-1uny17z-Sticky-PcLayoutHeader > div > div.css-uhicds-PcHeader > div.css-8qyfof-PcHeader > div",
   // following is for weekly scraper
   series: "#gnb_my_namebox",
+  ridi: "#__next > div.fig-16izi9a > div.fig-fs8jml > div > ul.fig-1aswo17 > li > a > span",
 };
 // this is necessary to wait for element to load to read
 async function waitForProfileIconAfterLogin(
@@ -199,7 +179,6 @@ export default async function login(
   scraperType?: ScraperType,
 ) {
   if (novelPlatform === "카카오페이지" && scraperType === "weekly") {
-    await page.goto(novelListUrl.kakape.weekly);
     // await page.goto(novelListUrl, { waitUntil: "load", timeout: 500000 });
     // set timeout specifically for navigational events such as page.waitForSelector
 
@@ -222,8 +201,6 @@ export default async function login(
   }
 
   if (novelPlatform === "네이버 시리즈" && scraperType === "weekly") {
-    await page.goto(novelListUrl.series.weekly);
-
     await waitAndClickLoginBtn(page, novelPlatform, scraperType);
 
     await typeLoginInfo(page, novelPlatform, scraperType);
@@ -239,8 +216,6 @@ export default async function login(
   }
 
   if (novelPlatform === "리디북스") {
-    await page.goto(novelListUrl.ridi);
-
     await waitAndClickLoginBtn(page, novelPlatform, scraperType);
 
     await typeLoginInfo(page, novelPlatform);
@@ -248,9 +223,5 @@ export default async function login(
     await page.click("#__next > div > section > div > form > div > input"); // 로그인상태유지
 
     await page.click("#__next > div > section > div > form > button"); // click login button
-
-    if (scraperType === "weekly") {
-      await waitForProfileIconAfterLogin(page, novelPlatform, scraperType);
-    }
   }
 }
