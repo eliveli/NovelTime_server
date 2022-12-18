@@ -1,18 +1,15 @@
 import puppeteer from "puppeteer";
 import dotenv from "dotenv";
-import { NovelPlatform, ScraperType } from "./types";
+import { NovelPlatform } from "./types";
 
 dotenv.config();
 
-async function waitAndClickLoginBtn(
-  page: puppeteer.Page,
-  novelPlatform: NovelPlatform,
-  scraperType?: ScraperType,
-) {
-  if (novelPlatform === "카카오페이지" && scraperType === "weekly") {
+async function waitAndClickLoginBtn(page: puppeteer.Page, novelPlatform: NovelPlatform) {
+  if (novelPlatform === "카카오페이지") {
     const loginBtn = await page.waitForSelector(
-      "#__next > div > div.css-1uny17z-Sticky-PcLayoutHeader > div > div.css-uhicds-PcHeader > div.css-8qyfof-PcHeader > img.css-dqete9-Icon-PcHeader",
+      "#__next > div > div > div > div > div > img.active\\:opacity-30.cursor-pointer.pr-16pxr",
     ); // wait object load
+
     // loginBtn null error handling
     if (!loginBtn) {
       throw new Error("login 버튼 null 에러");
@@ -28,7 +25,7 @@ async function waitAndClickLoginBtn(
     const newPage = (await newPagePromise) as puppeteer.Page;
     return newPage;
   }
-  if (novelPlatform === "네이버 시리즈" && scraperType === "weekly") {
+  if (novelPlatform === "네이버 시리즈") {
     const loginBtn = await page.waitForSelector("#gnb_login_button"); // wait object load
 
     // loginBtn null error handling
@@ -53,12 +50,8 @@ async function waitAndClickLoginBtn(
     ); // click and go to the login page in a current tab/window
   }
 }
-async function typeLoginInfo(
-  page: puppeteer.Page,
-  novelPlatform: NovelPlatform,
-  scraperType?: ScraperType,
-) {
-  if (novelPlatform === "카카오페이지" && scraperType === "weekly") {
+async function typeLoginInfo(page: puppeteer.Page, novelPlatform: NovelPlatform) {
+  if (novelPlatform === "카카오페이지") {
     let kakaoID: string;
     let kakaoPW: string;
 
@@ -85,7 +78,7 @@ async function typeLoginInfo(
     await page.type("#input-password", kakaoPW);
   }
 
-  if (novelPlatform === "네이버 시리즈" && scraperType === "weekly") {
+  if (novelPlatform === "네이버 시리즈") {
     let seriesID: string;
     let seriesPW: string;
 
@@ -148,19 +141,15 @@ async function typeLoginInfo(
 }
 
 const selectorProfileIcon = {
-  // following is for weekly scraper
-  kakape:
-    "#__next > div > div.css-1uny17z-Sticky-PcLayoutHeader > div > div.css-uhicds-PcHeader > div.css-8qyfof-PcHeader > div",
-  // following is for weekly scraper
+  kakape: "#__next > div > div > div > div > div > div > div > div > img",
   series: "#gnb_my_namebox",
+
+  // this is not profile icon. because I can't perceive whether I logged in or not by that
+  //  this icon show the word "캐시충전"
   ridi: "#__next > div.fig-16izi9a > div.fig-fs8jml > div > ul.fig-1aswo17 > li > a > span",
 };
 // this is necessary to wait for element to load to read
-async function waitForProfileIconAfterLogin(
-  page: puppeteer.Page,
-  novelPlatform: NovelPlatform,
-  scraperType?: ScraperType,
-) {
+async function waitForProfileIconAfterLogin(page: puppeteer.Page, novelPlatform: NovelPlatform) {
   if (novelPlatform === "카카오페이지") {
     await page.waitForSelector(selectorProfileIcon.kakape);
   }
@@ -173,20 +162,16 @@ async function waitForProfileIconAfterLogin(
 }
 
 // login for passing 15 age limitation
-export default async function login(
-  page: puppeteer.Page,
-  novelPlatform: NovelPlatform,
-  scraperType?: ScraperType,
-) {
-  if (novelPlatform === "카카오페이지" && scraperType === "weekly") {
+export default async function login(page: puppeteer.Page, novelPlatform: NovelPlatform) {
+  if (novelPlatform === "카카오페이지") {
     // await page.goto(novelListUrl, { waitUntil: "load", timeout: 500000 });
     // set timeout specifically for navigational events such as page.waitForSelector
 
-    const newPage = await waitAndClickLoginBtn(page, novelPlatform, scraperType);
+    const newPage = await waitAndClickLoginBtn(page, novelPlatform);
 
     if (!newPage) return;
 
-    await typeLoginInfo(newPage, novelPlatform, scraperType);
+    await typeLoginInfo(newPage, novelPlatform);
 
     await newPage.click(
       "#mainContent > div > div > form > div.set_login > div > label > span.ico_comm.ico_check",
@@ -197,13 +182,13 @@ export default async function login(
       "#mainContent > div > div > form > div.confirm_btn > button.btn_g.highlight",
     ); // submit
 
-    await waitForProfileIconAfterLogin(page, novelPlatform, scraperType);
+    await waitForProfileIconAfterLogin(page, novelPlatform);
   }
 
-  if (novelPlatform === "네이버 시리즈" && scraperType === "weekly") {
-    await waitAndClickLoginBtn(page, novelPlatform, scraperType);
+  if (novelPlatform === "네이버 시리즈") {
+    await waitAndClickLoginBtn(page, novelPlatform);
 
-    await typeLoginInfo(page, novelPlatform, scraperType);
+    await typeLoginInfo(page, novelPlatform);
 
     await page.click("#keep"); // 로그인상태유지
 
@@ -212,16 +197,18 @@ export default async function login(
     await page.waitForSelector("#new\\.save");
     await page.click("#new\\.save"); // 자주 사용하는 기기 등록
 
-    await waitForProfileIconAfterLogin(page, novelPlatform, scraperType);
+    await waitForProfileIconAfterLogin(page, novelPlatform);
   }
 
   if (novelPlatform === "리디북스") {
-    await waitAndClickLoginBtn(page, novelPlatform, scraperType);
+    await waitAndClickLoginBtn(page, novelPlatform);
 
     await typeLoginInfo(page, novelPlatform);
 
     await page.click("#__next > div > section > div > form > div > input"); // 로그인상태유지
 
     await page.click("#__next > div > section > div > form > button"); // click login button
+
+    await waitForProfileIconAfterLogin(page, novelPlatform);
   }
 }
