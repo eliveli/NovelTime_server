@@ -24,16 +24,7 @@ export default async function setNovels(
     );
 
     try {
-      let novelUrl = "";
-      if (novelPlatform === "리디북스") {
-        novelUrl = `ridibooks.com${currentNovelUrl}`;
-      }
-      if (novelPlatform === "네이버 시리즈") {
-        novelUrl = `series.naver.com${currentNovelUrl}`;
-      }
-      if (!novelUrl) return novelNO;
-
-      await addOrUpdateNovelInDB(page, novelUrl, novelPlatform);
+      await addOrUpdateNovelInDB(page, currentNovelUrl, novelPlatform);
 
       novelNO += 1; // 작품 번호 +1
 
