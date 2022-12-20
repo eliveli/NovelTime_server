@@ -7,24 +7,6 @@ import seeNovelListWithCardForRidi from "../utils/seeNovelListWithCardForRidi";
 import { NovelPlatform } from "../utils/types";
 import setNovels from "./utils/setNovels";
 
-//  전역 변수들을 함수 안에 넣을까 ------------------------
-
-let isGenreLoopEnd = false; // 전체 카테고리별 목록페이지 조회완료 여부
-
-// for series
-let totalPageNo = 1; // 전체 페이지 수
-// for ridi
-const totalPageNoList: number[] = []; // 필터 별 전체 페이지 수(참고용)
-
-// for series, ridi
-let currentPageNo = 1; // 현재 페이지 넘버
-
-// for series, ridi, kakape
-let totalNovelNo = 1; // 전체 작품 수
-let currentNovelNo = 1; // 현재 작품 넘버
-
-let novelUrls: string[];
-
 // this is for ridi------------------------------------------------------------------------------
 // in order to read dom elements from page
 async function waitForFirstNovelElement(page: puppeteer.Page) {
@@ -41,25 +23,10 @@ async function loadNovelList(page: puppeteer.Page) {
   }
 }
 
-function setTotalNOsOfPageAndNovel(novelNO: number) {
-  // 직전 페이지가 마지막 페이지일 때
-  if (novelNO === 1) {
-    totalPageNoList.push(currentPageNo - 1); // 해당 필터의 전체 페이지 수 표시
-    totalNovelNo += (currentPageNo - 1) * 60; // 전체 작품 수에 해당 필터의 작품 수 추가
-  }
-  // 현재 페이지가 마지막 페이지일 때
-  if (novelNO !== 1) {
-    totalPageNoList.push(currentPageNo); // 해당 필터의 전체 페이지 수 표시
-    totalNovelNo += (currentPageNo - 1) * 60 + (novelNO - 1); // 전체 작품 수에 해당 필터의 작품 수 추가
-  }
-
-  console.log("totalPageNoList: ", totalPageNoList, " totalNovelNo: ", totalNovelNo);
-}
-
 //-------------------------------------------------------------------------------------------------
-function getTotalPageNoForSeries() {
+function getTotalPageNoForSeries(totalNovelNo: number) {
   const calcTotalPageNO: number = Math.floor(totalNovelNo / 25);
-  totalPageNo = totalNovelNo % 25 !== 0 ? calcTotalPageNO + 1 : calcTotalPageNO;
+  return totalNovelNo % 25 !== 0 ? calcTotalPageNO + 1 : calcTotalPageNO;
 }
 
 function getTotalNovelNoSelector(novelPlatform: NovelPlatform) {
@@ -83,19 +50,12 @@ async function getTotalNovelNo(page: puppeteer.Page, novelPlatform: NovelPlatfor
     novelNoElement,
   )) as string;
 
-  totalNovelNo = Number(novelNoWithText.replace(regex, "")); // 총 작품 수
+  return Number(novelNoWithText.replace(regex, "")); // 총 작품 수
 }
 
-async function getTotalNovelNoOrPageNo(page: puppeteer.Page, novelPlatform: NovelPlatform) {
-  await getTotalNovelNo(page, novelPlatform);
-
-  if (novelPlatform === "네이버 시리즈") {
-    getTotalPageNoForSeries();
-  }
-}
 // this is for series-------------------------------------------------------------------------
 
-async function getNovelNoOfLastPage(page: puppeteer.Page) {
+async function getNovelNoOfLastPageForSeries(page: puppeteer.Page) {
   const listOfLastPage = await page.waitForSelector("#content > div > ul");
   return (await page.evaluate((lastList) => lastList.childElementCount, listOfLastPage)) as number;
 }
@@ -107,7 +67,12 @@ async function getNovelUrlsForRidi(
   novelPlatform: NovelPlatform,
   genreNOs: string[],
 ) {
-  const tempNovelUrls: string[] = [];
+  const novelUrlsFromPages: string[] = [];
+
+  let currentPageNo = 1; // 현재 페이지 넘버
+
+  let totalNovelNoForRidi = 0;
+  const totalPageNoListForRidi: number[] = [];
 
   // search from each category
   genreLoop: for (let ctgIdx = 0; ctgIdx < genreNOs.length; ctgIdx += 1) {
@@ -125,25 +90,40 @@ async function getNovelUrlsForRidi(
       console.log(currentPageNo, "현재 페이지 번호");
 
       // 각 페이지에서 작품 url 가져오기
-      for (let novelNO = 1; novelNO < 61; novelNO += 1) {
+      for (let novelNoOfCurrentPage = 1; novelNoOfCurrentPage < 61; novelNoOfCurrentPage += 1) {
         try {
           // 타이밍 맞춰 page down 차례로 하면 모든 dom 노드 load 가능
           //   화면에 보이지 않는 node도 사라지지 않아 읽을 수 있음
           await loadNovelList(page);
 
-          const novelUrl = await getNovelUrl(page, "new", novelPlatform, novelNO);
+          const novelUrl = await getNovelUrl(page, "new", novelPlatform, novelNoOfCurrentPage);
           if (!novelUrl) return;
 
-          tempNovelUrls.push(novelUrl);
+          novelUrlsFromPages.push(novelUrl);
 
-          console.log("noveNO: ", novelNO, " novelUrl: ", novelUrl);
+          console.log("noveNO: ", novelNoOfCurrentPage, " novelUrl: ", novelUrl);
         } catch (err) {
           console.log(err, "읽어올 작품이 더 없을 확률 높음");
 
-          // 읽어올 작품이 더 없을 때 현재 필터의 조회 종료
-          setTotalNOsOfPageAndNovel(novelNO);
+          // 읽어올 작품이 더 없을 때 전체 페이지/소설 수 구하기 //
+          // 직전 페이지가 마지막 페이지일 때
+          if (novelNoOfCurrentPage === 1) {
+            totalPageNoListForRidi.push(currentPageNo - 1);
+            totalNovelNoForRidi += (currentPageNo - 1) * 60;
+          }
+          // 현재 페이지가 마지막 페이지일 때
+          if (novelNoOfCurrentPage !== 1) {
+            totalPageNoListForRidi.push(currentPageNo);
+            totalNovelNoForRidi += (currentPageNo - 1) * 60 + (novelNoOfCurrentPage - 1);
+          }
+          console.log(
+            "totalPageNoListForRidi: ",
+            totalPageNoListForRidi,
+            " totalNovelNoForRidi: ",
+            totalNovelNoForRidi,
+          );
 
-          currentPageNo = 1;
+          currentPageNo = 1; // 페이지 넘버 1로 리셋
 
           continue genreLoop; // 다음 장르 조회
         }
@@ -158,10 +138,10 @@ async function getNovelUrlsForRidi(
     }
   }
 
-  return tempNovelUrls;
+  return { novelUrlsFromPages, totalNovelNoForRidi, totalPageNoListForRidi };
 }
 
-async function waitForCurrentNovelForKakape(page: puppeteer.Page) {
+async function waitForCurrentNovelForKakape(page: puppeteer.Page, currentNovelNo: number) {
   await page.waitForSelector(
     `#__next > div > div > div > div > div > div > div > div > div > div > div:nth-child(${currentNovelNo}) > div > a`,
     { timeout: 500 },
@@ -169,12 +149,18 @@ async function waitForCurrentNovelForKakape(page: puppeteer.Page) {
 }
 
 // 보완 필요!!!!!!!!!!!!!
-async function getNovelUrlsForKakape(page: puppeteer.Page, novelPlatform: NovelPlatform) {
-  const tempNovelUrls: string[] = [];
+async function getNovelUrlsForKakape(
+  page: puppeteer.Page,
+  novelPlatform: NovelPlatform,
+  totalNovelNo: number,
+) {
+  const novelUrlsFromPages: string[] = [];
+
+  let novelNo = 1;
 
   // 목록 페이지에서 page down 하면서 작품 url 읽어오기
-  while (currentNovelNo <= totalNovelNo) {
-    console.log(`currentNovelNo: ${currentNovelNo}, totalNovelNo: ${totalNovelNo}`);
+  while (novelNo <= totalNovelNo) {
+    console.log(`novelNo: ${novelNo}, totalNovelNo: ${totalNovelNo}`);
 
     // 1. waitForSelector 현 작품번호의 노드 기다림(try)
     // 1-1.
@@ -189,7 +175,7 @@ async function getNovelUrlsForKakape(page: puppeteer.Page, novelPlatform: NovelP
 
     for (let pressingEndNO = 1; pressingEndNO < 61; pressingEndNO += 1) {
       try {
-        await waitForCurrentNovelForKakape(page);
+        await waitForCurrentNovelForKakape(page, novelNo);
         break;
       } catch {
         // 현재 작품번호의 dom 노드를 읽어오는 데 0.5초 경과 시(try)
@@ -208,30 +194,33 @@ async function getNovelUrlsForKakape(page: puppeteer.Page, novelPlatform: NovelP
     try {
       // await loadNovelList(page); // 이 함수 다른 플랫폼과 통합?!
 
-      const novelUrl = await getNovelUrl(page, "new", novelPlatform, currentNovelNo);
+      const novelUrl = await getNovelUrl(page, "new", novelPlatform, novelNo);
       if (!novelUrl) return;
 
-      tempNovelUrls.push(novelUrl);
+      novelUrlsFromPages.push(novelUrl);
 
-      console.log("noveNO: ", currentNovelNo, " novelUrl: ", novelUrl);
+      console.log("noveNO: ", novelNo, " novelUrl: ", novelUrl);
     } catch (err) {
       // 실패하는 케이스 (추측) - selector의 a 태그에서 href 값을 읽어오지 못할 때
       //  이 소설은 넘기고 다음 소설 찾으러 가기
       console.log(err, "novel node에서 url 읽을 때 에러");
     }
 
-    currentNovelNo += 1; // 작품 번호 +1
+    novelNo += 1; // 작품 번호 +1
   }
 
-  return tempNovelUrls;
+  return novelUrlsFromPages;
 }
 
 async function getNovelUrlsForSeries(
   page: puppeteer.Page,
   novelPlatform: NovelPlatform,
   genreNo: string,
+  totalPageNo: number,
 ) {
-  const tempNovelUrls: string[] = [];
+  const novelUrlsFromPages: string[] = [];
+
+  let currentPageNo = 1; // 현재 페이지 넘버
 
   // 목록 페이지 조회 반복
   while (currentPageNo <= totalPageNo) {
@@ -241,7 +230,7 @@ async function getNovelUrlsForSeries(
 
     // 마지막 페이지 작품 수
     if (currentPageNo === totalPageNo) {
-      novelNoOfLastPage = await getNovelNoOfLastPage(page);
+      novelNoOfLastPage = await getNovelNoOfLastPageForSeries(page);
     }
 
     // 목록에서 각 작품 정보(url) 가져오기
@@ -252,7 +241,7 @@ async function getNovelUrlsForSeries(
       const novelUrl = await getNovelUrl(page, "new", novelPlatform, novelNO);
       if (!novelUrl) return;
 
-      tempNovelUrls.push(novelUrl);
+      novelUrlsFromPages.push(novelUrl);
       // console.log(novelList[novelNO - 1], "novel", novelNO);
     }
 
@@ -267,20 +256,44 @@ async function getNovelUrlsForSeries(
     });
   }
 
-  return tempNovelUrls;
+  return novelUrlsFromPages;
 }
 
 async function getNovelUrls(
   page: puppeteer.Page,
   novelPlatform: NovelPlatform,
   genreNo: string[] | string,
+  totalNOs: { totalNovelNo: number; totalPageNo: number },
 ) {
   if (novelPlatform === "카카오페이지" && typeof genreNo === "string") {
-    return await getNovelUrlsForKakape(page, novelPlatform);
+    const novelUrlsFromPages = await getNovelUrlsForKakape(
+      page,
+      novelPlatform,
+      totalNOs.totalNovelNo,
+    );
+    if (!novelUrlsFromPages) return;
+
+    return {
+      novelUrlsFromPages,
+      totalNovelNoForRidi: undefined,
+      totalPageNoListForRidi: undefined,
+    };
   }
 
   if (novelPlatform === "네이버 시리즈" && typeof genreNo === "string") {
-    return await getNovelUrlsForSeries(page, novelPlatform, genreNo);
+    const novelUrlsFromPages = await getNovelUrlsForSeries(
+      page,
+      novelPlatform,
+      genreNo,
+      totalNOs.totalPageNo,
+    );
+    if (!novelUrlsFromPages) return;
+
+    return {
+      novelUrlsFromPages,
+      totalNovelNoForRidi: undefined,
+      totalPageNoListForRidi: undefined,
+    };
   }
   if (novelPlatform === "리디북스" && typeof genreNo === "object") {
     return await getNovelUrlsForRidi(page, novelPlatform, genreNo);
@@ -288,6 +301,22 @@ async function getNovelUrls(
 }
 
 export default async function newScraper(novelPlatform: NovelPlatform, genreNo: string | string[]) {
+  //  전역 변수들을 함수 안에 넣을까 ------------------------
+
+  let isGenreLoopEnd = false; // 전체 카테고리별 목록페이지 조회완료 여부
+
+  // for series
+  let totalPageNo = 1; // 전체 페이지 수
+
+  // for ridi
+  const totalPageNoList: number[] = []; // 필터 별 전체 페이지 수(참고용)
+
+  // for series, ridi, kakape
+  let totalNovelNo = 1; // 전체 작품 수
+  let currentNovelNo = 1; // 현재 작품 넘버
+
+  let novelUrls: string[] = [];
+
   const browser = await puppeteer.launch({
     headless: false, // 브라우저 화면 열려면 false
     args: minimalArgs, // it may be removed later
@@ -316,18 +345,42 @@ export default async function newScraper(novelPlatform: NovelPlatform, genreNo: 
       ) {
         await goToNovelListPage(page, "new", novelPlatform, {
           genreNo,
-          currentPageNo,
+          currentPageNo: 1,
         });
 
-        await getTotalNovelNoOrPageNo(page, novelPlatform);
+        const totalNovelNoFromPage = await getTotalNovelNo(page, novelPlatform);
+        if (totalNovelNoFromPage) {
+          totalNovelNo = totalNovelNoFromPage;
+        }
+
+        // console.log(totalPageNo, "totalPageNo", totalNovelNo, "totalNovelNo");
+      }
+      if (novelPlatform === "네이버 시리즈" && typeof genreNo === "string") {
+        const totalPageNoFromPage = getTotalPageNoForSeries(totalNovelNo);
+
+        if (totalPageNoFromPage) {
+          totalPageNo = totalPageNoFromPage;
+        }
         // console.log(totalPageNo, "totalPageNo", totalNovelNo, "totalNovelNo");
       }
 
-      // this is for 카카페, 네이버 시리즈, 리디북스
-      const novelUrlsFromPages = await getNovelUrls(page, novelPlatform, genreNo);
-      if (!novelUrlsFromPages) return;
+      const novelUrlsAndTotalNOs = await getNovelUrls(page, novelPlatform, genreNo, {
+        totalNovelNo,
+        totalPageNo,
+      });
+      if (!novelUrlsAndTotalNOs) return;
+
+      const { novelUrlsFromPages, totalNovelNoForRidi, totalPageNoListForRidi } =
+        novelUrlsAndTotalNOs;
 
       novelUrls = novelUrlsFromPages;
+
+      if (totalNovelNoForRidi) {
+        totalNovelNo = totalNovelNoForRidi;
+      }
+      if (totalPageNoListForRidi && totalPageNoList.length === 0) {
+        totalPageNoList.push(...totalPageNoListForRidi);
+      }
 
       // 장르를 모두 조회한 후 완료 표시
       isGenreLoopEnd = true;
@@ -336,13 +389,19 @@ export default async function newScraper(novelPlatform: NovelPlatform, genreNo: 
     // urls로 상세페이지 조회하며 소설 정보 db에 등록
     //  장르 전체 조회 완료 후 반복문 2회차부터 실행(시크릿창 닫고 열며)
     if (isGenreLoopEnd) {
+      if (novelUrls.length === 0) return;
+
       // if (currentPageNo > totalPageNo) {
       await login(page, novelPlatform);
       // }
 
       currentNovelNo = await setNovels(
         page,
-        { currentNovelNo, totalNovelNo, totalPageNo },
+        {
+          currentNovelNo,
+          totalNovelNo,
+          totalPageNo: totalPageNoList.length === 0 ? totalPageNo : totalPageNoList,
+        },
         novelPlatform,
         novelUrls[currentNovelNo - 1],
       );
