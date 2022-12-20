@@ -57,27 +57,43 @@ function setTotalNOsOfPageAndNovel(novelNO: number) {
 }
 
 //-------------------------------------------------------------------------------------------------
-
-async function getTotalNovelNo(page: puppeteer.Page, novelPlatform: NovelPlatform) {
-  // 카카페 or 시리즈
-  const novelNoSelector =
-    novelPlatform === "카카오페이지"
-      ? "#__next > div > div > div > div > div > div > div > div > span"
-      : "#content > div > div > div.total";
-
-  // 총 작품 수 구하기
-  const regex = /[^0-9]/g; // 숫자가 아닌 문자열을 선택하는 정규식
-  const novelNoElement = await page.waitForSelector(novelNoSelector);
-
-  const novelNoWithText = await page.evaluate((element) => element.textContent, novelNoElement);
-  totalNovelNo = Number(novelNoWithText.replace(regex, "")); // 총 작품 수
-}
-
-// this is for series-------------------------------------------------------------------------
 function getTotalPageNoForSeries() {
   const calcTotalPageNO: number = Math.floor(totalNovelNo / 25);
   totalPageNo = totalNovelNo % 25 !== 0 ? calcTotalPageNO + 1 : calcTotalPageNO;
 }
+
+function getTotalNovelNoSelector(novelPlatform: NovelPlatform) {
+  if (novelPlatform === "카카오페이지") {
+    return "#__next > div > div > div > div > div > div > div > div > span";
+  }
+  if (novelPlatform === "네이버 시리즈") {
+    return "#content > div > div > div.total";
+  }
+}
+async function getTotalNovelNo(page: puppeteer.Page, novelPlatform: NovelPlatform) {
+  const totalNovelNoSelector = getTotalNovelNoSelector(novelPlatform);
+  if (!totalNovelNoSelector) return;
+
+  // 총 작품 수 구하기
+  const regex = /[^0-9]/g; // 숫자가 아닌 문자열을 선택하는 정규식
+  const novelNoElement = await page.waitForSelector(totalNovelNoSelector);
+
+  const novelNoWithText = (await page.evaluate(
+    (element) => element.textContent,
+    novelNoElement,
+  )) as string;
+
+  totalNovelNo = Number(novelNoWithText.replace(regex, "")); // 총 작품 수
+}
+
+async function getTotalNovelNoOrPageNo(page: puppeteer.Page, novelPlatform: NovelPlatform) {
+  await getTotalNovelNo(page, novelPlatform);
+
+  if (novelPlatform === "네이버 시리즈") {
+    getTotalPageNoForSeries();
+  }
+}
+// this is for series-------------------------------------------------------------------------
 
 async function getNovelNoOfLastPage(page: puppeteer.Page) {
   const listOfLastPage = await page.waitForSelector("#content > div > ul");
@@ -152,6 +168,7 @@ async function waitForCurrentNovelForKakape(page: puppeteer.Page) {
   );
 }
 
+// 보완 필요!!!!!!!!!!!!!
 async function getNovelUrlsForKakape(page: puppeteer.Page, novelPlatform: NovelPlatform) {
   const tempNovelUrls: string[] = [];
 
@@ -293,25 +310,19 @@ export default async function newScraper(novelPlatform: NovelPlatform, genreNo: 
     // 장르 내 소설 목록 조회하며 소설 urls 받아 옴
     //  반복문 1회차에만 실행
     if (!isGenreLoopEnd) {
-      if (novelPlatform === "카카오페이지" && typeof genreNo === "string") {
+      if (
+        ["카카오페이지", "네이버 시리즈"].includes(novelPlatform) &&
+        typeof genreNo === "string"
+      ) {
         await goToNovelListPage(page, "new", novelPlatform, {
           genreNo,
           currentPageNo,
         });
 
-        await getTotalNovelNo(page, novelPlatform);
+        await getTotalNovelNoOrPageNo(page, novelPlatform);
         // console.log(totalPageNo, "totalPageNo", totalNovelNo, "totalNovelNo");
       }
-      if (novelPlatform === "네이버 시리즈" && typeof genreNo === "string") {
-        await goToNovelListPage(page, "new", novelPlatform, {
-          genreNo,
-          currentPageNo,
-        });
 
-        await getTotalNovelNo(page, novelPlatform);
-        getTotalPageNoForSeries();
-        // console.log(totalPageNo, "totalPageNo", totalNovelNo, "totalNovelNo");
-      }
       // this is for 카카페, 네이버 시리즈, 리디북스
       const novelUrlsFromPages = await getNovelUrls(page, novelPlatform, genreNo);
       if (!novelUrlsFromPages) return;
