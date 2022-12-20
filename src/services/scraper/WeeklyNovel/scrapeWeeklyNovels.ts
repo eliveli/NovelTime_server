@@ -5,7 +5,7 @@ import getNovelUrls from "./utils/getNovelUrls";
 import getNovelIDsFromDB from "./utils/getNovelIDsFromDB";
 import addWeeklyNovels from "./utils/addWeeklyNovels";
 import { NovelPlatform } from "../utils/types";
-import goToWeeklyNovelListPage from "./utils/goToWeeklyNovelListPage";
+import goToNovelListPage from "../utils/goToNovelListPage";
 
 // 각 플랫폼에서 주간베스트 소설 20개 씩 가져오기
 export default async function weeklyScraper(novelPlatform: NovelPlatform) {
@@ -18,7 +18,7 @@ export default async function weeklyScraper(novelPlatform: NovelPlatform) {
 
   page.setDefaultTimeout(500000); // set timeout globally
 
-  await goToWeeklyNovelListPage(page, novelPlatform);
+  await goToNovelListPage(page, "weekly", novelPlatform);
 
   const novelUrls = await getNovelUrls(page, novelPlatform);
 
