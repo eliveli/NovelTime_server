@@ -17,37 +17,30 @@ async function loadElementsForRidi(page: puppeteer.Page) {
   }
 }
 
-// selector 확인!!!!!!!!!!!!!!!
 function getNovelSelector(scraperType: ScraperType, novelPlatform: NovelPlatform, novelNO: number) {
   if (novelPlatform === "카카오페이지") {
     if (scraperType === "new") {
-      return "";
+      return `#__next > div > div.flex.w-full.grow.flex-col.px-122pxr > div > div.flex.grow.flex-col > div.flex.grow.flex-col > div > div.flex.grow.flex-col.py-10pxr.px-15pxr > div > div > div > div:nth-child(${novelNO}) > div > a`;
     }
     if (scraperType === "weekly") {
-      return `#__next > div > div.css-gqvt86-PcLayout > div.css-58idf7-Menu > div.css-1dqbyyp-Home > div > div > div.css-1k8yz4-StaticLandingRanking > div > div > div > div:nth-child(${novelNO}) > div > div > a`;
+      return `#__next > div > div.flex.w-full.grow.flex-col.px-122pxr > div > div.flex.grow.flex-col > div.flex.grow.flex-col > div > div.flex.w-full.grow.flex-col.py-5px > div > div > div > div:nth-child(${novelNO}) > div > div > a`;
     }
   }
 
   if (novelPlatform === "네이버 시리즈") {
-    if (scraperType === "new") {
-      return `#content > div > ul > li:nth-child(${novelNO}) > div > h3 > a`;
-    }
-    if (scraperType === "weekly") {
-      return `#content > div > ul > li:nth-child(${novelNO}) > a`;
-    }
+    return `#content > div > ul > li:nth-child(${novelNO}) > a`;
   }
+
   if (novelPlatform === "리디북스") {
     if (scraperType === "new") {
       return `#__next > main > div > section > ul > li:nth-child(${novelNO}) > div > div > div > h3 > a`;
     }
     if (scraperType === "weekly") {
-      return `#__next > main > div > section > ul.fig-1o0lea8 > li:nth-child(${novelNO})
-        > div > div.fig-7p4nhu > a`;
+      return `#__next > main > section > ul.fig-1o0lea8 > li:nth-child(${novelNO}) > div > div.fig-7p4nhu > a`;
     }
   }
 }
 
-// 각 플랫폼 정보를 포함한 전체 url을 반환하도록 바꾸기.(new 스크래퍼 수정할 때 그렇게 했음)
 export default async function getNovelUrl(
   page: puppeteer.Page,
   scraperType: ScraperType,
