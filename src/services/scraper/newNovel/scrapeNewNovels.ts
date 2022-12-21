@@ -159,7 +159,7 @@ async function getNovelUrlsForKakape(
 
   let novelNo = 1;
 
-  // 목록 페이지에서 page down 하면서 작품 url 읽어오기
+  // repeat : load novel node and read url from it
   while (novelNo <= totalNovelNo) {
     console.log(`novelNo: ${novelNo}, totalNovelNo: ${totalNovelNo}`);
 
@@ -181,7 +181,8 @@ async function getNovelUrlsForKakape(
     for (let pressingEndNo = 1; pressingEndNo < 61; pressingEndNo += 1) {
       try {
         // wait for loading current novel element
-        // 사이클마다 불러오는 첫 번째 소설을 읽을 때는 노드 기다리는 시간 증가
+        // and increase waiting time when reading a first novel
+        //    right after moving a page down and loading novels
         await waitForCurrentNovelForKakape(page, novelNo);
         break;
       } catch {
@@ -189,29 +190,32 @@ async function getNovelUrlsForKakape(
         // press End key and wait for the node again
         await page.keyboard.press("End", { delay: 1000 });
         continue;
-        // 설정한 시간이 지나도록 소설을 읽어오지 못한다면 소설 node 로드 실패로 간주
         //
-        // 아래 중 하나 선택 후  코드 작성 필요!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        // case 1 스크래퍼 종료
-        // case 2 읽어온 곳까지 url 조회
-        // case 3 다음 노드 기다리기
+        // 만약 연속적으로 소설을 로딩하다가 에러 페이지로 이동될 경우
+        //  설정한 시간/page.setDefaultTimeout(시간) or jest.setTimeout(시간)/ 지나고 스크래퍼 종료
+        //
+        // 에러페이지 이동 없이 load 실패할 경우
+        //  다음 코드에서 url 읽어오려다 실패, 다음 소설 node 기다리러 감
+        //
       }
     }
 
-    // 각 소설 node에서 url 읽어오기
+    // read novel url from the novel node
     try {
       // await loadNovelList(page); // 이 함수 다른 플랫폼과 통합?!
 
       const novelUrl = await getNovelUrl(page, "new", novelPlatform, novelNo);
-      if (!novelUrl) return;
+      if (!novelUrl) {
+        throw Error("can't get url from node");
+      }
 
       novelUrls.push(novelUrl);
 
       console.log("noveNO: ", novelNo, " novelUrl: ", novelUrl);
     } catch (err) {
-      // 실패하는 케이스 (추측) - selector의 a 태그에서 href 값을 읽어오지 못할 때
-      //  이 소설은 넘기고 다음 소설 찾으러 가기
-      console.log(err, "novel node에서 url 읽을 때 에러");
+      // failure case (추측) - selector의 a 태그에서 href 값을 읽어오지 못할 때
+      //  go getting next novel node
+      console.log(err, "error when reading url from href attribute in novel node");
     }
 
     novelNo += 1; // 작품 번호 +1
