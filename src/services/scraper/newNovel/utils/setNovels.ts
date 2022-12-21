@@ -7,7 +7,7 @@ export default async function setNovels(
   novelNoAndPageNo: {
     currentNovelNo: number;
     totalNovelNo: number;
-    totalPageNo: number[] | number;
+    totalPageNo: number[] | number; // for ridi, series
   },
   novelPlatform: NovelPlatform,
   currentNovelUrl: string,
