@@ -379,7 +379,7 @@ export default async function newScraper(novelPlatform: NovelPlatform, genreNo: 
           totalPageNo: totalPageNoList.length === 0 ? totalPageNo : totalPageNoList,
         },
         novelPlatform,
-        novelUrls[novelNoToGetNovel - 1],
+        novelUrls,
       );
     }
 

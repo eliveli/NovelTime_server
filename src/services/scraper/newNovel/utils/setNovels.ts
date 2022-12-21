@@ -10,7 +10,7 @@ export default async function setNovels(
     totalPageNo: number[] | number; // for ridi, series
   },
   novelPlatform: NovelPlatform,
-  currentNovelUrl: string,
+  novelUrls: string[],
 ) {
   const { currentNovelNo, totalNovelNo, totalPageNo } = novelNoAndPageNo;
 
@@ -24,7 +24,8 @@ export default async function setNovels(
     );
 
     try {
-      await addOrUpdateNovelInDB(page, currentNovelUrl, novelPlatform);
+      const novelId = await addOrUpdateNovelInDB(page, novelUrls[novelNo - 1], novelPlatform);
+      console.log("novelId: ", novelId);
 
       novelNo += 1; // 작품 번호 +1
 
