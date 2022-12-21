@@ -133,9 +133,19 @@ async function getNovelUrlsForRidi(
 }
 
 async function waitForCurrentNovelForKakape(page: puppeteer.Page, currentNovelNo: number) {
+  let waitingTime = 1000;
+
+  // waitingTime 변경
+  //  : 페이지 다운 후 불러오는 첫 번째 소설 (24개 단위로 소설을 불러옴)
+  if (currentNovelNo % 24 === 1) {
+    // 소설 천 번째 단위마다 기다리는 시간 증가
+    // ex. 1011번째 - 2초, 2022번째 - 3초
+    waitingTime *= Math.floor(currentNovelNo / 1000) + 1;
+  }
+
   await page.waitForSelector(
     `#__next > div > div > div > div > div > div > div > div > div > div > div:nth-child(${currentNovelNo}) > div > a`,
-    { timeout: 500 },
+    { timeout: waitingTime },
   );
 }
 
@@ -155,29 +165,36 @@ async function getNovelUrlsForKakape(
 
     // 1. waitForSelector 현 작품번호의 노드 기다림(try)
     // 1-1.
-    //    이 때 0.5초 초과 시 end 키보드 누르기. 페이지 최하단 이동
-    //    그리고 다시 노드 기다림
-    // 1-2. 작품번호가 맨 마지막이라 읽어올 노드가 없다면 루프 벗어나기
-    //    - 마지막 작품 여부 파악
+    //    이 때 1초 초과 시 end 키보드 누르기. 페이지 최하단 이동
+    //    1초 후 다시 노드 기다림
+    // 1-2.
+    //    한 번에 불러오는 24개 소설 중 첫 번째 소설을 읽을 때는
+    //    노드 기다리는 시간 변경 (천 번째 단위로 1초 씩 증가)
+    // 1-3.
+    //    작품번호가 맨 마지막이라 읽어올 노드가 없다면 루프 벗어나기
+    //     - 마지막 작품 여부 파악
     //     : url을 읽어온 작품 번호가 페이지에 읽어온 마지막 번호와 같을 때
     //          이건 while문 조건으로 판별 가능
     // 2. 1의 노드로부터 url 읽기
     //    그리고 url로 상세페이지에서 소설 정보 읽어오는 함수 실행
 
-    for (let pressingEndNO = 1; pressingEndNO < 61; pressingEndNO += 1) {
+    for (let pressingEndNo = 1; pressingEndNo < 61; pressingEndNo += 1) {
       try {
+        // wait for loading current novel element
+        // 사이클마다 불러오는 첫 번째 소설을 읽을 때는 노드 기다리는 시간 증가
         await waitForCurrentNovelForKakape(page, novelNo);
         break;
       } catch {
-        // 현재 작품번호의 dom 노드를 읽어오는 데 0.5초 경과 시(try)
+        // load new novels if timeout by pressing End key
         // press End key and wait for the node again
-        await page.keyboard.press("End", { delay: 500 });
+        await page.keyboard.press("End", { delay: 1000 });
         continue;
-        // 대락 1분이 지나도 (반복문 60회) 소설을 읽어오지 못한다면 소설 node 로드 실패로 간주
+        // 설정한 시간이 지나도록 소설을 읽어오지 못한다면 소설 node 로드 실패로 간주
         //
         // 아래 중 하나 선택 후  코드 작성 필요!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         // case 1 스크래퍼 종료
         // case 2 읽어온 곳까지 url 조회
+        // case 3 다음 노드 기다리기
       }
     }
 
@@ -238,7 +255,6 @@ async function getNovelUrlsForSeries(
       if (!novelUrl) return;
 
       novelUrls.push(novelUrl);
-      // console.log(novelList[novelNo - 1], "novel", novelNo);
     }
 
     // 다음 페이지 이동
@@ -328,7 +344,6 @@ export default async function newScraper(novelPlatform: NovelPlatform, genreNo: 
           totalPageNo,
         );
         if (!novelUrlsFromPages) return;
-
         novelUrls = novelUrlsFromPages;
       }
 
@@ -336,12 +351,9 @@ export default async function newScraper(novelPlatform: NovelPlatform, genreNo: 
         const novelUrlsAndTotalNOs = await getNovelUrlsForRidi(page, novelPlatform, genreNo);
         if (!novelUrlsAndTotalNOs) return;
 
-        const { novelUrlsFromPages, totalNovelNoForRidi, totalPageNoListForRidi } =
-          novelUrlsAndTotalNOs;
-
-        novelUrls = novelUrlsFromPages;
-        totalNovelNo = totalNovelNoForRidi;
-        totalPageNoList.push(...totalPageNoListForRidi);
+        novelUrls = novelUrlsAndTotalNOs.novelUrlsFromPages;
+        totalNovelNo = novelUrlsAndTotalNOs.totalNovelNoForRidi;
+        totalPageNoList.push(...novelUrlsAndTotalNOs.totalPageNoListForRidi);
       }
 
       // 장르 전체 조회 완료 표시
