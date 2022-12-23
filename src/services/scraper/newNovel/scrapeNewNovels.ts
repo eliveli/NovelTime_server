@@ -84,7 +84,11 @@ async function getNovelUrlsForRidi(
       for (let novelNoOfCurrentPage = 1; novelNoOfCurrentPage < 61; novelNoOfCurrentPage += 1) {
         try {
           // 타이밍 맞춰 page down 차례로 하면 모든 dom 노드 load 가능
-          //   화면에 보이지 않는 node도 사라지지 않아 읽을 수 있음
+          //  . 화면에 보이지 않는 node도 사라지지 않아 읽을 수 있음
+          //  . 스크롤 조금씩 내린다면(not page down) 화면에 보이는 만큼만 새로 불러옴
+          //    (소설 목록이 카드 형태일 때는 한 줄에 소설 5작품 기준)
+          //                     한 줄에 하나 씩 보일 때는 1작품 기준)
+          //  . (개발자 도구 - 네트워크 탭 참고)
           await loadNovelList(page);
 
           const novelUrl = await getNovelUrl(page, "new", novelPlatform, novelNoOfCurrentPage);
@@ -149,7 +153,6 @@ async function waitForCurrentNovelForKakape(page: puppeteer.Page, currentNovelNo
   );
 }
 
-// 보완 필요!!!!!!!!!!!!!
 async function getNovelUrlsForKakape(
   page: puppeteer.Page,
   novelPlatform: NovelPlatform,
@@ -168,7 +171,9 @@ async function getNovelUrlsForKakape(
     //    이 때 1초 초과 시 end 키보드 누르기. 페이지 최하단 이동
     //    1초 후 다시 노드 기다림
     // 1-2.
-    //    한 번에 불러오는 24개 소설 중 첫 번째 소설을 읽을 때는
+    //    한 번 요청할 때마다 24개 소설을 불러옴
+    //      (개발자 도구 - 네트워크 탭 참고)
+    //    이 중 첫 번째 소설을 읽을 때는
     //    노드 기다리는 시간 변경 (천 번째 단위로 1초 씩 증가)
     // 1-3.
     //    작품번호가 맨 마지막이라 읽어올 노드가 없다면 루프 벗어나기
