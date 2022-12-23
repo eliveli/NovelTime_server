@@ -34,7 +34,7 @@ function getNovelListPage(
     }
 
     if (novelPlatform === "네이버 시리즈") {
-      return "";
+      return "https://series.naver.com/novel/top100List.series?rankingTypeCode=WEEKLY&categoryCode=ALL";
     }
 
     // 리디의 경우 전체 장르 베스트 조회 불가
