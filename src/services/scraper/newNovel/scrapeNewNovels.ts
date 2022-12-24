@@ -7,10 +7,10 @@ import seeNovelListWithCardForRidi from "../utils/seeNovelListWithCardForRidi";
 import { NovelPlatform } from "../utils/types";
 import setNovels from "./utils/setNovels";
 
-//-------------------------------------------------------------------------------------------------
-function getTotalPageNoForSeries(totalNovelNo: number) {
-  const calcTotalPageNO: number = Math.floor(totalNovelNo / 25);
-  return totalNovelNo % 25 !== 0 ? calcTotalPageNO + 1 : calcTotalPageNO;
+// get total page number or total novel number //
+function getTotalPageNoForSeries(totalNovelNoToScrape: number) {
+  const calcTotalPageNO: number = Math.floor(totalNovelNoToScrape / 25);
+  return totalNovelNoToScrape % 25 !== 0 ? calcTotalPageNO + 1 : calcTotalPageNO;
 }
 
 function getTotalNovelNoSelector(novelPlatform: NovelPlatform) {
@@ -37,8 +37,7 @@ async function getTotalNovelNo(page: puppeteer.Page, novelPlatform: NovelPlatfor
   return Number(novelNoWithText.replace(regex, "")); // 총 작품 수
 }
 
-// this is for ridi------------------------------------------------------------------------------
-// in order to read dom elements from page
+// for ridi //
 async function waitForFirstNovelElement(page: puppeteer.Page) {
   await page.waitForSelector(
     "#__next > main > div > section > ul > li:nth-child(1) > div > div > div > h3 > a",
@@ -136,6 +135,7 @@ async function getNovelUrlsForRidi(
   return { novelUrlsFromPages: novelUrls, totalNovelNoForRidi, totalPageNoListForRidi };
 }
 
+// for kakape //
 async function waitForCurrentNovelForKakape(page: puppeteer.Page, currentNovelNo: number) {
   let waitingTime = 1000;
 
@@ -156,15 +156,15 @@ async function waitForCurrentNovelForKakape(page: puppeteer.Page, currentNovelNo
 async function getNovelUrlsForKakape(
   page: puppeteer.Page,
   novelPlatform: NovelPlatform,
-  totalNovelNo: number,
+  totalNovelNoToScrape: number,
 ) {
   const novelUrls: string[] = [];
 
   let novelNo = 1;
 
   // repeat : load novel node and read url from it
-  while (novelNo <= totalNovelNo) {
-    console.log(`novelNo: ${novelNo}, totalNovelNo: ${totalNovelNo}`);
+  while (novelNo <= totalNovelNoToScrape) {
+    console.log(`novelNo: ${novelNo}, totalNovelNoToScrape: ${totalNovelNoToScrape}`);
 
     // 1. waitForSelector 현 작품번호의 노드 기다림(try)
     // 1-1.
@@ -229,20 +229,22 @@ async function getNovelUrlsForKakape(
   return novelUrls;
 }
 
-async function getNovelNoOfLastPage(page: puppeteer.Page) {
-  const listOfLastPage = await page.waitForSelector("#content > div > ul");
-  return (await page.evaluate((lastList) => lastList.childElementCount, listOfLastPage)) as number;
-}
-
+// for series //
 async function getNovelUrlsForSeries(
   page: puppeteer.Page,
   novelPlatform: NovelPlatform,
   genreNo: string,
-  totalPageNo: number,
+  totalNo: {
+    totalPageNo: number;
+    totalNovelNoToScrape: number;
+  },
 ) {
+  const { totalPageNo, totalNovelNoToScrape } = totalNo;
+
   const novelUrls: string[] = [];
 
   let currentPageNo = 1; // 현재 페이지 넘버
+  const novelNoPerPage = 25;
 
   // 목록 페이지 조회 반복
   while (currentPageNo <= totalPageNo) {
@@ -252,17 +254,18 @@ async function getNovelUrlsForSeries(
 
     // 마지막 페이지 작품 수
     if (currentPageNo === totalPageNo) {
-      novelNoOfLastPage = await getNovelNoOfLastPage(page);
+      novelNoOfLastPage = totalNovelNoToScrape % novelNoPerPage;
     }
 
-    // 목록에서 각 작품 정보(url) 가져오기
-    for (let novelNo = 1; novelNo < 26; novelNo += 1) {
-      // 마지막페이지 작품 수가 25보다 작을 때 루프 탈출
-      if (currentPageNo === totalPageNo && novelNoOfLastPage < novelNo) break;
+    // 페이지 내 소설들의 url 읽어오기 (페이지 당 소설 수 25)
+    for (let currentNovelNoOfPage = 1; currentNovelNoOfPage < 26; currentNovelNoOfPage += 1) {
+      // 마지막페이지일 때 마지막 페이지의 작품 수 만큼 읽기
+      if (currentPageNo === totalPageNo && novelNoOfLastPage < currentNovelNoOfPage) break;
 
-      const novelUrl = await getNovelUrl(page, "new", novelPlatform, novelNo);
+      const novelUrl = await getNovelUrl(page, "new", novelPlatform, currentNovelNoOfPage);
       if (!novelUrl) return;
 
+      console.log("novelUrl:", novelUrl);
       novelUrls.push(novelUrl);
     }
 
@@ -280,13 +283,25 @@ async function getNovelUrlsForSeries(
   return novelUrls;
 }
 
-export default async function newScraper(novelPlatform: NovelPlatform, genreNo: string | string[]) {
+// scraper for new novels //
+function getTotalNovelNoFromPram(totalNovelNoFromParam?: number) {
+  if (totalNovelNoFromParam && totalNovelNoFromParam >= 2) {
+    return Math.floor(totalNovelNoFromParam);
+  }
+}
+
+export default async function newScraper(
+  novelPlatform: NovelPlatform,
+  genreNo: string | string[],
+  totalNovelNoToScrapeFromParam?: number,
+) {
   let isGenreLoopEnd = false; // 전체 카테고리별 목록페이지 조회완료 여부
 
   let novelUrls: string[] = [];
 
-  let totalNovelNo = 1; // 전체 작품 수
-  let novelNoToGetNovel = 1; // 현재 작품 넘버
+  let totalNovelNoToScrape = getTotalNovelNoFromPram(totalNovelNoToScrapeFromParam) || 1;
+
+  let currentNoToGetNovel = 1; // 현재 작품 넘버
 
   let totalPageNo = 1; // 전체 페이지 수 for series
   const totalPageNoList = [] as number[]; // 장르 별 전체 페이지 수 for ridi
@@ -320,11 +335,16 @@ export default async function newScraper(novelPlatform: NovelPlatform, genreNo: 
         });
 
         const totalNovelNoFromPage = await getTotalNovelNo(page, novelPlatform);
-        if (totalNovelNoFromPage) {
-          totalNovelNo = totalNovelNoFromPage;
+        if (totalNovelNoFromPage && totalNovelNoToScrape > totalNovelNoFromPage) {
+          // reset total novel number from novel platform page
+          totalNovelNoToScrape = totalNovelNoFromPage;
         }
 
-        const novelUrlsFromPages = await getNovelUrlsForKakape(page, novelPlatform, totalNovelNo);
+        const novelUrlsFromPages = await getNovelUrlsForKakape(
+          page,
+          novelPlatform,
+          totalNovelNoToScrape,
+        );
         if (!novelUrlsFromPages) return;
 
         novelUrls = novelUrlsFromPages;
@@ -337,21 +357,20 @@ export default async function newScraper(novelPlatform: NovelPlatform, genreNo: 
         });
 
         const totalNovelNoFromPage = await getTotalNovelNo(page, novelPlatform);
-        if (totalNovelNoFromPage) {
-          totalNovelNo = totalNovelNoFromPage;
+        if (totalNovelNoFromPage && totalNovelNoToScrape > totalNovelNoFromPage) {
+          // reset total novel number from novel platform page
+          totalNovelNoToScrape = totalNovelNoFromPage;
         }
 
-        const totalPageNoFromPage = getTotalPageNoForSeries(totalNovelNo);
+        const totalPageNoFromPage = getTotalPageNoForSeries(totalNovelNoToScrape);
         if (totalPageNoFromPage) {
           totalPageNo = totalPageNoFromPage;
         }
 
-        const novelUrlsFromPages = await getNovelUrlsForSeries(
-          page,
-          novelPlatform,
-          genreNo,
+        const novelUrlsFromPages = await getNovelUrlsForSeries(page, novelPlatform, genreNo, {
           totalPageNo,
-        );
+          totalNovelNoToScrape,
+        });
         if (!novelUrlsFromPages) return;
         novelUrls = novelUrlsFromPages;
       }
@@ -361,7 +380,7 @@ export default async function newScraper(novelPlatform: NovelPlatform, genreNo: 
         if (!novelUrlsAndTotalNOs) return;
 
         novelUrls = novelUrlsAndTotalNOs.novelUrlsFromPages;
-        totalNovelNo = novelUrlsAndTotalNOs.totalNovelNoForRidi;
+        totalNovelNoToScrape = novelUrlsAndTotalNOs.totalNovelNoForRidi;
         totalPageNoList.push(...novelUrlsAndTotalNOs.totalPageNoListForRidi);
       }
 
@@ -376,11 +395,11 @@ export default async function newScraper(novelPlatform: NovelPlatform, genreNo: 
 
       await login(page, novelPlatform);
 
-      novelNoToGetNovel = await setNovels(
+      currentNoToGetNovel = await setNovels(
         page,
         {
-          currentNovelNo: novelNoToGetNovel,
-          totalNovelNo,
+          currentNovelNo: currentNoToGetNovel,
+          totalNovelNoToScrape,
           totalPageNo: totalPageNoList.length === 0 ? totalPageNo : totalPageNoList,
         },
         novelPlatform,
@@ -390,7 +409,7 @@ export default async function newScraper(novelPlatform: NovelPlatform, genreNo: 
 
     await context.close(); // 시크릿창 닫기
 
-    if (totalNovelNo < novelNoToGetNovel) break; // 전체 작품 조회 완료 후 루프 탈출
+    if (totalNovelNoToScrape < currentNoToGetNovel) break; // 전체 작품 조회 완료 후 루프 탈출
   }
   await browser.close();
 }
