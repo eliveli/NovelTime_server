@@ -284,10 +284,27 @@ async function getNovelUrlsForSeries(
 }
 
 // scraper for new novels //
-function getTotalNovelNoFromPram(totalNovelNoFromParam?: number) {
-  if (totalNovelNoFromParam && totalNovelNoFromParam >= 2) {
-    return Math.floor(totalNovelNoFromParam);
+
+function setInitialTotalNovelNo(
+  genreNo: string | string[],
+  totalNovelNoToScrapeFromParam?: number,
+) {
+  if (totalNovelNoToScrapeFromParam && totalNovelNoToScrapeFromParam >= 2) {
+    const totalNovelNo = Math.floor(totalNovelNoToScrapeFromParam);
+    // for ridi
+    // 리디의 몇 가지 장르를 하나로 분류해 가져올 때
+    // 세부 장르 별로 설정한 수 만큼 가져오기
+    if (typeof genreNo === "object") {
+      return totalNovelNo * genreNo.length;
+    }
+    return totalNovelNo;
   }
+  // - 1을 반환하는 경우 -
+  //  1. 스크랩 할 소설 수(totalNovelNoToScrapeFromParam)를 넘겨주지 않았을 때
+  //      이 때는 단지 변수를 비워두지 않기 위해 1을 반환.
+  //      totalNovelNoToScrapeFromParam 값이 undefined라면 추후 플랫폼에서 읽어 온 실제 값으로 대체
+  //  2. 해당 값이 1이거나 1이하의 실수일 때
+  return 1; // 단지 변수를 비워두지 않기 위해 반환.
 }
 
 export default async function newScraper(
@@ -299,7 +316,7 @@ export default async function newScraper(
 
   let novelUrls: string[] = [];
 
-  let totalNovelNoToScrape = getTotalNovelNoFromPram(totalNovelNoToScrapeFromParam) || 1;
+  let totalNovelNoToScrape = setInitialTotalNovelNo(genreNo, totalNovelNoToScrapeFromParam);
 
   let currentNoToGetNovel = 1; // 현재 작품 넘버
 
@@ -335,7 +352,10 @@ export default async function newScraper(
         });
 
         const totalNovelNoFromPage = await getTotalNovelNo(page, novelPlatform);
-        if (totalNovelNoFromPage && totalNovelNoToScrape > totalNovelNoFromPage) {
+        if (
+          totalNovelNoFromPage &&
+          (!totalNovelNoToScrapeFromParam || totalNovelNoToScrape > totalNovelNoFromPage)
+        ) {
           // reset total novel number from novel platform page
           totalNovelNoToScrape = totalNovelNoFromPage;
         }
@@ -357,7 +377,10 @@ export default async function newScraper(
         });
 
         const totalNovelNoFromPage = await getTotalNovelNo(page, novelPlatform);
-        if (totalNovelNoFromPage && totalNovelNoToScrape > totalNovelNoFromPage) {
+        if (
+          totalNovelNoFromPage &&
+          (!totalNovelNoToScrapeFromParam || totalNovelNoToScrape > totalNovelNoFromPage)
+        ) {
           // reset total novel number from novel platform page
           totalNovelNoToScrape = totalNovelNoFromPage;
         }
