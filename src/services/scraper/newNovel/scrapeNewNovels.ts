@@ -446,7 +446,7 @@ export default async function newScraper(
         {
           currentNovelNo: currentNoToGetNovel,
           totalNovelNo: totalNovelNoToScrape,
-          totalNovelNoList: totalNovelNoOfEachGenre,
+          totalNovelNoOfEachGenre,
           totalPageNo: totalPageNoOfEachGenre.length === 0 ? totalPageNo : totalPageNoOfEachGenre,
         },
         novelPlatform,
