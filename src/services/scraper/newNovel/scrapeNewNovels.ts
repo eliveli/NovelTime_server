@@ -2,7 +2,7 @@ import puppeteer from "puppeteer";
 import getNovelUrl from "../utils/getNovelUrl";
 import goToNovelListPage from "../utils/goToNovelListPage";
 import login from "../utils/login";
-import minimalArgs from "../utils/minimalArgsToLaunch";
+import { minimalArgs } from "../utils/variables";
 import seeNovelListWithCardForRidi from "../utils/seeNovelListWithCardForRidi";
 import { NovelPlatform } from "../utils/types";
 import setNovels from "./utils/setNovels";

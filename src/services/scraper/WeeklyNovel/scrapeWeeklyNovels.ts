@@ -1,5 +1,5 @@
 import puppeteer from "puppeteer";
-import minimalArgs from "../utils/minimalArgsToLaunch";
+import { minimalArgs } from "../utils/variables";
 import login from "../utils/login";
 import getNovelUrls from "./utils/getNovelUrls";
 import getNovelIDsFromDB from "./utils/getNovelIDsFromDB";
