@@ -130,13 +130,16 @@ async function getNovelUrlsForRidi(
           console.log(err, "읽어올 작품이 더 없다고 가정, 현재 장르 조회 완료");
 
           // 플랫폼 내 현재 장르의 페이지 수를 리스트에 추가 //
-          // 직전 페이지가 마지막 페이지일 때
-          if (novelNoOfCurrentPage === 1) {
-            totalPageNoListForRidi.push(currentPageNo - 1);
-          }
-          // 현재 페이지가 마지막 페이지일 때
-          if (novelNoOfCurrentPage !== 1) {
+          if (novelNoOfCurrentPage !== 1 || totalNovelNoToScrape === 1) {
+            // 페이지의 소설 몇 개를 읽고 catch문 실행 시 또는 스크랩할 소설 수가 1일 때
+            //   현재 페이지를 마지막 페이지로 간주
             totalPageNoListForRidi.push(currentPageNo);
+          }
+
+          // 페이지의 첫 번째 소설도 읽지 못하고 catch문 실행 시
+          //     직전 페이지를 마지막 페이지로 간주
+          else if (novelNoOfCurrentPage === 1) {
+            totalPageNoListForRidi.push(currentPageNo - 1);
           }
 
           currentPageNo = 1; // 페이지 넘버 1로 리셋
