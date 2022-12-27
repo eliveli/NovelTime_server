@@ -2,13 +2,24 @@ import puppeteer from "puppeteer";
 import addOrUpdateNovelInDB from "../../utils/addOrUpdateNovelInDB";
 import { NovelPlatform } from "../../utils/types";
 
+function markTotalPageNo(totalPageNo: number[] | number | undefined) {
+  if (typeof totalPageNo === "object") {
+    return `totalPageNoOfEachGenre: ${String(totalPageNo)}`; // for ridi
+  }
+  if (typeof totalPageNo === "number") {
+    return `totalPageNo: ${String(totalPageNo)}`; // for series
+  }
+  return ""; // for kakape
+}
+
 export default async function setNovels(
   page: puppeteer.Page,
   novelNoAndPageNo: {
     currentNovelNo: number;
     totalNovelNo: number;
     totalNovelNoListForRidi: number[]; // for ridi
-    totalPageNo: number[] | number; // number[] for ridi, number for series
+    totalPageNo: number[] | number | undefined;
+    // number[] for ridi, number for series, undefined for kakape
   },
   novelPlatform: NovelPlatform,
   novelUrls: string[],
@@ -24,9 +35,7 @@ export default async function setNovels(
         totalNovelNoListForRidi.length !== 0
           ? `totalNovelNoListForRidi: ${String(totalNovelNoListForRidi)}, `
           : ""
-      } ${typeof totalPageNo === "number" ? "totalPageNo" : "totalPageNoOfEachGenre"}: ${String(
-        totalPageNo,
-      )}`,
+      } ${markTotalPageNo(totalPageNo)}`,
     );
 
     try {

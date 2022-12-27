@@ -19,6 +19,20 @@ function setInitialTotalNovelNo(totalNovelNoToScrapeFromParam?: number) {
   return 1; // 단지 변수를 비워두지 않기 위해 반환.
 }
 
+function passTotalPageNo(
+  novelPlatform: NovelPlatform,
+  totalPageNoForSeries: number,
+  totalPageNoListForRidi: number[],
+) {
+  if (novelPlatform === "네이버 시리즈") {
+    return totalPageNoForSeries;
+  }
+  if (novelPlatform === "리디북스") {
+    return totalPageNoListForRidi;
+  }
+  return undefined;
+}
+
 // get total page number or total novel number //
 function getTotalPageNoForSeries(totalNovelNoToScrape: number) {
   const calcTotalPageNO: number = Math.floor(totalNovelNoToScrape / 25);
@@ -450,8 +464,7 @@ export default async function newScraper(
           currentNovelNo: currentNoToGetNovel,
           totalNovelNo: totalNovelNoToScrape,
           totalNovelNoListForRidi,
-          totalPageNo:
-            totalPageNoListForRidi.length === 0 ? totalPageNoForSeries : totalPageNoListForRidi,
+          totalPageNo: passTotalPageNo(novelPlatform, totalPageNoForSeries, totalPageNoListForRidi),
         },
         novelPlatform,
         novelUrls,
