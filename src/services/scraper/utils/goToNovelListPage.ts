@@ -5,7 +5,7 @@ function getNovelListPage(
   scraperType: ScraperType,
   novelPlatform: NovelPlatform,
   urlParams?: {
-    genreNo: string;
+    genreNo: number;
     currentPageNo?: number;
   },
 ) {
@@ -14,17 +14,23 @@ function getNovelListPage(
 
     if (novelPlatform === "카카오페이지") {
       // 무한스크롤 / 최신순(등록일 순)
-      return `https://page.kakao.com/menu/11/screen/37?subcategory_uid=${genreNo}&sort_opt=latest`;
+      return `https://page.kakao.com/menu/11/screen/37?subcategory_uid=${String(
+        genreNo,
+      )}&sort_opt=latest`;
     }
 
     if (novelPlatform === "네이버 시리즈" && currentPageNo) {
       // 페이지네이션 / 최신순, 완결작 포함 조회
-      return `https://series.naver.com/novel/categoryProductList.series?categoryTypeCode=genre&genreCode=${genreNo}&orderTypeCode=new&is&isFinished=false&page=${currentPageNo}`;
+      return `https://series.naver.com/novel/categoryProductList.series?categoryTypeCode=genre&genreCode=${String(
+        genreNo,
+      )}&orderTypeCode=new&is&isFinished=false&page=${String(currentPageNo)}`;
     }
 
     if (novelPlatform === "리디북스" && currentPageNo) {
       // 페이지네이션 + semi 스크롤(페이지 내리면서 dom load) / 최신순(최신화등록일), 성인 제외
-      return `https://ridibooks.com/category/books/${genreNo}?order=recent&adult_exclude=y&page=${currentPageNo}`;
+      return `https://ridibooks.com/category/books/${String(
+        genreNo,
+      )}?order=recent&adult_exclude=y&page=${String(currentPageNo)}`;
     }
   }
 
@@ -50,7 +56,7 @@ export default async function goToNovelListPage(
   scraperType: ScraperType,
   novelPlatform: NovelPlatform,
   urlParams?: {
-    genreNo: string;
+    genreNo: number;
     currentPageNo: number;
   },
 ) {

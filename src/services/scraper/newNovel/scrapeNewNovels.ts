@@ -82,7 +82,7 @@ async function loadNovelList(page: puppeteer.Page) {
 async function getNovelUrlsForRidi(
   page: puppeteer.Page,
   novelPlatform: NovelPlatform,
-  genreNOs: string[],
+  genreNOs: number[],
   totalNovelNoToScrape?: number,
 ) {
   const novelUrls: string[] = [];
@@ -287,7 +287,7 @@ async function getNovelUrlsForKakape(
 async function getNovelUrlsForSeries(
   page: puppeteer.Page,
   novelPlatform: NovelPlatform,
-  genreNo: string,
+  genreNo: number,
   totalNo: {
     totalPageNo: number;
     totalNovelNoToScrape: number;
@@ -340,7 +340,7 @@ async function getNovelUrlsForSeries(
 // scraper for new novels //
 export default async function newScraper(
   novelPlatform: NovelPlatform,
-  genreNo: string | string[], // only ridi gets multiple genres from this
+  genreNo: number | number[], // only ridi gets multiple genres from this
   totalNovelNoToScrapeFromParam?: number,
 ) {
   let isGenreLoopEnd = false; // 전체 카테고리별 목록페이지 조회완료 여부
@@ -379,7 +379,7 @@ export default async function newScraper(
     // 장르 내 소설 목록 조회, 소설 urls 받아 옴
     //  반복문 1회차에만 실행
     if (!isGenreLoopEnd) {
-      if (novelPlatform === "카카오페이지" && typeof genreNo === "string") {
+      if (novelPlatform === "카카오페이지" && typeof genreNo === "number") {
         await goToNovelListPage(page, "new", novelPlatform, {
           genreNo,
           currentPageNo: 1,
@@ -404,7 +404,7 @@ export default async function newScraper(
         novelUrls = novelUrlsFromPages;
       }
 
-      if (novelPlatform === "네이버 시리즈" && typeof genreNo === "string") {
+      if (novelPlatform === "네이버 시리즈" && typeof genreNo === "number") {
         await goToNovelListPage(page, "new", novelPlatform, {
           genreNo,
           currentPageNo: 1,
