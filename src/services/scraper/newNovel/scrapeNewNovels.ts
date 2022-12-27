@@ -338,10 +338,10 @@ export default async function newScraper(
   // 리디는 스크래퍼 실행 중에 세부 장르 별 소설 수의 합산 값으로 대체됨
   let totalNovelNoToScrape = setInitialTotalNovelNo(totalNovelNoToScrapeFromParam);
 
-  const totalNovelNoOfEachGenre = [] as number[]; // for ridi
+  const totalNovelNoListForRidi = [] as number[]; // for ridi
 
-  let totalPageNo = 1; // for series
-  const totalPageNoOfEachGenre = [] as number[]; // for ridi
+  let totalPageNoForSeries = 1; // for series
+  const totalPageNoListForRidi = [] as number[]; // for ridi
 
   const browser = await puppeteer.launch({
     headless: false, // 브라우저 화면 열려면 false
@@ -407,11 +407,11 @@ export default async function newScraper(
 
         const totalPageNoFromPage = getTotalPageNoForSeries(totalNovelNoToScrape);
         if (totalPageNoFromPage) {
-          totalPageNo = totalPageNoFromPage;
+          totalPageNoForSeries = totalPageNoFromPage;
         }
 
         const novelUrlsFromPages = await getNovelUrlsForSeries(page, novelPlatform, genreNo, {
-          totalPageNo,
+          totalPageNo: totalPageNoForSeries,
           totalNovelNoToScrape,
         });
         if (!novelUrlsFromPages) return;
@@ -429,8 +429,8 @@ export default async function newScraper(
 
         novelUrls = novelUrlsAndTotalNOs.novelUrlsFromPages;
         totalNovelNoToScrape = novelUrlsAndTotalNOs.totalNovelNoForRidi; // 세부 장르 별 소설 수 합산
-        totalNovelNoOfEachGenre.push(...novelUrlsAndTotalNOs.totalNovelNoListForRidi);
-        totalPageNoOfEachGenre.push(...novelUrlsAndTotalNOs.totalPageNoListForRidi);
+        totalNovelNoListForRidi.push(...novelUrlsAndTotalNOs.totalNovelNoListForRidi);
+        totalPageNoListForRidi.push(...novelUrlsAndTotalNOs.totalPageNoListForRidi);
       }
 
       // 장르 전체 조회 완료 표시
@@ -449,8 +449,9 @@ export default async function newScraper(
         {
           currentNovelNo: currentNoToGetNovel,
           totalNovelNo: totalNovelNoToScrape,
-          totalNovelNoOfEachGenre,
-          totalPageNo: totalPageNoOfEachGenre.length === 0 ? totalPageNo : totalPageNoOfEachGenre,
+          totalNovelNoListForRidi,
+          totalPageNo:
+            totalPageNoListForRidi.length === 0 ? totalPageNoForSeries : totalPageNoListForRidi,
         },
         novelPlatform,
         novelUrls,

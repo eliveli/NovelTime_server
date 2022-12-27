@@ -7,13 +7,13 @@ export default async function setNovels(
   novelNoAndPageNo: {
     currentNovelNo: number;
     totalNovelNo: number;
-    totalNovelNoOfEachGenre: number[]; // for ridi
+    totalNovelNoListForRidi: number[]; // for ridi
     totalPageNo: number[] | number; // number[] for ridi, number for series
   },
   novelPlatform: NovelPlatform,
   novelUrls: string[],
 ) {
-  const { currentNovelNo, totalNovelNo, totalNovelNoOfEachGenre, totalPageNo } = novelNoAndPageNo;
+  const { currentNovelNo, totalNovelNo, totalNovelNoListForRidi, totalPageNo } = novelNoAndPageNo;
 
   let novelNo = currentNovelNo;
 
@@ -21,8 +21,8 @@ export default async function setNovels(
   while (totalNovelNo >= novelNo) {
     console.log(
       `currentNovelNo: ${novelNo}, totalNovelNo: ${totalNovelNo}, ${
-        totalNovelNoOfEachGenre.length !== 0
-          ? `totalNovelNoOfEachGenre: ${String(totalNovelNoOfEachGenre)}, `
+        totalNovelNoListForRidi.length !== 0
+          ? `totalNovelNoListForRidi: ${String(totalNovelNoListForRidi)}, `
           : ""
       } ${typeof totalPageNo === "number" ? "totalPageNo" : "totalPageNoOfEachGenre"}: ${String(
         totalPageNo,
