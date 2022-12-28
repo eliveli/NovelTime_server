@@ -36,7 +36,7 @@ function getNovelSelector(scraperType: ScraperType, novelPlatform: NovelPlatform
       return `#__next > main > div > section > ul > li:nth-child(${novelNO}) > div > div > div > h3 > a`;
     }
     if (scraperType === "weekly") {
-      return `#__next > main > section > ul.fig-1o0lea8 > li:nth-child(${novelNO}) > div > div.fig-7p4nhu > a`;
+      return `#__next > main > div > section > ul.fig-1o0lea8 > li:nth-child(${novelNO}) > div > div.fig-7p4nhu > a`;
     }
   }
 }
