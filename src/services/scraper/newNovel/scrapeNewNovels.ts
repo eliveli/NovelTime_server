@@ -63,19 +63,88 @@ async function getTotalNovelNo(page: puppeteer.Page, novelPlatform: NovelPlatfor
   return Number(novelNoWithText.replace(regex, "")); // 총 작품 수
 }
 
-// for ridi //
-async function waitForFirstNovelElement(page: puppeteer.Page) {
-  await page.waitForSelector(
-    "#__next > main > div > section > ul > li:nth-child(1) > div > div > div > h3 > a",
-    { timeout: 60000 },
-  );
-}
-async function loadNovelList(page: puppeteer.Page) {
-  await waitForFirstNovelElement(page);
+// wait or load novel for kakape, ridi
+async function waitForCurrentNovel(
+  page: puppeteer.Page,
+  novelPlatform: NovelPlatform,
+  currentNovelNo: number,
+  waitingNo: number,
+) {
+  let waitingTime = 1000; // 기본 대기 시간
 
-  // to load elements
-  for (let i = 1; i < 16; i += 1) {
-    await page.keyboard.press("PageDown", { delay: 100 });
+  // for kakape //
+  // . 요청 마다 소설 24개 불러옴
+  //    (End 키를 눌러 요청 - see the waitOrLoadNovel function)
+  // . 기다리는 시간 증가 cases
+  //   : 요청 후 불러오는 첫번째 소설
+  //   : 소설 단위 천 번 마다 기다리는 시간 +1
+  //      ex. 1011번째 - 2초, 2022번째 - 3초
+
+  // for ridi //
+  // . 소설 1줄 요청 시 소설 5개 불러옴
+  //    (소설 게시 형식 카드형일때. 목록형은 1줄 1소설)
+  // . PageDown 키를 눌러 한 번에 여러 줄 요청
+  //    - 현재 화면에 보여야 하는 소설들이 요청됨.
+  //      End 키를 눌러 페이지 끝으로 이동할 경우 중간에 위치한 소설은 요청 안 됨
+  //    - 몇 줄을 요청할 지는 창 크기에 따라 다름
+  // . 타이밍 맞춰 PageDown을 차례로 하면 모든 소설 요청 가능
+  // . 요청 후 불러오는 첫 번째 소설에 기다리는 시간 증가
+
+  //   소설 요청 상세는 소설 플랫폼의 소설 목록 페이지에서 개발자 도구 - 네트워크 탭 참고
+
+  const novelNoPerRequest = novelPlatform === "카카오페이지" ? 24 : 5;
+
+  const waitingTimeForFirstNovel =
+    novelPlatform === "카카오페이지" ? 1000 * (Math.floor(currentNovelNo / 1000) + 1) : 2000;
+
+  const novelSelector =
+    novelPlatform === "카카오페이지"
+      ? `#__next > div > div > div > div > div > div > div > div > div > div > div:nth-child(${currentNovelNo}) > div > a`
+      : `#__next > main > div > section > ul > li:nth-child(${currentNovelNo}) > div > div > div > h3 > a`;
+
+  if (currentNovelNo % novelNoPerRequest === 1) {
+    waitingTime = waitingTimeForFirstNovel;
+  }
+
+  // 직전에 소설 노드 대기 시간 초과 후 페이지 다운 한 번 했을 경우
+  //  waiting time 3배
+  if (waitingNo === 2) {
+    waitingTime *= 3;
+  }
+
+  await page.waitForSelector(novelSelector, { timeout: waitingTime });
+}
+
+async function waitOrLoadNovel(
+  page: puppeteer.Page,
+  novelPlatform: NovelPlatform,
+  currentNovelNo: number,
+) {
+  const downKey = novelPlatform === "카카오페이지" ? "End" : "PageDown";
+
+  for (let waitingNo = 1; waitingNo < 3; waitingNo += 1) {
+    try {
+      // wait for loading current novel element
+      // and increase waiting time when reading a first novel
+      //    right after moving a page down and loading novels
+      await waitForCurrentNovel(page, novelPlatform, currentNovelNo, waitingNo);
+      break;
+    } catch {
+      // if timeout occurs,
+      //  move a page down by pressing an End key for kakape, Page Down key for ridi
+      //  and request next novel pack
+      // and wait for the node again
+      //
+      await page.keyboard.press(downKey, { delay: 500 });
+      continue; // 페이지 다운 후 다시 소설 노드 읽기 시도
+
+      // error case for kakape (이전 코드에서 발견. 지금은 참고만 하기)
+      // 새로운 소설을 요청 후 받아오기 전에 다시 같은 소설을 요청하는 작업을 반복될 때
+      //  -> 에러페이지로 이동
+      //  -> 설정한 시간(page.setDefaultTimeout(시간) or jest.setTimeout(시간)) 경과 후 스크래퍼 종료
+      //   : 무한스크롤 방식. 후반부로 갈수록 요청한 소설을 받아오는 데 시간이 걸려서 문제 발생
+      //  -> 같은 소설 묶음을 재요청할 때 waitingTime을 늘려 해결
+    }
   }
 }
 
@@ -117,13 +186,7 @@ async function getNovelUrlsForRidi(
         novelNoOfCurrentPage += 1
       ) {
         try {
-          // 타이밍 맞춰 page down 차례로 하면 모든 dom 노드 load 가능
-          //  . 화면에 보이지 않는 node도 사라지지 않아 읽을 수 있음
-          //  . 스크롤 조금씩 내린다면(not page down) 화면에 보이는 만큼만 새로 불러옴
-          //    (소설 목록이 카드 형태일 때는 한 줄에 소설 5작품 기준)
-          //                     한 줄에 하나 씩 보일 때는 1작품 기준)
-          //  . (개발자 도구 - 네트워크 탭 참고)
-          await loadNovelList(page);
+          await waitOrLoadNovel(page, novelPlatform, novelNoOfCurrentPage);
 
           const novelUrl = await getNovelUrl(page, "new", novelPlatform, novelNoOfCurrentPage);
           if (!novelUrl) return;
@@ -177,7 +240,6 @@ async function getNovelUrlsForRidi(
         genreNo: genreNOs[ctgIdx],
         currentPageNo,
       });
-      await waitForFirstNovelElement(page);
     }
   }
 
@@ -190,22 +252,6 @@ async function getNovelUrlsForRidi(
 }
 
 // for kakape //
-async function waitForCurrentNovelForKakape(page: puppeteer.Page, currentNovelNo: number) {
-  let waitingTime = 1000;
-
-  // waitingTime 변경
-  //  : 페이지 다운 후 불러오는 첫 번째 소설 (24개 단위로 소설을 불러옴)
-  if (currentNovelNo % 24 === 1) {
-    // 소설 천 번째 단위마다 기다리는 시간 증가
-    // ex. 1011번째 - 2초, 2022번째 - 3초
-    waitingTime *= Math.floor(currentNovelNo / 1000) + 1;
-  }
-
-  await page.waitForSelector(
-    `#__next > div > div > div > div > div > div > div > div > div > div > div:nth-child(${currentNovelNo}) > div > a`,
-    { timeout: waitingTime },
-  );
-}
 
 async function getNovelUrlsForKakape(
   page: puppeteer.Page,
@@ -214,70 +260,31 @@ async function getNovelUrlsForKakape(
 ) {
   const novelUrls: string[] = [];
 
-  let novelNo = 1;
+  let currentNovelNo = 1;
 
   // repeat : load novel node and read url from it
-  while (novelNo <= totalNovelNoToScrape) {
-    console.log(`novelNo: ${novelNo}, totalNovelNoToScrape: ${totalNovelNoToScrape}`);
+  while (currentNovelNo <= totalNovelNoToScrape) {
+    console.log(`currentNovelNo: ${currentNovelNo}, totalNovelNoToScrape: ${totalNovelNoToScrape}`);
 
-    // 1. waitForSelector 현 작품번호의 노드 기다림(try)
-    // 1-1.
-    //    이 때 1초 초과 시 end 키보드 누르기. 페이지 최하단 이동
-    //    1초 후 다시 노드 기다림
-    // 1-2.
-    //    한 번 요청할 때마다 24개 소설을 불러옴
-    //      (개발자 도구 - 네트워크 탭 참고)
-    //    이 중 첫 번째 소설을 읽을 때는
-    //    노드 기다리는 시간 변경 (천 번째 단위로 1초 씩 증가)
-    // 1-3.
-    //    작품번호가 맨 마지막이라 읽어올 노드가 없다면 루프 벗어나기
-    //     - 마지막 작품 여부 파악
-    //     : url을 읽어온 작품 번호가 페이지에 읽어온 마지막 번호와 같을 때
-    //          이건 while문 조건으로 판별 가능
-    // 2. 1의 노드로부터 url 읽기
-    //    그리고 url로 상세페이지에서 소설 정보 읽어오는 함수 실행
-
-    for (let pressingEndNo = 1; pressingEndNo < 61; pressingEndNo += 1) {
-      try {
-        // wait for loading current novel element
-        // and increase waiting time when reading a first novel
-        //    right after moving a page down and loading novels
-        await waitForCurrentNovelForKakape(page, novelNo);
-        break;
-      } catch {
-        // load new novels if timeout by pressing End key
-        // press End key and wait for the node again
-        await page.keyboard.press("End", { delay: 1000 });
-        continue;
-        //
-        // 만약 연속적으로 소설을 로딩하다가 에러 페이지로 이동될 경우
-        //  설정한 시간/page.setDefaultTimeout(시간) or jest.setTimeout(시간)/ 지나고 스크래퍼 종료
-        //
-        // 에러페이지 이동 없이 load 실패할 경우
-        //  다음 코드에서 url 읽어오려다 실패, 다음 소설 node 기다리러 감
-        //
-      }
-    }
+    await waitOrLoadNovel(page, novelPlatform, currentNovelNo);
 
     // read novel url from the novel node
     try {
-      // await loadNovelList(page); // 이 함수 다른 플랫폼과 통합?!
-
-      const novelUrl = await getNovelUrl(page, "new", novelPlatform, novelNo);
+      const novelUrl = await getNovelUrl(page, "new", novelPlatform, currentNovelNo);
       if (!novelUrl) {
         throw Error("can't get url from node");
       }
 
       novelUrls.push(novelUrl);
 
-      console.log("noveNO: ", novelNo, " novelUrl: ", novelUrl);
+      console.log("noveNO: ", currentNovelNo, " novelUrl: ", novelUrl);
     } catch (err) {
       // failure case (추측) - selector의 a 태그에서 href 값을 읽어오지 못할 때
       //  go getting next novel node
       console.log(err, "error when reading url from href attribute in novel node");
     }
 
-    novelNo += 1; // 작품 번호 +1
+    currentNovelNo += 1; // 작품 번호 +1
   }
 
   return novelUrls;
