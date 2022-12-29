@@ -81,12 +81,13 @@ async function waitForCurrentNovel(
   //      ex. 1011번째 - 2초, 2022번째 - 3초
 
   // for ridi //
-  // . 소설 1줄 요청 시 소설 5개 불러옴
-  //    (소설 게시 형식 카드형일때. 목록형은 1줄 1소설)
-  // . PageDown 키를 눌러 한 번에 여러 줄 요청
+  // . 요청하는 소설 수는 창 크기에 따라, 게시 형식(카드형/목록형)에 따라 다름
+  //    - 카드형일 때 창 width가 넓으면 1줄에 많은 소설이 게시됨
+  //      목록형일 때 1줄에 소설 1개 게시
+  //    - 1줄에 소설 5개가 게시된다면 그만큼 요청
+  // . PageDown 키를 눌러 한 번에 여러 줄 요청(창 height에 따라 다름)
   //    - 현재 화면에 보여야 하는 소설들이 요청됨.
   //      End 키를 눌러 페이지 끝으로 이동할 경우 중간에 위치한 소설은 요청 안 됨
-  //    - 몇 줄을 요청할 지는 창 크기에 따라 다름
   // . 타이밍 맞춰 PageDown을 차례로 하면 모든 소설 요청 가능
   // . 요청 후 불러오는 첫 번째 소설에 기다리는 시간 증가
 
@@ -135,7 +136,7 @@ async function waitOrLoadNovel(
       //  and request next novel pack
       // and wait for the node again
       //
-      await page.keyboard.press(downKey, { delay: 500 });
+      await page.keyboard.press(downKey, { delay: 100 });
       continue; // 페이지 다운 후 다시 소설 노드 읽기 시도
 
       // error case for kakape (이전 코드에서 발견. 지금은 참고만 하기)
@@ -366,7 +367,12 @@ export default async function newScraper(
 
   const browser = await puppeteer.launch({
     headless: false, // 브라우저 화면 열려면 false
-    args: minimalArgs, // it may be removed later
+    args: [...minimalArgs, "--start-maximized"],
+    // "--start-maximized" to maximize the browser
+    //  : in my case "--start-fullscreen" arg is not good
+    //      when I used it the incognito window was never increased
+    //    and I should also set the viewport in incognito window. see the below
+
     // defaultViewport: { width: 800, height: 1080 }, // 실행될 브라우저의 화면 크기
 
     // -크롬에서 열기 (when 카카페 기존 로그인된 상태로 작업 / but 로그인상태가 항상 유지되지 않음)
@@ -381,6 +387,9 @@ export default async function newScraper(
   while (true) {
     const context = await browser.createIncognitoBrowserContext(); // 시크릿창 열기
     const page = await context.newPage();
+
+    await page.setViewport({ width: 0, height: 0 }); // to maximize the viewport in incognito window
+
     page.setDefaultTimeout(30000);
 
     // 장르 내 소설 목록 조회, 소설 urls 받아 옴
