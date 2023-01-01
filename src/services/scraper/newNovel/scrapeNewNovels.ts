@@ -461,6 +461,11 @@ export default async function newScraper(
     if (isGenreLoopEnd) {
       if (novelUrls.length === 0) return;
 
+      await goToNovelListPage(page, "new", novelPlatform, {
+        genreNo: typeof genreNo === "number" ? genreNo : genreNo[0],
+        currentPageNo: 1,
+      });
+
       await login(page, novelPlatform);
 
       currentNoToGetNovel = await setNovels(
