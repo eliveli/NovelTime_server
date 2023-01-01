@@ -20,6 +20,7 @@ export default async function getNovelUrls(page: puppeteer.Page, novelPlatform: 
       }
 
       novelUrls.push(novelUrl);
+      console.log(`bestNo: ${bestNo} novelUrl: ${novelUrl}`);
     } catch (err: any) {
       console.log(err, "\n  현재 작품 노드 또는 url 읽기 실패");
       // -> 이로 인해 실제 읽어오는 소설 수는 20개가 안 될 수 있음

@@ -93,7 +93,7 @@ async function getNovelUrlsForRidi(
 
     // 장르 내 목록 페이지 조회 반복
     while (true) {
-      console.log(currentPageNo, "현재 페이지 번호");
+      console.log("현재 페이지 번호: ", currentPageNo);
 
       // 각 페이지에서 작품 url 가져오기
       for (
@@ -128,17 +128,25 @@ async function getNovelUrlsForRidi(
           if (totalNovelNoToScrape && accumulatedNovelNoOfCurrentGenre === totalNovelNoToScrape) {
             throw Error("설정한 만큼 스크랩 완료");
           }
-        } catch (err: any) {
-          // 소설 읽기 실패 시 (아래 1 또는 2) //
 
-          // 1. 다음 장르 조회 //
+          if (currentNovelNoInCurrentPage === totalNovelNoPerPage) {
+            // 1. 페이지 내 소설이 가득 차 있음(60개)
+            // 2. 조회하는 목록 페이지가 마지막 페이지 이상일 때 마지막 페이지를 불러옴.
+            // 1+2
+            //   : 현재 페이지가 마지막 페이지라도 페이지 내 소설이 가득 채워져 있다면
+            //      이후 같은 페이지를 계속 반복 조회하게 됨.
+            //   -> 1의 조건을 만족할 때 마지막 페이지 여부 확인 필요
+            throw Error("꽉 채워진 한 페이지의 마지막 소설 노드 읽은 후");
+          }
+        } catch (err: any) {
+          // 소설 읽기 실패 시 or 꽉 채워진 한 페이지의 마지막 소설 노드 읽은 후 //
 
           // (유의) 리디에서는 마지막 페이지 이상의 수는 마지막 페이지로 인식 (url로 목록 페이지 조회 시)
           // -> 목록 페이지 하단의 페이지 번호 엘리먼트를 읽어 마지막 페이지 여부 파악
           //    : 페이지 번호 엘리먼트는 현재 페이지 번호를 포함해 최대 5개 나타남.
           //        현재 장르의 총 페이지 수가 5개 미만인 경우에만 5개 미만이고 그 외에는 항상 5개.
           //      이 때 현재 페이지가 마지막 페이지라면 나열된 페이지번호 엘리먼트 중 마지막 차례에 표시됨
-          //      -> 아래 isLastPage 값이 true일 때
+          //      -> isLastPage 값이 true일 경우
           const lastPageNoElementIn5 = await page.waitForSelector(
             "#__next > main > div > section > div:nth-child(6) > div > ul > li:last-child > a",
           );
@@ -149,6 +157,11 @@ async function getNovelUrlsForRidi(
             currentPageNo,
           )) as boolean;
 
+          // 1. 다음 페이지 읽으러 가기 //
+          if (err.message === "꽉 채워진 한 페이지의 마지막 소설 노드 읽은 후" && !isLastPage) {
+            break;
+          }
+
           const novelListElement = await page.waitForSelector(
             "#__next > main > div > section > ul.fig-1o0lea8",
           );
@@ -157,11 +170,15 @@ async function getNovelUrlsForRidi(
             novelListElement,
           );
 
-          // 현재 장르 조회 완료, 다음 장르 조회하러 가기
-          // : 정해 둔 스크랩할 소설 수 만큼 또는 플랫폼에 존재하는 마지막 소설까지 스크랩했을 때
+          // 2. 다음 장르 읽으러 가기 //
+          // : 정해 둔 스크랩할 소설 수 만큼
+          //   또는 마지막 페이지의 마지막 소설 노드까지 읽었을 때
+          //    후자는 페이지에 소설이 꽉 채워져 있지 않을 때와 채워져 있을 때로 구분
+          //   (아래 조건문에 차례로 적용)
           if (
             err.message === "설정한 만큼 스크랩 완료" ||
-            (isLastPage && currentNovelNoInCurrentPage > totalNovelNoInCurrentPage)
+            (isLastPage && currentNovelNoInCurrentPage > totalNovelNoInCurrentPage) ||
+            (isLastPage && err.message === "꽉 채워진 한 페이지의 마지막 소설 노드 읽은 후")
           ) {
             console.log(
               err,
@@ -194,9 +211,9 @@ async function getNovelUrlsForRidi(
             continue genreLoop; // 다음 장르 조회
           }
 
-          // 2. 현재 장르의 다음 소설 조회
-          //    1의 조건문을 만족하지 않으면서 소설 노드 읽기 실패 시
-          console.log(err, "\n  현재 작품 노드 또는 url 읽기 실패");
+          // 3. 현재 페이지의 다음 소설 노드 읽으러 가기 //
+          //   : 2의 조건문을 만족하지 않으면서 소설 노드 읽기 실패 시
+          console.log(err, "\n  현재 노드 또는 노드의 url 읽기 실패");
           continue;
         }
       }
