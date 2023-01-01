@@ -6,6 +6,7 @@ import { minimalArgs } from "../utils/variables";
 import seeNovelListWithCardForRidi from "../utils/seeNovelListWithCardForRidi";
 import { NovelPlatform } from "../utils/types";
 import setNovels from "./utils/setNovels";
+import { waitForNovel, waitOrLoadNovel } from "../utils/waitOrLoadNovel";
 
 function setInitialTotalNovelNo(totalNovelNoToScrapeFromParam?: number) {
   if (totalNovelNoToScrapeFromParam && totalNovelNoToScrapeFromParam >= 2) {
@@ -63,97 +64,6 @@ async function getTotalNovelNo(page: puppeteer.Page, novelPlatform: NovelPlatfor
   return Number(novelNoWithText.replace(regex, "")); // 총 작품 수
 }
 
-// wait or load novel for kakape, ridi
-async function waitForCurrentNovel(
-  page: puppeteer.Page,
-  novelPlatform: NovelPlatform,
-  currentNovelNo: number,
-  waitingNo: number,
-) {
-  let waitingTime = 1000; // 기본 대기 시간
-
-  // for kakape //
-  // . 요청 마다 소설 24개 불러옴
-  //    (End 키를 눌러 요청 - see the waitOrLoadNovel function)
-  // . 기다리는 시간 증가 cases
-  //   : 요청 후 불러오는 첫번째 소설
-  //   : 소설 단위 천 번 마다 기다리는 시간 +1
-  //      ex. 1011번째 - 2초, 2022번째 - 3초
-
-  // for ridi //
-  // . 요청하는 소설 수는 창 크기에 따라, 게시 형식(카드형/목록형)에 따라 다름
-  //    - 카드형일 때 창 width가 넓으면 1줄에 많은 소설이 게시됨 (최대 1줄 5작품)
-  //      목록형일 때 1줄에 소설 1개 게시
-  // . PageDown 키를 눌러 한 번에 여러 줄 요청(창 height에 따라 다름)
-  //    - 현재 화면에 보여야 하는 소설들이 요청됨.
-  //      End 키를 눌러 페이지 끝으로 이동할 경우 중간에 위치한 소설은 요청 안 됨
-  // . 타이밍 맞춰 PageDown을 차례로 하면 모든 소설 요청 가능
-  // . 요청 후 불러오는 첫 번째 소설에 기다리는 시간 증가
-
-  //   소설 요청 상세는 소설 플랫폼의 소설 목록 페이지에서 개발자 도구 - 네트워크 탭 참고
-
-  const novelNoPerRequest = novelPlatform === "카카오페이지" ? 24 : 5;
-
-  const waitingTimeForFirstNovel =
-    novelPlatform === "카카오페이지" ? 1000 * (Math.floor(currentNovelNo / 1000) + 1) : 2000;
-
-  const novelSelector =
-    novelPlatform === "카카오페이지"
-      ? `#__next > div > div > div > div > div > div > div > div > div > div > div:nth-child(${currentNovelNo}) > div > a`
-      : `#__next > main > div > section > ul > li:nth-child(${currentNovelNo}) > div > div > div > h3 > a`;
-
-  if (currentNovelNo % novelNoPerRequest === 1) {
-    waitingTime = waitingTimeForFirstNovel;
-  }
-
-  // 직전에 소설 노드 대기 시간 초과 후 페이지 다운 한 번 또는 두 번 했을 경우
-  //  waiting time 3배
-  if ([2, 3].includes(waitingNo)) {
-    waitingTime *= 3;
-  }
-
-  await page.waitForSelector(novelSelector, { timeout: waitingTime });
-}
-
-async function waitOrLoadNovel(
-  page: puppeteer.Page,
-  novelPlatform: NovelPlatform,
-  currentNovelNo: number,
-) {
-  const downKey = novelPlatform === "카카오페이지" ? "End" : "PageDown";
-
-  for (let waitingNo = 1; waitingNo < 4; waitingNo += 1) {
-    try {
-      // wait for loading current novel element
-      // and increase waiting time when reading a first novel
-      //    right after moving a page down and loading novels
-      await waitForCurrentNovel(page, novelPlatform, currentNovelNo, waitingNo);
-      break;
-    } catch {
-      // 소설 대기 세번째라면 실패로 간주
-      if (waitingNo === 3) {
-        throw Error("소설 노드 불러오기 실패");
-      }
-
-      // 최대 두 번 까지 소설 다시 요청(페이지 다운이 작동하지 않을 경우 고려해 두 번 까지)
-      // if timeout occurs when waitingNo is 1 or 2
-      //  move a page down by pressing an End key for kakape, Page Down key for ridi
-      //  and request next novel pack
-      // and wait for the node again
-      //
-      await page.keyboard.press(downKey, { delay: 100 });
-      continue; // 페이지 다운 후 다시 소설 노드 읽기 시도
-
-      // error case for kakape (이전 코드에서 발견. 지금은 참고만 하기)
-      // 새로운 소설을 요청 후 받아오기 전에 다시 같은 소설을 요청하는 작업을 반복될 때
-      //  -> 에러페이지로 이동
-      //  -> 설정한 시간(page.setDefaultTimeout(시간) or jest.setTimeout(시간)) 경과 후 스크래퍼 종료
-      //   : 무한스크롤 방식. 후반부로 갈수록 요청한 소설을 받아오는 데 시간이 걸려서 문제 발생
-      //  -> 같은 소설 묶음을 재요청할 때 waitingTime을 늘려 해결
-    }
-  }
-}
-
 async function getNovelUrlsForRidi(
   page: puppeteer.Page,
   novelPlatform: NovelPlatform,
@@ -192,16 +102,18 @@ async function getNovelUrlsForRidi(
         currentNovelNoInCurrentPage += 1
       ) {
         try {
-          await waitOrLoadNovel(page, novelPlatform, currentNovelNoInCurrentPage);
-
-          const novelUrl = await getNovelUrl(
+          const novelElement = await waitOrLoadNovel(
             page,
-            "new",
             novelPlatform,
             currentNovelNoInCurrentPage,
           );
+          if (!novelElement) {
+            throw Error("can't load novel node");
+          }
+
+          const novelUrl = await getNovelUrl(page, novelPlatform, novelElement);
           if (!novelUrl) {
-            throw Error("url 읽어오기 실패");
+            throw Error("can't get url from the node");
           }
 
           novelUrls.push(novelUrl);
@@ -307,8 +219,6 @@ async function getNovelUrlsForRidi(
   };
 }
 
-// for kakape //
-
 async function getNovelUrlsForKakape(
   page: puppeteer.Page,
   novelPlatform: NovelPlatform,
@@ -322,31 +232,31 @@ async function getNovelUrlsForKakape(
   while (currentNovelNo <= totalNovelNoToScrape) {
     console.log(`currentNovelNo: ${currentNovelNo}, totalNovelNoToScrape: ${totalNovelNoToScrape}`);
 
-    await waitOrLoadNovel(page, novelPlatform, currentNovelNo);
-
-    // read novel url from the novel node
     try {
-      const novelUrl = await getNovelUrl(page, "new", novelPlatform, currentNovelNo);
+      const novelElement = await waitOrLoadNovel(page, novelPlatform, currentNovelNo);
+      if (!novelElement) {
+        throw Error("can't load novel node");
+      }
+
+      // read novel url from the novel node
+      const novelUrl = await getNovelUrl(page, novelPlatform, novelElement);
       if (!novelUrl) {
-        throw Error("can't get url from node");
+        throw Error("can't get url from the node");
       }
 
       novelUrls.push(novelUrl);
 
       console.log("noveNO: ", currentNovelNo, " novelUrl: ", novelUrl);
     } catch (err) {
-      // failure case (추측) - selector의 a 태그에서 href 값을 읽어오지 못할 때
-      //  go getting next novel node
-      console.log(err, "error when reading url from href attribute in novel node");
+      console.log(err, "\n 현재 작품 노드 또는 url 읽기 실패");
     }
 
-    currentNovelNo += 1; // 작품 번호 +1
+    currentNovelNo += 1; // 다음 작품 노드 읽으러 가기
   }
 
   return novelUrls;
 }
 
-// for series //
 async function getNovelUrlsForSeries(
   page: puppeteer.Page,
   novelPlatform: NovelPlatform,
@@ -376,14 +286,29 @@ async function getNovelUrlsForSeries(
 
     // 페이지 내 소설들의 url 읽어오기 (페이지 당 소설 수 25)
     for (let currentNovelNoOfPage = 1; currentNovelNoOfPage < 26; currentNovelNoOfPage += 1) {
-      // 마지막페이지일 때 마지막 페이지의 작품 수 만큼 읽기
-      if (currentPageNo === totalPageNo && novelNoOfLastPage < currentNovelNoOfPage) break;
+      try {
+        // 마지막페이지일 때 마지막 페이지의 작품 수 만큼 읽기
+        if (currentPageNo === totalPageNo && novelNoOfLastPage < currentNovelNoOfPage) break;
 
-      const novelUrl = await getNovelUrl(page, "new", novelPlatform, currentNovelNoOfPage);
-      if (!novelUrl) return;
+        const novelElement = await waitForNovel(page, "new", novelPlatform, currentNovelNoOfPage);
+        if (!novelElement) {
+          throw Error("can't load novel node");
+        }
 
-      console.log("novelUrl:", novelUrl);
-      novelUrls.push(novelUrl);
+        const novelUrl = await getNovelUrl(page, novelPlatform, novelElement);
+        if (!novelUrl) {
+          throw Error("can't get url from the node");
+        }
+
+        novelUrls.push(novelUrl);
+
+        console.log(
+          `novelNo: ${currentNovelNoOfPage}/25 novelUrl: ${novelUrl} currentPageNo: ${currentPageNo} totalPageNo: ${totalPageNo}`,
+        );
+      } catch (err: any) {
+        console.log(err, "\n  현재 작품 노드 또는 url 읽기 실패");
+        continue; // 다음 소설 읽으러 가기
+      }
     }
 
     // 다음 페이지 이동
@@ -401,6 +326,8 @@ async function getNovelUrlsForSeries(
 }
 
 // scraper for new novels //
+// note. 시리즈는 목록 페이지 이동 시 한 번에 모든 소설을 요청
+//       카카페, 리디는 목록페이지에서 페이지를 내려야 소설 세트 요청 가능
 export default async function newScraper(
   novelPlatform: NovelPlatform,
   genreNo: number | number[], // only ridi gets multiple genres from this
@@ -443,11 +370,12 @@ export default async function newScraper(
     const context = await browser.createIncognitoBrowserContext(); // 시크릿창 열기
     const page = await context.newPage();
 
-    await page.setViewport({ width: 1800, height: novelPlatform === "리디북스" ? 5800 : 970 });
+    await page.setViewport({ width: 1840, height: novelPlatform === "리디북스" ? 5800 : 970 });
     // for ridi : viewport height를 플랫폼의 document height에 가깝게 설정
     //   -> 한 페이지에 있는 소설을 한 번에 불러올 수 있음(여러 번 나눠 요청X)
     // for kakape : viewport height를 window height 가깝게 설정
     //   -> 한 번에 25개씩 정해진 양을 불러옴. height 길 필요 없음
+    // for series : 목록 페이지의 모든 소설을 한 번에 요청함. 페이지 다운을 위해 height 조정할 필요 없음
 
     // (X) { width: 0, height: 0 }
     //    -> it doesn't always work to maximize the viewport in incognito window
