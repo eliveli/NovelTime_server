@@ -82,9 +82,8 @@ async function waitForCurrentNovel(
 
   // for ridi //
   // . 요청하는 소설 수는 창 크기에 따라, 게시 형식(카드형/목록형)에 따라 다름
-  //    - 카드형일 때 창 width가 넓으면 1줄에 많은 소설이 게시됨
+  //    - 카드형일 때 창 width가 넓으면 1줄에 많은 소설이 게시됨 (최대 1줄 5작품)
   //      목록형일 때 1줄에 소설 1개 게시
-  //    - 1줄에 소설 5개가 게시된다면 그만큼 요청
   // . PageDown 키를 눌러 한 번에 여러 줄 요청(창 height에 따라 다름)
   //    - 현재 화면에 보여야 하는 소설들이 요청됨.
   //      End 키를 눌러 페이지 끝으로 이동할 경우 중간에 위치한 소설은 요청 안 됨
@@ -107,9 +106,9 @@ async function waitForCurrentNovel(
     waitingTime = waitingTimeForFirstNovel;
   }
 
-  // 직전에 소설 노드 대기 시간 초과 후 페이지 다운 한 번 했을 경우
+  // 직전에 소설 노드 대기 시간 초과 후 페이지 다운 한 번 또는 두 번 했을 경우
   //  waiting time 3배
-  if (waitingNo === 2) {
+  if ([2, 3].includes(waitingNo)) {
     waitingTime *= 3;
   }
 
@@ -123,7 +122,7 @@ async function waitOrLoadNovel(
 ) {
   const downKey = novelPlatform === "카카오페이지" ? "End" : "PageDown";
 
-  for (let waitingNo = 1; waitingNo < 3; waitingNo += 1) {
+  for (let waitingNo = 1; waitingNo < 4; waitingNo += 1) {
     try {
       // wait for loading current novel element
       // and increase waiting time when reading a first novel
@@ -131,7 +130,13 @@ async function waitOrLoadNovel(
       await waitForCurrentNovel(page, novelPlatform, currentNovelNo, waitingNo);
       break;
     } catch {
-      // if timeout occurs,
+      // 소설 대기 세번째라면 실패로 간주
+      if (waitingNo === 3) {
+        throw Error("소설 노드 불러오기 실패");
+      }
+
+      // 최대 두 번 까지 소설 다시 요청(페이지 다운이 작동하지 않을 경우 고려해 두 번 까지)
+      // if timeout occurs when waitingNo is 1 or 2
       //  move a page down by pressing an End key for kakape, Page Down key for ridi
       //  and request next novel pack
       // and wait for the node again
@@ -195,7 +200,9 @@ async function getNovelUrlsForRidi(
             novelPlatform,
             currentNovelNoInCurrentPage,
           );
-          if (!novelUrl) return;
+          if (!novelUrl) {
+            throw Error("url 읽어오기 실패");
+          }
 
           novelUrls.push(novelUrl);
 
@@ -244,7 +251,10 @@ async function getNovelUrlsForRidi(
             err.message === "설정한 만큼 스크랩 완료" ||
             (isLastPage && currentNovelNoInCurrentPage > totalNovelNoInCurrentPage)
           ) {
-            console.log(err, "읽어올 작품이 더 없다고 가정, 현재 장르 조회 완료");
+            console.log(
+              err,
+              "\n  현재 장르 조회 완료 : 설정한 만큼 스크랩 완료 또는 읽어올 작품이 더 없음",
+            );
 
             // 플랫폼 내 현재 장르의 페이지 수를 리스트에 추가 //
             if (currentNovelNoInCurrentPage !== 1 || totalNovelNoToScrape === 1) {
@@ -275,7 +285,8 @@ async function getNovelUrlsForRidi(
           }
 
           // 2. 현재 장르의 다음 소설 조회
-          //    1의 조건문을 만족하지 않으면서 소설 읽기 실패 시
+          //    1의 조건문을 만족하지 않으면서 소설 노드 읽기 실패 시
+          console.log(err, "\n  현재 작품 노드 또는 url 읽기 실패");
           continue;
         }
       }
@@ -432,7 +443,15 @@ export default async function newScraper(
     const context = await browser.createIncognitoBrowserContext(); // 시크릿창 열기
     const page = await context.newPage();
 
-    await page.setViewport({ width: 0, height: 0 }); // to maximize the viewport in incognito window
+    await page.setViewport({ width: 1800, height: novelPlatform === "리디북스" ? 5800 : 970 });
+    // for ridi : viewport height를 플랫폼의 document height에 가깝게 설정
+    //   -> 한 페이지에 있는 소설을 한 번에 불러올 수 있음(여러 번 나눠 요청X)
+    // for kakape : viewport height를 window height 가깝게 설정
+    //   -> 한 번에 25개씩 정해진 양을 불러옴. height 길 필요 없음
+
+    // (X) { width: 0, height: 0 }
+    //    -> it doesn't always work to maximize the viewport in incognito window
+    //         especially headless option is true, it doesn't work
 
     page.setDefaultTimeout(30000);
 
