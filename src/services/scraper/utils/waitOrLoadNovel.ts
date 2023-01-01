@@ -1,20 +1,6 @@
 import puppeteer from "puppeteer";
 import seeNovelListWithCardForRidi from "./seeNovelListWithCardForRidi";
-import { NovelPlatform, ScraperType } from "./types";
-
-async function loadElementsForRidi(page: puppeteer.Page) {
-  await seeNovelListWithCardForRidi(page);
-
-  // wait for loading first novel element
-  await page.waitForSelector(
-    "#__next > main > div > section > ul.fig-1o0lea8 > li:nth-child(1) > div > div.fig-7p4nhu > a",
-  );
-
-  // load novel elements as scrolling down
-  for (let i = 1; i < 7; i += 1) {
-    await page.keyboard.press("PageDown", { delay: 200 });
-  }
-}
+import { NovelPlatform } from "./types";
 
 function getNovelSelector(novelPlatform: NovelPlatform, novelNO: number) {
   if (novelPlatform === "카카오페이지") {
@@ -42,7 +28,10 @@ export async function waitForNovel(
 
   if (novelPlatform === "리디북스") {
     if (currentNovelNo === 1) {
-      await loadElementsForRidi(page);
+      await seeNovelListWithCardForRidi(page);
+      // 카드형으로 보기 & 스크래퍼 viewport 설정
+      // -> 위클리 소설 20개 한 번에 불러오기
+      //   (페이지 다운해 소설 추가 요청할 필요 없음)
     }
   }
 

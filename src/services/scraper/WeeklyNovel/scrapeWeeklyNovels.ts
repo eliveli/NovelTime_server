@@ -11,10 +11,13 @@ import goToNovelListPage from "../utils/goToNovelListPage";
 export default async function weeklyScraper(novelPlatform: NovelPlatform) {
   const browser = await puppeteer.launch({
     headless: false, // 브라우저 화면 열려면 false
-    args: minimalArgs,
+    args: [...minimalArgs, "--start-maximized"],
   });
 
   const page = await browser.newPage();
+  await page.setViewport({ width: 1840, height: novelPlatform === "리디북스" ? 1700 : 970 });
+  // 리디북스 viewport width & height 설정
+  //  -> 한 번에 20개 소설 요청하기 위함. 페이지 내려 소설 요청X
 
   page.setDefaultTimeout(500000); // set timeout globally
 
