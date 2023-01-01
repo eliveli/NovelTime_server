@@ -9,7 +9,7 @@ export default async function getNovelUrls(page: puppeteer.Page, novelPlatform: 
 
   while (bestNo < 21) {
     try {
-      const novelElement = await waitForNovel(page, "weekly", novelPlatform, bestNo);
+      const novelElement = await waitForNovel(page, novelPlatform, bestNo);
       if (!novelElement) {
         throw Error("can't load novel node");
       }

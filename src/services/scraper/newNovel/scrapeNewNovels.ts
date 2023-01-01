@@ -173,11 +173,9 @@ async function getNovelUrlsForRidi(
               // 페이지의 소설 몇 개를 읽고 catch문 실행 시 또는 스크랩할 소설 수가 1일 때
               //   현재 페이지를 마지막 페이지로 간주
               totalPageNoListForRidi.push(currentPageNo);
-            }
-
-            // 페이지의 첫 번째 소설도 읽지 못하고 catch문 실행 시
-            //     직전 페이지를 마지막 페이지로 간주
-            else if (currentNovelNoInCurrentPage === 1) {
+            } else if (currentNovelNoInCurrentPage === 1) {
+              // 페이지의 첫 번째 소설도 읽지 못하고 catch문 실행 시
+              //     직전 페이지를 마지막 페이지로 간주
               totalPageNoListForRidi.push(currentPageNo - 1);
             }
 
@@ -290,7 +288,7 @@ async function getNovelUrlsForSeries(
         // 마지막페이지일 때 마지막 페이지의 작품 수 만큼 읽기
         if (currentPageNo === totalPageNo && novelNoOfLastPage < currentNovelNoOfPage) break;
 
-        const novelElement = await waitForNovel(page, "new", novelPlatform, currentNovelNoOfPage);
+        const novelElement = await waitForNovel(page, novelPlatform, currentNovelNoOfPage);
         if (!novelElement) {
           throw Error("can't load novel node");
         }
