@@ -216,13 +216,17 @@ async function getNovelUrlsForRidi(
 
           // (유의) 리디에서는 마지막 페이지 이상의 수는 마지막 페이지로 인식 (url로 목록 페이지 조회 시)
           // -> 목록 페이지 하단의 페이지 번호 엘리먼트를 읽어 마지막 페이지 여부 파악
-          const lastPageNoElement = await page.waitForSelector(
+          //    : 페이지 번호 엘리먼트는 현재 페이지 번호를 포함해 최대 5개 나타남.
+          //        현재 장르의 총 페이지 수가 5개 미만인 경우에만 5개 미만이고 그 외에는 항상 5개.
+          //      이 때 현재 페이지가 마지막 페이지라면 나열된 페이지번호 엘리먼트 중 마지막 차례에 표시됨
+          //      -> 아래 isLastPage 값이 true일 때
+          const lastPageNoElementIn5 = await page.waitForSelector(
             "#__next > main > div > section > div:nth-child(6) > div > ul > li:last-child > a",
           );
           const isLastPage = (await page.evaluate(
             (element, pageNo) => element.innerText.includes(String(pageNo)),
 
-            lastPageNoElement,
+            lastPageNoElementIn5,
             currentPageNo,
           )) as boolean;
 
