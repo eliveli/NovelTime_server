@@ -52,8 +52,8 @@ async function waitForCurrentNovel(
   //    (End 키를 눌러 요청 - see the waitOrLoadNovel function)
   // . 기다리는 시간 증가 cases
   //   : 요청 후 불러오는 첫번째 소설
-  //   : 소설 단위 천 번 마다 기다리는 시간 +1
-  //      ex. 1011번째 - 2초, 2022번째 - 3초
+  //   : 소설 200번째 마다 기다리는 시간 +1
+  //      ex. 101번째 - 1초, 202번째 - 2초
 
   // for ridi //
   // <중요>
@@ -75,17 +75,17 @@ async function waitForCurrentNovel(
 
   //   소설 요청 상세는 소설 플랫폼의 소설 목록 페이지에서 개발자 도구 - 네트워크 탭 참고
 
-  const novelNoPerRequest = novelPlatform === "카카오페이지" ? 24 : 5;
+  const totalQuantityOfNovelsInOneRequest = novelPlatform === "카카오페이지" ? 24 : 5;
 
   const waitingTimeForFirstNovel =
-    novelPlatform === "카카오페이지" ? 1000 * (Math.floor(currentNovelNo / 1000) + 1) : 2000;
+    novelPlatform === "카카오페이지" ? 1000 * (Math.floor(currentNovelNo / 200) + 1) : 2000;
 
   const novelSelector =
     novelPlatform === "카카오페이지"
       ? `#__next > div > div > div > div > div > div > div > div > div > div > div:nth-child(${currentNovelNo}) > div > a`
       : `#__next > main > div > section > ul > li:nth-child(${currentNovelNo}) > div > div > div > h3 > a`;
 
-  if (currentNovelNo % novelNoPerRequest === 1) {
+  if (currentNovelNo % totalQuantityOfNovelsInOneRequest === 1) {
     waitingTime = waitingTimeForFirstNovel;
   }
 
@@ -105,13 +105,28 @@ export async function waitOrLoadNovel(
 ) {
   const downKey = novelPlatform === "카카오페이지" ? "End" : "PageDown";
 
+  // 변경 사항
+  // (기존) 소설 노드를 못 읽으면 페이지 내려 소설 요청
+  // (변경) 먼저 요청하고 못 읽으면 재요청하기
+  //      . 카카페는 소설 묶음 단위인 24개 기준으로 페이지 다운 시점 설정 (조건문, % 등 활용)
+  //      . 가장 처음에는 요청하지 않기
+  //      . 간혹 페이지다운이 작동하지 않을 수 있으니 이전 코드와 같이 페이지다운 두 번 까지 허용
+  // (기대 효과) 실행 시간 줄임
+
   for (let waitingNo = 1; waitingNo < 4; waitingNo += 1) {
     try {
+      if (
+        novelPlatform === "카카오페이지" &&
+        currentNovelNo !== 1 &&
+        currentNovelNo % 24 === 1 &&
+        waitingNo === 1
+      ) {
+        throw Error("대기 없이 소설 요청");
+      }
       // wait for loading current novel element
       // and increase waiting time when reading a first novel
       //    right after moving a page down and loading novels
       return await waitForCurrentNovel(page, novelPlatform, currentNovelNo, waitingNo);
-      //   break;
     } catch {
       // 최대 두 번 까지 소설 다시 요청(페이지 다운이 작동하지 않을 경우 고려한 것)
       // if timeout occurs when waitingNo is 1 or 2
@@ -119,8 +134,10 @@ export async function waitOrLoadNovel(
       //  and request next novel pack
       // and wait for the node again
 
+      console.log("waitingNo:", waitingNo);
+
       if (waitingNo === 3) return;
-      //
+
       await page.keyboard.press(downKey, { delay: 100 });
       continue; // 페이지 다운 후 다시 소설 노드 읽기 시도
 
