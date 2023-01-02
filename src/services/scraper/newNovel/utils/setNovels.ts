@@ -51,7 +51,10 @@ export default async function setNovels(
 
       if (novelNo % 100 === 0) break; // 작품 100번째 마다 loop 탈출. for 시크릿창 여닫기
     } catch (err: any) {
-      console.log(err, `\n 현재작품: ${novelNo}, 마지막작품: ${totalNovelNo}`);
+      console.log(
+        err,
+        `\n 현재작품: ${novelNo}, 마지막작품: ${totalNovelNo}, novelUrl: ${novelUrls[novelNo - 1]}`,
+      );
       // 에러 발생 시 해당 작품은 통과. 시크릿창 여닫으며 다음 작품으로 넘어감
       novelNo += 1; // 작품 번호 +1
 

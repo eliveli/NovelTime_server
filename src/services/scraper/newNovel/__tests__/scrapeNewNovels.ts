@@ -17,18 +17,23 @@ jest.setTimeout(60000000);
 //  - 실행 중 인풋 넣지 않기(마우스, 키보드 등)
 //    : 현재 작업을 방해할 수 있음
 //  - <중요> 해당 플랫폼에서 설렉터 변경 여부 확인, 코드의 설렉터 변경 <중요>
+//
+// [상황]
+//  - 스크래퍼 장시간 실행시키고 자리비울 때 컴퓨터가 절전 모드 진입, 스크래퍼 중단
+// [대처]
+//  - 자동절전모드 시간 조정 또는 해제
 
-it("run a new scraper for a certain amount of novels for series :", async () => {
-  await newScraper("네이버 시리즈", genreFilter.series.F, 1);
-});
+// it("run a new scraper for a certain amount of novels for series :", async () => {
+//   await newScraper("네이버 시리즈", genreFilter.series.F);
+// });
 
 // it("run a new scraper for a certain amount of novels for ridi:", async () => {
-//   await newScraper("리디북스", genreFilter.ridi.F1, 1);
+//   await newScraper("리디북스", genreFilter.ridi.RF);
 // });
 
-// it("run a new scraper for a certain amount of novels for kakape :", async () => {
-//   await newScraper("카카오페이지", genreFilter.kakape.RF, 1);
-// });
+it("run a new scraper for a certain amount of novels for kakape :", async () => {
+  await newScraper("카카오페이지", genreFilter.kakape.RF);
+});
 
 // it("test setNovels :", async () => {
 //   const novelNoAndPageNo = {
