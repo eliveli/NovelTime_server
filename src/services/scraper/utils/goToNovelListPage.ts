@@ -63,5 +63,5 @@ export default async function goToNovelListPage(
   const listPage = getNovelListPage(scraperType, novelPlatform, urlParams);
   if (!listPage) return;
 
-  await page.goto(listPage, { waitUntil: "networkidle0" });
+  await page.goto(listPage, { waitUntil: "domcontentloaded" });
 }

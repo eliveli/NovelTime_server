@@ -363,7 +363,7 @@ export default async function newScraper(
   const totalPageNoListForRidi = [] as number[]; // for ridi
 
   const browser = await puppeteer.launch({
-    // headless: false, // 브라우저 화면 열려면 false
+    headless: false, // 브라우저 화면 열려면 false
     args: [...minimalArgs, "--start-maximized"],
     // "--start-maximized" to maximize the browser
     //  : in my case "--start-fullscreen" arg is not good
@@ -478,10 +478,12 @@ export default async function newScraper(
     if (isGenreLoopEnd) {
       if (novelUrls.length === 0) return;
 
-      await goToNovelListPage(page, "new", novelPlatform, {
-        genreNo: typeof genreNo === "number" ? genreNo : genreNo[0],
-        currentPageNo: 1,
-      });
+      if (currentNoToGetNovel !== 1) {
+        await goToNovelListPage(page, "new", novelPlatform, {
+          genreNo: typeof genreNo === "number" ? genreNo : genreNo[0],
+          currentPageNo: 1,
+        });
+      }
 
       await login(page, novelPlatform);
 

@@ -26,14 +26,14 @@ async function waitAndClickLoginBtn(page: puppeteer.Page, novelPlatform: NovelPl
     return newPage;
   }
   if (novelPlatform === "네이버 시리즈") {
-    const loginBtn = await page.waitForSelector("#gnb_login_button"); // wait object load
+    // following three lines are necessary to click the login element exactly
+    const loginSelector = "#gnb_login_button";
 
-    // loginBtn null error handling
-    if (!loginBtn) {
-      throw new Error("login 버튼 null 에러");
-    }
+    await page.waitForSelector(loginSelector, { timeout: 10000 });
+    // "timeout" option is necessary before clicking
 
-    await page.click("#gnb_login_button"); // click and go to the login page in a current tab/window
+    await page.evaluate((selector) => document.querySelector(selector).click(), loginSelector);
+    // "page.click(selector)" doesn't always work for series
   }
   if (novelPlatform === "리디북스") {
     const loginBtn = await page.waitForSelector(
