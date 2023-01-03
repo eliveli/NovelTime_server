@@ -485,8 +485,16 @@ export default async function newScraper(
         });
       }
 
-      await login(page, novelPlatform);
+      // to pass age limitation when getting novel
+      // - actually it works only for kakape where novel for age 15 needs login
+      // - I don't need novel for age 19 which needs login for all platforms
+      //    for series, login doesn't always work. and I won't login for it
+      if (novelPlatform !== "네이버 시리즈") {
+        await login(page, novelPlatform);
+      }
 
+      // if a novel needs login because of age limitation but I didn't login previously,
+      // the novel won't be scraped and I will go to the next novel in the scrape process
       currentNoToGetNovel = await setNovels(
         page,
         {

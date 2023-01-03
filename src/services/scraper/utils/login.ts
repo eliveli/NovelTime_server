@@ -26,6 +26,9 @@ async function waitAndClickLoginBtn(page: puppeteer.Page, novelPlatform: NovelPl
     return newPage;
   }
   if (novelPlatform === "네이버 시리즈") {
+    // following login process doesn't always work //
+    // I won't use this when scraper runs before they are necessary
+    //
     // following three lines are necessary to click the login element exactly
     const loginSelector = "#gnb_login_button";
 
@@ -164,7 +167,8 @@ async function waitForProfileIconAfterLogin(page: puppeteer.Page, novelPlatform:
   }
 }
 
-// login for passing 15 age limitation
+// login to pass age limitation
+//  :  age 15 for kakape, 19 for all platforms
 export default async function login(page: puppeteer.Page, novelPlatform: NovelPlatform) {
   if (novelPlatform === "카카오페이지") {
     // await page.goto(novelListUrl, { waitUntil: "load", timeout: 500000 });
