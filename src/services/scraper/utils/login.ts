@@ -32,7 +32,10 @@ async function waitAndClickLoginBtn(page: puppeteer.Page, novelPlatform: NovelPl
     await page.waitForSelector(loginSelector, { timeout: 10000 });
     // "timeout" option is necessary before clicking
 
-    await page.evaluate((selector) => document.querySelector(selector).click(), loginSelector);
+    await page.evaluate(
+      async (selector) => await document.querySelector(selector).click(),
+      loginSelector,
+    ); // inner async and await are required
     // "page.click(selector)" doesn't always work for series
   }
   if (novelPlatform === "리디북스") {
