@@ -55,7 +55,13 @@ async function waitAndClickLoginBtn(page: puppeteer.Page, novelPlatform: NovelPl
       "#__next > div.fig-16izi9a > div.fig-fs8jml > div > ul.fig-1aswo17 > li:nth-child(2) > a",
     ); // click and go to the login page in a current tab/window
   }
+  if (novelPlatform === "조아라") {
+    const loginSelector = "#root > div > div.gnb > div.pc-util-nav > ul > li:nth-child(1) > a";
+    await page.waitForSelector(loginSelector);
+    await page.click(loginSelector);
+  }
 }
+
 async function typeLoginInfo(page: puppeteer.Page, novelPlatform: NovelPlatform) {
   if (novelPlatform === "카카오페이지") {
     let kakaoID: string;
@@ -144,6 +150,39 @@ async function typeLoginInfo(page: puppeteer.Page, novelPlatform: NovelPlatform)
       delay: 100,
     });
   }
+
+  if (novelPlatform === "조아라") {
+    let joaraID: string;
+    let joaraPW: string;
+
+    // handle undefined env variable
+    if (process.env.JOARA_ID) {
+      joaraID = process.env.JOARA_ID;
+    } else {
+      throw new Error("JOARA_ID env was not set");
+    }
+    if (process.env.JOARA_PW) {
+      joaraPW = process.env.JOARA_PW;
+    } else {
+      throw new Error("JOARA_PW env was not set");
+    }
+
+    const idSelector = "#root > div > div > div > div.input-group > input[type=text]:nth-child(1)";
+    const pwSelector =
+      "#root > div > div > div > div.input-group > input[type=password]:nth-child(2)";
+
+    await page.waitForSelector(idSelector, {
+      timeout: 50000,
+    });
+    await page.type(idSelector, joaraID, {
+      delay: 100,
+    });
+
+    await page.waitForSelector(pwSelector);
+    await page.type(pwSelector, joaraPW, {
+      delay: 100,
+    });
+  }
 }
 
 const selectorProfileIcon = {
@@ -153,6 +192,8 @@ const selectorProfileIcon = {
   // this is not profile icon. because I can't perceive whether I logged in or not by that
   //  this icon show the word "캐시충전"
   ridi: "#__next > div.fig-16izi9a > div.fig-fs8jml > div > ul.fig-1aswo17 > li > a > span",
+
+  joara: "#root > div > div.gnb > div.pc-util-nav > ul > li:nth-child(1) > a",
 };
 // this is necessary to wait for element to load to read
 async function waitForProfileIconAfterLogin(page: puppeteer.Page, novelPlatform: NovelPlatform) {
@@ -164,6 +205,9 @@ async function waitForProfileIconAfterLogin(page: puppeteer.Page, novelPlatform:
   }
   if (novelPlatform === "리디북스") {
     await page.waitForSelector(selectorProfileIcon.ridi);
+  }
+  if (novelPlatform === "조아라") {
+    await page.waitForSelector(selectorProfileIcon.joara);
   }
 }
 
@@ -215,6 +259,16 @@ export default async function login(page: puppeteer.Page, novelPlatform: NovelPl
     await page.click("#__next > div > section > div > form > div > input"); // 로그인상태유지
 
     await page.click("#__next > div > section > div > form > button"); // click login button
+
+    await waitForProfileIconAfterLogin(page, novelPlatform);
+  }
+
+  if (novelPlatform === "조아라") {
+    await waitAndClickLoginBtn(page, novelPlatform);
+
+    await typeLoginInfo(page, novelPlatform);
+
+    await page.click("#root > div > div > div > button"); // click login button
 
     await waitForProfileIconAfterLogin(page, novelPlatform);
   }

@@ -23,4 +23,8 @@ export default async function getNovelUrl(
     const partialNovelUrlCut = partialNovelUrl.slice(0, partialNovelUrl.indexOf("?")); // url : "?" 부터 문자 제외
     return `ridibooks.com${partialNovelUrlCut}`;
   }
+
+  if (novelPlatform === "조아라") {
+    return `joara.com${partialNovelUrl}`;
+  }
 }

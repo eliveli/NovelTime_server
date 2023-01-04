@@ -93,6 +93,29 @@ const selectorsOfNovelPage = {
     isEnd:
       "#page_detail > div.detail_wrap > div.detail_body_wrap > section > article.detail_header.trackable > div.header_info_wrap > div:nth-child(4) > p.metadata.metadata_info_series_complete_wrap > span.metadata_item.not_complete",
   },
+  joara: {
+    img: "#root > div > div.subpage-container.work-detail > div.content-info.pc-content-info > div.pc-info-mid > div.cover-col > img",
+
+    title:
+      "#root > div > div.subpage-container.work-detail > div.content-info.pc-content-info > div.pc-info-top > div.title-wrap > div.title-col",
+
+    keywords:
+      "#root > div > div.subpage-container.work-detail > div.content-info.pc-content-info > div.pc-info-bottom > div > div.content-col.keyword",
+    desc: "#root > div > div.subpage-container.work-detail > div.content-info.pc-content-info > div.pc-info-mid > div.intro-col",
+
+    iconForAge19:
+      "#root > div > div.subpage-container.work-detail > div.content-info.pc-content-info > div.pc-info-mid > div.cover-col > img.ic-adult",
+
+    author:
+      "#root > div > div.subpage-container.work-detail > div.content-info.pc-content-info > div.pc-info-top > div.writer > div",
+
+    genre:
+      "#root > div > div.subpage-container.work-detail > div.content-info.pc-content-info > div.pc-info-top > div.category > span:nth-child(1)",
+
+    iconsIncludingEnd:
+      "#root > div > div.subpage-container.work-detail > div.content-info.pc-content-info > div.pc-info-top > div.icon-tag > img",
+    endIcon: "https://cf.joara.com/book_icon/mobile_pc_icon_v2_e.png",
+  },
 };
 
 async function getInfo(
@@ -101,24 +124,28 @@ async function getInfo(
   instruction: "attr" | "html" | undefined = undefined,
   attributeName = "",
 ) {
-  const infoElement = await page.waitForSelector(selector);
-  const info: string = await page.evaluate(
-    (element, instr, attrName) => {
-      if (instr === "attr") {
-        return element.getAttribute(attrName);
-      }
+  try {
+    const infoElement = await page.waitForSelector(selector);
+    const info: string = await page.evaluate(
+      (element, instr, attrName) => {
+        if (instr === "attr") {
+          return element.getAttribute(attrName);
+        }
 
-      if (instr === "html") {
-        return element.innerHTML;
-      }
+        if (instr === "html") {
+          return element.innerHTML;
+        }
 
-      return element.innerText;
-    },
-    infoElement,
-    instruction as SerializableOrJSHandle,
-    attributeName as SerializableOrJSHandle,
-  );
-  return info;
+        return element.innerText;
+      },
+      infoElement,
+      instruction as SerializableOrJSHandle,
+      attributeName as SerializableOrJSHandle,
+    );
+    return info;
+  } catch (err: any) {
+    return undefined; // for when there is no certain node
+  }
 }
 
 async function getImg(page: puppeteer.Page, novelPlatform: NovelPlatform) {
@@ -131,6 +158,9 @@ async function getImg(page: puppeteer.Page, novelPlatform: NovelPlatform) {
   if (novelPlatform === "리디북스") {
     return await getInfo(page, selectorsOfNovelPage.ridi.img, "attr", "src");
   }
+  if (novelPlatform === "조아라") {
+    return await getInfo(page, selectorsOfNovelPage.joara.img, "attr", "src");
+  }
 }
 
 async function getTitle(
@@ -138,9 +168,6 @@ async function getTitle(
   novelPlatform: NovelPlatform,
   selectorOfTitle: string,
 ) {
-  if (novelPlatform === "카카오페이지") {
-    return await getInfo(page, selectorOfTitle);
-  }
   if (novelPlatform === "네이버 시리즈") {
     // 제목 앞에 추가정보(from some icon) 붙은 경우 제외하고 가져오기
     const titleElement = await page.waitForSelector(selectorOfTitle, { timeout: 5000 });
@@ -156,10 +183,9 @@ async function getTitle(
       return element.innerText;
     }, titleElement)) as string;
   }
-  if (novelPlatform === "리디북스") {
-    return await getInfo(page, selectorOfTitle);
-  }
+  return await getInfo(page, selectorOfTitle);
 }
+
 async function getDescFromPageForRidi(page: puppeteer.Page) {
   const descElement = await page.waitForSelector(
     "article.detail_box_module.detail_introduce_book #introduce_book > p",
@@ -233,6 +259,15 @@ async function getKeywordsForRidi(page: puppeteer.Page) {
   });
 }
 
+async function getKeywordsForJoara(page: puppeteer.Page) {
+  const keywordsFromPage = await getInfo(page, selectorsOfNovelPage.joara.keywords);
+  if (!keywordsFromPage) return;
+
+  const keywords = `#${keywordsFromPage.replace(/\n/g, " #")}`;
+
+  return keywords;
+}
+
 async function getDesc(page: puppeteer.Page, novelPlatform: NovelPlatform) {
   if (novelPlatform === "카카오페이지") {
     return await getInfo(page, selectorsOfNovelPage.kakape.desc, "html");
@@ -258,6 +293,7 @@ async function getDesc(page: puppeteer.Page, novelPlatform: NovelPlatform) {
       selectorsOfNovelPage.series.desc.child2,
       "html",
     );
+    if (!descriptionWithOtherTag) return;
 
     const startIndexOfOtherTag = descriptionWithOtherTag.indexOf("<span");
 
@@ -300,6 +336,20 @@ async function getDesc(page: puppeteer.Page, novelPlatform: NovelPlatform) {
     // set desc with keywords
     return `${keywords}\n\n${desc}`;
   }
+
+  if (novelPlatform === "조아라") {
+    const desc = await getInfo(page, selectorsOfNovelPage.joara.desc, "html");
+    if (!desc) return;
+
+    // when desc includes keywords
+    if (desc.includes("#") || desc.includes("[") || desc.includes("키워드")) return desc;
+
+    const keywords = await getKeywordsForJoara(page);
+
+    if (!keywords) return desc;
+
+    return `${keywords}\n\n${desc}`;
+  }
 }
 
 async function getAge(page: puppeteer.Page, novelPlatform: NovelPlatform) {
@@ -311,10 +361,18 @@ async function getAge(page: puppeteer.Page, novelPlatform: NovelPlatform) {
   }
   if (novelPlatform === "리디북스") {
     const notification = await getInfo(page, selectorsOfNovelPage.ridi.age);
+    if (!notification) return;
 
     if (notification.includes("15세")) return "15세 이용가";
     if (notification.includes("12세")) return "12세 이용가";
     return "전체 이용가";
+  }
+  if (novelPlatform === "조아라") {
+    const adultElement = await page.evaluate(
+      (element) => document.querySelector(element),
+      selectorsOfNovelPage.joara.iconForAge19, // 표지 위 19금 아이콘
+    );
+    return adultElement !== null ? "청소년 이용불가" : "전체 이용가";
   }
 }
 
@@ -328,7 +386,19 @@ function divideGenreForRidi(genre: string) {
     return "현판";
   }
   if (genre.includes("판타지")) return "판타지";
-  return "기타";
+  return `extra|${genre}`;
+}
+
+function divideGenreForJoara(genre: string) {
+  if (genre.includes("패러디")) return "패러디";
+  if (genre.includes("로판")) return "로판";
+  if (genre.includes("로맨스")) return "로맨스";
+  if (genre.includes("게임") || genre.includes("스포츠")) return "현판";
+  if (genre.includes("판타지") || genre.includes("퓨전") || genre.includes("역사")) return "판타지";
+  if (genre.includes("무협")) return "무협";
+  if (genre.includes("라이트노벨")) return "라이트노벨";
+  if (genre.includes("BL")) return "BL";
+  return `extra|${genre}`;
 }
 
 async function getGenre(page: puppeteer.Page, novelPlatform: NovelPlatform, isBL: boolean) {
@@ -343,7 +413,15 @@ async function getGenre(page: puppeteer.Page, novelPlatform: NovelPlatform, isBL
   }
   if (novelPlatform === "리디북스") {
     const genre = await getInfo(page, selectorsOfNovelPage.ridi.genre);
+    if (!genre) return;
+
     return divideGenreForRidi(genre);
+  }
+  if (novelPlatform === "조아라") {
+    const genre = await getInfo(page, selectorsOfNovelPage.joara.genre);
+    if (!genre) return;
+
+    return divideGenreForJoara(genre);
   }
 }
 
@@ -353,9 +431,29 @@ async function getGenre(page: puppeteer.Page, novelPlatform: NovelPlatform, isBL
 //       to do remove the following in the end of the img src when needed : "&filename=th3"
 //
 
+async function searchForEndIconForJoara(page: puppeteer.Page) {
+  return await page.evaluate(
+    (icons, endIcon) => {
+      const iconList = document.querySelectorAll(icons);
+      if (iconList === null) return false; // when there is no icon
+
+      for (let i = 0; i < iconList.length; i += 1) {
+        if (iconList[i].getAttribute("src") === endIcon) {
+          return true; // when there is an end icon
+        }
+      }
+      return false; // when there is not an end icon
+    },
+    selectorsOfNovelPage.joara.iconsIncludingEnd,
+    selectorsOfNovelPage.joara.endIcon,
+  );
+}
+
 async function getIsEnd(page: puppeteer.Page, novelPlatform: NovelPlatform) {
   if (novelPlatform === "카카오페이지") {
     const checkingEnd = await getInfo(page, selectorsOfNovelPage.kakape.isEnd);
+    if (!checkingEnd) return;
+
     if (checkingEnd.includes("완결")) {
       return true;
     }
@@ -364,6 +462,8 @@ async function getIsEnd(page: puppeteer.Page, novelPlatform: NovelPlatform) {
 
   if (novelPlatform === "네이버 시리즈") {
     const checkingEnd = await getInfo(page, selectorsOfNovelPage.series.isEnd);
+    if (!checkingEnd) return;
+
     if (checkingEnd.includes("완결")) {
       return true;
     }
@@ -376,6 +476,10 @@ async function getIsEnd(page: puppeteer.Page, novelPlatform: NovelPlatform) {
       return notEndElement === null;
     }, selectorsOfNovelPage.ridi.isEnd);
     return isEnd;
+  }
+
+  if (novelPlatform === "조아라") {
+    return await searchForEndIconForJoara(page);
   }
 }
 
@@ -470,6 +574,10 @@ function getSelectorsByPlatform(novelPlatform: NovelPlatform) {
     selectorOfTitle = selectorsOfNovelPage.ridi.title;
     selectorOfAuthor = selectorsOfNovelPage.ridi.author;
   }
+  if (novelPlatform === "조아라") {
+    selectorOfTitle = selectorsOfNovelPage.joara.title;
+    selectorOfAuthor = selectorsOfNovelPage.joara.author;
+  }
 
   return { selectorOfTitle, selectorOfAuthor };
 }
@@ -498,12 +606,12 @@ async function getSameNovelsAndSeveralInfo(
   if (!(selectorOfTitle && selectorOfAuthor)) return undefined;
 
   const novelTitleFromPage = await getTitle(page, novelPlatform, selectorOfTitle);
-
   if (!novelTitleFromPage) return;
 
   const novelTitleWithoutLabels = removeLabelsFromTitle(novelTitleFromPage);
 
   const novelAuthor = await getInfo(page, selectorOfAuthor);
+  if (!novelAuthor) return;
 
   // 라벨 뗀 문구가 포함된 제목으로 소설 검색
   // get novels that have titles including text without labels in them
@@ -660,7 +768,7 @@ export default async function addOrUpdateNovelInDB(
 ) {
   const sameNovelsAndInfo = await getSameNovelsAndSeveralInfo(page, novelUrl, novelPlatform);
 
-  if (!sameNovelsAndInfo) return undefined;
+  if (!sameNovelsAndInfo) return;
 
   const { sameNovelsInDB, severalNovelInfo } = sameNovelsAndInfo;
 

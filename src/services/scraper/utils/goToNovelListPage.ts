@@ -48,6 +48,9 @@ function getNovelListPage(
     if (novelPlatform === "리디북스") {
       return "https://ridibooks.com/category/bestsellers/6050?adult_exclude=y&page=1";
     }
+    if (novelPlatform === "조아라") {
+      return "https://www.joara.com/todaybest?best=weekly";
+    }
   }
 }
 

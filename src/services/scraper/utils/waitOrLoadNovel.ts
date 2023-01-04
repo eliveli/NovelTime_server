@@ -14,6 +14,10 @@ function getNovelSelector(novelPlatform: NovelPlatform, novelNO: number) {
   if (novelPlatform === "리디북스") {
     return `#__next > main > div > section > ul.fig-1o0lea8 > li:nth-child(${novelNO}) > div > div.fig-7p4nhu > a`;
   }
+
+  if (novelPlatform === "조아라") {
+    return `#root > div > div.subpage-container.double-tabs-list > ul > li:nth-child(${novelNO}) > div > div.detail > a:nth-child(2)`;
+  }
 }
 
 // for all platforms in weekly scraper
