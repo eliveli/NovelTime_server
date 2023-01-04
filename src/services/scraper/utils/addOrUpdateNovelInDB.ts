@@ -143,7 +143,10 @@ async function getTitle(
   }
   if (novelPlatform === "네이버 시리즈") {
     // 제목 앞에 추가정보(from some icon) 붙은 경우 제외하고 가져오기
-    const titleElement = await page.waitForSelector(selectorOfTitle);
+    const titleElement = await page.waitForSelector(selectorOfTitle, { timeout: 5000 });
+    // timeout 5초로 시간 절약
+    // : 비로그인 상태에서 19세 작품 페이지 조회 시 실패하므로
+    //   특히 네이버 시리즈 (로그인페이지 나옴)
 
     return (await page.evaluate((element) => {
       if (element.childNodes.length !== 1) {

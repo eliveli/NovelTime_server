@@ -41,7 +41,9 @@ export default async function setNovels(
     try {
       // 스크랩할 소설 수 보다 읽어온 url 수가 작을 때
       if (!novelUrls[novelNo - 1]) {
-        throw Error("읽을 url이 더 이상 없음");
+        console.log("읽을 url이 더 이상 없음");
+        novelNo = totalNovelNo + 1; // 스크래퍼 종료 조건
+        break;
       }
 
       const novelId = await addOrUpdateNovelInDB(page, novelUrls[novelNo - 1], novelPlatform);
@@ -55,13 +57,8 @@ export default async function setNovels(
         err,
         `\n 현재작품: ${novelNo}, 마지막작품: ${totalNovelNo}, novelUrl: ${novelUrls[novelNo - 1]}`,
       );
-      // 에러 발생 시 해당 작품은 통과. 시크릿창 여닫으며 다음 작품으로 넘어감
+      // 에러 발생 시 해당 작품은 통과. 계속해서 다음 작품 조회
       novelNo += 1; // 작품 번호 +1
-
-      if (err.message === "읽을 url이 더 이상 없음") {
-        novelNo = totalNovelNo + 1; // 스크래퍼 종료 조건
-      }
-      break;
     }
   }
 
