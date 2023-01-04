@@ -272,6 +272,17 @@ async function getNovelUrlsForKakape(
   return novelUrls;
 }
 
+async function skipNovelForAge19ForSeries(page: puppeteer.Page, currentNovelNo: number) {
+  const isForAge19 = await page.evaluate((novelNo: number) => {
+    const iconForAge19 = document.querySelector(
+      `#content > div > ul > li:nth-child(${String(novelNo)}) > div > h3 > em.ico.n19`,
+    );
+    return !!iconForAge19; // when the value is null return false
+  }, currentNovelNo);
+
+  if (isForAge19) throw Error("skip this novel for age 19");
+}
+
 async function getNovelUrlsForSeries(
   page: puppeteer.Page,
   novelPlatform: NovelPlatform,
@@ -309,6 +320,8 @@ async function getNovelUrlsForSeries(
         if (!novelElement) {
           throw Error("can't load novel node");
         }
+
+        await skipNovelForAge19ForSeries(page, currentNovelNoOfPage);
 
         const novelUrl = await getNovelUrl(page, novelPlatform, novelElement);
         if (!novelUrl) {
@@ -485,8 +498,8 @@ export default async function newScraper(
         });
       }
 
-      // to pass age limitation when getting novel
-      // - actually it works only for kakape where novel for age 15 needs login
+      // to skip age limitation when getting novel
+      // - actually login function is only for kakape where novel for age 15 needs login
       // - I don't need novel for age 19 which needs login for all platforms
       //    for series, login doesn't always work. and I won't login for it
       if (novelPlatform !== "네이버 시리즈") {
@@ -494,7 +507,9 @@ export default async function newScraper(
       }
 
       // if a novel needs login because of age limitation but I didn't login previously,
-      // the novel won't be scraped and I will go to the next novel in the scrape process
+      //    the novel won't be scraped and I will go to the next novel in the scrape process
+      // + I added code to skip novels for age 19 for series when getting novel urls above
+      //   so I can spend less time because I even won't visit novel pages for age 19 (for series)
       currentNoToGetNovel = await setNovels(
         page,
         {
