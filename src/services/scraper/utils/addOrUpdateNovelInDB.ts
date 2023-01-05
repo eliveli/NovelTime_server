@@ -56,7 +56,6 @@ const selectorsOfNovelPage = {
     //    and  "#container > div.aside.NE\\=a\\:nvi >   a  > img"
     img: "#container > div.aside.NE\\=a\\:nvi   img",
 
-    // need to remove a tag such as [독점]
     title: "#content > div.end_head > h2",
 
     desc: {
@@ -65,7 +64,7 @@ const selectorsOfNovelPage = {
       child2: "#content > div.end_dsc > div:nth-child(2)",
     },
 
-    age: "#content > ul.end_info.NE\\=a\\:nvi > li > ul > li:nth-child(5)",
+    age: "#content > ul.end_info.NE\\=a\\:nvi > li > ul > li:last-child",
 
     author: "#content > ul.end_info.NE\\=a\\:nvi > li > ul > li:nth-child(3) > a",
 
