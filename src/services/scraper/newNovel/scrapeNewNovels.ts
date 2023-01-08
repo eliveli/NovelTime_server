@@ -449,6 +449,7 @@ export default async function newScraper(
           totalPageNoForSeries = totalPageNoFromPage;
         }
 
+        // 일단 시리즈만 19세 소설 스킵(in following function)
         const novelUrlsFromPages = await getNovelUrlsForSeries(page, novelPlatform, genreNo, {
           totalPageNo: totalPageNoForSeries,
           totalNovelNoToScrape,

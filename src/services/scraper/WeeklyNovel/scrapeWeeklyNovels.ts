@@ -8,9 +8,12 @@ import { NovelPlatform } from "../utils/types";
 import goToNovelListPage from "../utils/goToNovelListPage";
 
 // 각 플랫폼에서 주간베스트 소설 20개 씩 가져오기
+// . 19세 소설 스킵(기본)
+//  : isSkipForAge19 false 설정 시 스킵 X (예외 : 시리즈는 항상 스킵(로그인 함수 버그))
+
 // (유의 : 조아라는 먼저 비로그인 상태로 전체 장르에서 소설 urls 수집)
-//           로그인 후 선호장르 안에서 베스트 소설 보여주는 것과 구분)
-export default async function weeklyScraper(novelPlatform: NovelPlatform) {
+//                       로그인 시 선호장르 안에서 베스트 소설 게시되나 활용X)
+export default async function weeklyScraper(novelPlatform: NovelPlatform, isSkipForAge19?: false) {
   const browser = await puppeteer.launch({
     headless: false, // 브라우저 화면 열려면 false
     args: [...minimalArgs, "--start-maximized"],
@@ -25,7 +28,7 @@ export default async function weeklyScraper(novelPlatform: NovelPlatform) {
 
   await goToNovelListPage(page, "weekly", novelPlatform);
 
-  const novelUrls = await getNovelUrls(page, novelPlatform);
+  const novelUrls = await getNovelUrls(page, novelPlatform, isSkipForAge19);
 
   if (!novelUrls) return;
 
@@ -33,7 +36,7 @@ export default async function weeklyScraper(novelPlatform: NovelPlatform) {
   // so I skip this process for series
   //   and even don't get novel urls for age 19 for series above
   if (novelPlatform !== "네이버 시리즈") {
-    await login(page, novelPlatform);
+    await login(page, novelPlatform); // 카카오 15세 작품 로그인 필요
   }
 
   const novelIDs = await getNovelIDsFromDB(page, novelPlatform, novelUrls);
