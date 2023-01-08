@@ -47,9 +47,13 @@ function getNovelListPage(
     }
 
     // 리디의 경우 전체 장르 베스트 조회 불가
-    //  아래는 로판 웹소설 / 성인 작품 제외됨
+    //  아래는 로판 웹소설
     if (novelPlatform === "리디북스") {
+      // 성인 작품 제외(adult_exclude=y)
       return "https://ridibooks.com/category/bestsellers/6050?adult_exclude=y&page=1";
+
+      // 성인 작품 포함 for skipNovelForAge19 함수 테스트
+      // return "https://ridibooks.com/category/bestsellers/6050?adult_exclude=n&page=1";
     }
 
     if (novelPlatform === "조아라") {

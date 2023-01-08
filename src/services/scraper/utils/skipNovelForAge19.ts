@@ -45,7 +45,7 @@ function getSelector(
     //  : 19세 소설 판별 불필요
     //    추후 변동 가능성 고려, 코드는 작성함
     if (scraperType === "weekly") {
-      return `#__next > main > section > ul.fig-1o0lea8 > li:nth-child(${String(
+      return `#__next > main > div > section > ul.fig-1o0lea8 > li:nth-child(${String(
         currentNovelNo,
       )}) > div > div.fig-7p4nhu > a > svg`;
     }
@@ -74,7 +74,7 @@ export default async function skipNovelForAge19(
 
   // 리디북스는 리스트 페이지에서 성인 제외 체크
   // : 연령에 따른 스킵 여부 판별 불필요
-  if (novelPlatform === "리디북스" && scraperType === "weekly") return;
+  // if (novelPlatform === "리디북스" && scraperType === "weekly") return;
 
   const selector = getSelector(currentNovelNo, novelPlatform, scraperType);
   if (!selector) throw Error("can't get selector before skipping or not novel for age 19");
