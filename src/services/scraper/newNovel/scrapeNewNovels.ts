@@ -7,6 +7,7 @@ import seeNovelListWithCardForRidi from "../utils/seeNovelListWithCardForRidi";
 import { NovelPlatform } from "../utils/types";
 import setNovels from "./utils/setNovels";
 import { waitForNovel, waitOrLoadNovel } from "../utils/waitOrLoadNovel";
+import skipNovelForAge19ForSeries from "../utils/skipNovelForAge19ForSeries";
 
 function setInitialTotalNovelNo(totalNovelNoToScrapeFromParam?: number) {
   if (totalNovelNoToScrapeFromParam && totalNovelNoToScrapeFromParam >= 2) {
@@ -272,17 +273,6 @@ async function getNovelUrlsForKakape(
   return novelUrls;
 }
 
-async function skipNovelForAge19ForSeries(page: puppeteer.Page, currentNovelNo: number) {
-  const isForAge19 = await page.evaluate((novelNo: number) => {
-    const iconForAge19 = document.querySelector(
-      `#content > div > ul > li:nth-child(${String(novelNo)}) > div > h3 > em.ico.n19`,
-    );
-    return !!iconForAge19; // when the value is null return false
-  }, currentNovelNo);
-
-  if (isForAge19) throw Error("skip this novel for age 19");
-}
-
 async function getNovelUrlsForSeries(
   page: puppeteer.Page,
   novelPlatform: NovelPlatform,
@@ -321,7 +311,7 @@ async function getNovelUrlsForSeries(
           throw Error("can't load novel node");
         }
 
-        await skipNovelForAge19ForSeries(page, currentNovelNoOfPage);
+        await skipNovelForAge19ForSeries(page, currentNovelNoOfPage, "new");
 
         const novelUrl = await getNovelUrl(page, novelPlatform, novelElement);
         if (!novelUrl) {

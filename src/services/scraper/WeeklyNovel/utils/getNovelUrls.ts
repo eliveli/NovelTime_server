@@ -1,5 +1,6 @@
 import puppeteer from "puppeteer";
 import getNovelUrl from "../../utils/getNovelUrl";
+import skipNovelForAge19ForSeries from "../../utils/skipNovelForAge19ForSeries";
 import { NovelPlatform } from "../../utils/types";
 import { waitForNovel } from "../../utils/waitOrLoadNovel";
 
@@ -12,6 +13,10 @@ export default async function getNovelUrls(page: puppeteer.Page, novelPlatform: 
       const novelElement = await waitForNovel(page, novelPlatform, bestNo);
       if (!novelElement) {
         throw Error("can't load novel node");
+      }
+
+      if (novelPlatform === "네이버 시리즈") {
+        await skipNovelForAge19ForSeries(page, bestNo, "weekly");
       }
 
       const novelUrl = await getNovelUrl(page, novelPlatform, novelElement);

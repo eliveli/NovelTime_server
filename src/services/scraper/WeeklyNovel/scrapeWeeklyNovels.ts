@@ -29,8 +29,12 @@ export default async function weeklyScraper(novelPlatform: NovelPlatform) {
 
   if (!novelUrls) return;
 
-  // 네이버 로그인 함수 작동 good
-  await login(page, novelPlatform);
+  // sometimes login for naver series doesn't work
+  // so I skip this process for series
+  //   and even don't get novel urls for age 19 for series above
+  if (novelPlatform !== "네이버 시리즈") {
+    await login(page, novelPlatform);
+  }
 
   const novelIDs = await getNovelIDsFromDB(page, novelPlatform, novelUrls);
 

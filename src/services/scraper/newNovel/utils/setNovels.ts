@@ -57,6 +57,7 @@ export default async function setNovels(
         err,
         `\n 현재작품: ${novelNo}, 마지막작품: ${totalNovelNo}, novelUrl: ${novelUrls[novelNo - 1]}`,
       );
+
       // 에러 발생 시 해당 작품은 통과. 계속해서 다음 작품 조회
       novelNo += 1; // 작품 번호 +1
     }
