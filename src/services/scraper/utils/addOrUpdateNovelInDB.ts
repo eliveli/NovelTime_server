@@ -125,6 +125,7 @@ async function getInfo(
 ) {
   try {
     const infoElement = await page.waitForSelector(selector);
+
     const info: string = await page.evaluate(
       (element, instr, attrName) => {
         if (instr === "attr") {
@@ -143,6 +144,7 @@ async function getInfo(
     );
     return info;
   } catch (err: any) {
+    console.log("can't get info from element");
     return undefined; // for when there is no certain node
   }
 }
@@ -182,6 +184,7 @@ async function getTitle(
       return element.innerText;
     }, titleElement)) as string;
   }
+
   return await getInfo(page, selectorOfTitle);
 }
 
@@ -591,7 +594,7 @@ export async function goToDetailPage(
     return;
   }
 
-  await page.goto(`https://${novelUrl}`);
+  await page.goto(`https://${novelUrl}`, { waitUntil: "networkidle0" });
 }
 
 async function getSameNovelsAndSeveralInfo(
@@ -605,6 +608,7 @@ async function getSameNovelsAndSeveralInfo(
   if (!(selectorOfTitle && selectorOfAuthor)) return undefined;
 
   const novelTitleFromPage = await getTitle(page, novelPlatform, selectorOfTitle);
+
   if (!novelTitleFromPage) return;
 
   const novelTitleWithoutLabels = removeLabelsFromTitle(novelTitleFromPage);

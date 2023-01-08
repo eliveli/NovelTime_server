@@ -23,8 +23,12 @@ jest.setTimeout(500000);
 //   await weeklyScraper("리디북스");
 // });
 
-it("run a weekly scraper for series :", async () => {
-  await weeklyScraper("네이버 시리즈");
+// it("run a weekly scraper for series :", async () => {
+//   await weeklyScraper("네이버 시리즈");
+// });
+
+it("run a weekly scraper for joara :", async () => {
+  await weeklyScraper("조아라");
 });
 
 // const novelInfo = {

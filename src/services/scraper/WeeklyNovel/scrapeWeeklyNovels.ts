@@ -8,6 +8,8 @@ import { NovelPlatform } from "../utils/types";
 import goToNovelListPage from "../utils/goToNovelListPage";
 
 // 각 플랫폼에서 주간베스트 소설 20개 씩 가져오기
+// (유의 : 조아라는 먼저 비로그인 상태로 전체 장르에서 소설 urls 수집)
+//           로그인 후 선호장르 안에서 베스트 소설 보여주는 것과 구분)
 export default async function weeklyScraper(novelPlatform: NovelPlatform) {
   const browser = await puppeteer.launch({
     headless: false, // 브라우저 화면 열려면 false
@@ -27,6 +29,7 @@ export default async function weeklyScraper(novelPlatform: NovelPlatform) {
 
   if (!novelUrls) return;
 
+  // 네이버 로그인 함수 작동 good
   await login(page, novelPlatform);
 
   const novelIDs = await getNovelIDsFromDB(page, novelPlatform, novelUrls);
