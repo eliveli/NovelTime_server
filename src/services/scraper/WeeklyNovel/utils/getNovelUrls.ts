@@ -1,6 +1,6 @@
 import puppeteer from "puppeteer";
 import getNovelUrl from "../../utils/getNovelUrl";
-import skipNovelForAge19ForSeries from "../../utils/skipNovelForAge19ForSeries";
+import skipNovelForAge19 from "../../utils/skipNovelForAge19";
 import { NovelPlatform } from "../../utils/types";
 import { waitForNovel } from "../../utils/waitOrLoadNovel";
 
@@ -8,16 +8,16 @@ export default async function getNovelUrls(page: puppeteer.Page, novelPlatform: 
   let bestNo = 1;
   const novelUrls = [];
 
-  while (bestNo < 21) {
+  // 소설 url 못 읽어올 경우 스킵, 총 20개 읽어옴
+  //  : 플랫폼 상 순위는 20위 넘을 수 있음
+  while (novelUrls.length < 21) {
     try {
       const novelElement = await waitForNovel(page, novelPlatform, bestNo);
       if (!novelElement) {
         throw Error("can't load novel node");
       }
 
-      if (novelPlatform === "네이버 시리즈") {
-        await skipNovelForAge19ForSeries(page, bestNo, "weekly");
-      }
+      await skipNovelForAge19(page, bestNo, novelPlatform, "weekly");
 
       const novelUrl = await getNovelUrl(page, novelPlatform, novelElement);
       if (!novelUrl) {
@@ -28,7 +28,6 @@ export default async function getNovelUrls(page: puppeteer.Page, novelPlatform: 
       console.log(`bestNo: ${bestNo} novelUrl: ${novelUrl}`);
     } catch (err: any) {
       console.log(err, "\n  현재 작품 노드 또는 url 읽기 실패");
-      // -> 이로 인해 실제 읽어오는 소설 수는 20개가 안 될 수 있음
     }
 
     bestNo += 1; // 다음 소설 읽으러 가기

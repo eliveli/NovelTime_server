@@ -7,7 +7,7 @@ import seeNovelListWithCardForRidi from "../utils/seeNovelListWithCardForRidi";
 import { NovelPlatform } from "../utils/types";
 import setNovels from "./utils/setNovels";
 import { waitForNovel, waitOrLoadNovel } from "../utils/waitOrLoadNovel";
-import skipNovelForAge19ForSeries from "../utils/skipNovelForAge19ForSeries";
+import skipNovelForAge19 from "../utils/skipNovelForAge19";
 
 function setInitialTotalNovelNo(totalNovelNoToScrapeFromParam?: number) {
   if (totalNovelNoToScrapeFromParam && totalNovelNoToScrapeFromParam >= 2) {
@@ -311,7 +311,7 @@ async function getNovelUrlsForSeries(
           throw Error("can't load novel node");
         }
 
-        await skipNovelForAge19ForSeries(page, currentNovelNoOfPage, "new");
+        await skipNovelForAge19(page, currentNovelNoOfPage, novelPlatform, "new");
 
         const novelUrl = await getNovelUrl(page, novelPlatform, novelElement);
         if (!novelUrl) {
