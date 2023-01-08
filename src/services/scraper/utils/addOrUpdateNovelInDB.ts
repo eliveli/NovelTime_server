@@ -501,19 +501,19 @@ async function addNewNovel(
   //  just return undefined and continue loop for getting a next novel
   try {
     const novelImg = await getImg(page, novelPlatform);
-    if (novelImg === undefined) return undefined;
+    if (!novelImg) return;
 
     const novelDesc = await getDesc(page, novelPlatform);
-    if (novelDesc === undefined) return undefined;
+    if (!novelDesc) return;
 
     const novelAge = await getAge(page, novelPlatform);
-    if (novelAge === undefined) return undefined;
+    if (!novelAge) return;
 
     const novelGenre = await getGenre(page, novelPlatform, severalNovelInfo.isBL);
-    if (novelGenre === undefined) return undefined;
+    if (!novelGenre) return;
 
     const novelIsEnd = await getIsEnd(page, novelPlatform);
-    if (novelIsEnd === undefined) return undefined;
+    if (!novelIsEnd) return;
 
     const novelId = getCurrentTime();
     const { novelAuthor, novelTitle, novelUrl } = severalNovelInfo;
@@ -616,7 +616,7 @@ async function getSameNovelsAndSeveralInfo(
   const novelAuthor = await getInfo(page, selectorOfAuthor);
   if (!novelAuthor) return;
 
-  // 라벨 뗀 문구가 포함된 제목으로 소설 검색
+  // 라벨 뗀 문구가 포함된 제목으로 소설 검색 in DB
   // get novels that have titles including text without labels in them
   const existingNovelsInDB = await searchForNovelsByTitleAndAuthor(
     novelTitleWithoutLabels,

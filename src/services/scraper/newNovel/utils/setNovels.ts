@@ -47,6 +47,8 @@ export default async function setNovels(
       }
 
       const novelId = await addOrUpdateNovelInDB(page, novelUrls[novelNo - 1], novelPlatform);
+      if (!novelId) throw Error("can't get this novel");
+
       console.log("novelId: ", novelId);
 
       novelNo += 1; // 작품 번호 +1

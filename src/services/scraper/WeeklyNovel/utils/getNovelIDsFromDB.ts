@@ -10,14 +10,17 @@ export default async function getNovelIDsFromDB(
   const novelIDs: string[] = [];
 
   while (novelUrls.length !== 0) {
-    const novelID = await addOrUpdateNovelInDB(page, novelUrls[0], novelPlatform);
+    try {
+      const novelId = await addOrUpdateNovelInDB(page, novelUrls[0], novelPlatform);
 
-    if (!novelID) {
-      novelUrls.shift();
-      continue;
+      if (!novelId) {
+        throw Error("can't get this novel");
+      }
+
+      novelIDs.push(novelId);
+    } catch (err: any) {
+      console.log(err, `\n novelUrl: ${novelUrls[0]}`);
     }
-
-    novelIDs.push(novelID);
 
     novelUrls.shift();
   }
