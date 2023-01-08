@@ -35,8 +35,9 @@ type NovelForChecking = {
 };
 
 const selectorsOfNovelPage = {
+  // this is often changed in its platform
   kakape: {
-    img: "#__next > div > div.flex.w-full.grow.flex-col.px-122pxr > div.flex.h-full.flex-1 > div.mb-28pxr.flex.w-320pxr.flex-col > div:nth-child(1) > div.w-320pxr.css-0 > div > div.css-0 > div.mx-auto.css-1cyn2un-ContentOverviewThumbnail > div > div > img",
+    img: "#__next > div > div.flex.w-full.grow.flex-col.px-122pxr > div.flex.h-full.flex-1 > div.mb-28pxr.flex.w-320pxr.flex-col > div:nth-child(1) > div.w-320pxr.css-0 > div > div.css-0 > div.mx-auto.css-u4ybgy > div > div > img",
     title:
       "#__next > div > div.flex.w-full.grow.flex-col.px-122pxr > div.flex.h-full.flex-1 > div.mb-28pxr.flex.w-320pxr.flex-col > div:nth-child(1) > div.w-320pxr.css-0 > div > div.css-0 > div.relative.text-center.mx-32pxr.py-24pxr > span",
     desc: "#__next > div > div.flex.w-full.grow.flex-col.px-122pxr > div.flex.h-full.flex-1 > div.mb-28pxr.ml-4px.flex.w-632pxr.flex-col > div.flex-1.bg-bg-a-20 > div.text-el-60.py-20pxr.pt-31pxr.pb-32pxr > span",
@@ -44,7 +45,7 @@ const selectorsOfNovelPage = {
     author:
       "#__next > div > div.flex.w-full.grow.flex-col.px-122pxr > div.flex.h-full.flex-1 > div.mb-28pxr.ml-4px.flex.w-632pxr.flex-col > div.flex-1.bg-bg-a-20 > div.flex.pr-32pxr > div:nth-child(2) > div.mt-16pxr.px-32pxr > div > div",
     genre:
-      "#__next > div > div.flex.w-full.grow.flex-col.px-122pxr > div.flex.h-full.flex-1 > div.mb-28pxr.flex.w-320pxr.flex-col > div:nth-child(1) > div.w-320pxr.css-0 > div > div.css-0 > div.relative.text-center.mx-32pxr.py-24pxr > div.mt-16pxr.flex.items-center.justify-center.text-el-60.all-child\\:font-small2 > span:nth-child(9)",
+      "#__next > div > div.flex.w-full.grow.flex-col.px-122pxr > div.flex.h-full.flex-1 > div.mb-28pxr.flex.w-320pxr.flex-col > div:nth-child(1) > div.w-320pxr.css-0 > div > div.css-0 > div.relative.text-center.mx-32pxr.py-24pxr > div.mt-16pxr.flex.items-center.justify-center.text-el-60.all-child\\:font-small2 > span:last-child",
     isEnd:
       "#__next > div > div.flex.w-full.grow.flex-col.px-122pxr > div.flex.h-full.flex-1 > div.mb-28pxr.flex.w-320pxr.flex-col > div:nth-child(1) > div.w-320pxr.css-0 > div > div.css-0 > div.relative.text-center.mx-32pxr.py-24pxr > div.flex.items-center.justify-center.mt-4pxr.flex-col.text-el-50.opacity-100.all-child\\:font-small2 > div:nth-child(1) > span",
   },
@@ -499,44 +500,40 @@ async function addNewNovel(
   // don't add this novel into DB
   //  if I can't get its certain info from detail page
   //  just return undefined and continue loop for getting a next novel
-  try {
-    const novelImg = await getImg(page, novelPlatform);
-    if (!novelImg) return;
+  const novelImg = await getImg(page, novelPlatform);
+  if (!novelImg) throw Error("can't get this novel");
 
-    const novelDesc = await getDesc(page, novelPlatform);
-    if (!novelDesc) return;
+  const novelDesc = await getDesc(page, novelPlatform);
+  if (!novelDesc) throw Error("can't get this novel");
 
-    const novelAge = await getAge(page, novelPlatform);
-    if (!novelAge) return;
+  const novelAge = await getAge(page, novelPlatform);
+  if (!novelAge) throw Error("can't get this novel");
 
-    const novelGenre = await getGenre(page, novelPlatform, severalNovelInfo.isBL);
-    if (!novelGenre) return;
+  const novelGenre = await getGenre(page, novelPlatform, severalNovelInfo.isBL);
+  if (!novelGenre) throw Error("can't get this novel");
 
-    const novelIsEnd = await getIsEnd(page, novelPlatform);
-    if (!novelIsEnd) return;
+  const novelIsEnd = await getIsEnd(page, novelPlatform);
+  if (novelIsEnd === undefined) throw Error("can't get this novel");
 
-    const novelId = getCurrentTime();
-    const { novelAuthor, novelTitle, novelUrl } = severalNovelInfo;
+  const novelId = getCurrentTime();
+  const { novelAuthor, novelTitle, novelUrl } = severalNovelInfo;
 
-    const novel = {
-      novelId,
-      novelImg,
-      novelTitle,
-      novelDesc,
-      novelAuthor,
-      novelAge,
-      novelGenre,
-      novelIsEnd,
-      novelPlatform,
-      novelUrl,
-    };
+  const novel = {
+    novelId,
+    novelImg,
+    novelTitle,
+    novelDesc,
+    novelAuthor,
+    novelAge,
+    novelGenre,
+    novelIsEnd,
+    novelPlatform,
+    novelUrl,
+  };
 
-    await setNovel(novel);
+  await setNovel(novel);
 
-    return novelId;
-  } catch {
-    return undefined;
-  }
+  return novelId;
 }
 
 function findSameNovelsFromTitlesWithLabels(
@@ -606,7 +603,7 @@ async function getSameNovelsAndSeveralInfo(
 
   const novelTitleFromPage = await getTitle(page, novelPlatform, selectorOfTitle);
 
-  if (!novelTitleFromPage) return;
+  if (!novelTitleFromPage) throw Error("can't get this novel");
 
   // 조아라 소설일 때는 제목 태그 안 뗌
   //  : 패러디 장르의 경우 제목 앞에 [ ] 태그를 붙이는 게 일반적이기 때문
@@ -614,7 +611,7 @@ async function getSameNovelsAndSeveralInfo(
     novelPlatform !== "조아라" ? removeLabelsFromTitle(novelTitleFromPage) : novelTitleFromPage;
 
   const novelAuthor = await getInfo(page, selectorOfAuthor);
-  if (!novelAuthor) return;
+  if (!novelAuthor) throw Error("can't get this novel");
 
   // 라벨 뗀 문구가 포함된 제목으로 소설 검색 in DB
   // get novels that have titles including text without labels in them
@@ -771,7 +768,7 @@ export default async function addOrUpdateNovelInDB(
 ) {
   const sameNovelsAndInfo = await getSameNovelsAndSeveralInfo(page, novelUrl, novelPlatform);
 
-  if (!sameNovelsAndInfo) return;
+  if (!sameNovelsAndInfo) throw Error("can't get this novel");
 
   const { sameNovelsInDB, severalNovelInfo } = sameNovelsAndInfo;
 
