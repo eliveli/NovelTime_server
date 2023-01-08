@@ -270,9 +270,9 @@ async function getKeywordsForJoara(page: puppeteer.Page) {
   return keywords;
 }
 
-async function getDesc(page: puppeteer.Page, novelPlatform: NovelPlatform) {
+export async function getDesc(page: puppeteer.Page, novelPlatform: NovelPlatform) {
   if (novelPlatform === "카카오페이지") {
-    return await getInfo(page, selectorsOfNovelPage.kakape.desc, "html");
+    return await getInfo(page, selectorsOfNovelPage.kakape.desc);
   }
 
   if (novelPlatform === "네이버 시리즈") {
@@ -284,22 +284,19 @@ async function getDesc(page: puppeteer.Page, novelPlatform: NovelPlatform) {
 
     // if there is not a more-button of desc
     if (childrenLengthOfDesc === 1) {
-      return await getInfo(page, selectorsOfNovelPage.series.desc.child1, "html");
+      return await getInfo(page, selectorsOfNovelPage.series.desc.child1);
     }
 
     // if there is a more-button of desc
     await page.waitForSelector(selectorsOfNovelPage.series.desc.child2);
 
-    const descriptionWithOtherTag = await getInfo(
-      page,
-      selectorsOfNovelPage.series.desc.child2,
-      "html",
-    );
+    const descriptionWithOtherTag = await getInfo(page, selectorsOfNovelPage.series.desc.child2);
     if (!descriptionWithOtherTag) return;
 
-    const startIndexOfOtherTag = descriptionWithOtherTag.indexOf("<span");
+    // beforeTextOfDesc is : \n\t\t\t\t\t\t\t
+    const afterIndexOfDesc = descriptionWithOtherTag.indexOf("\n\t\t\t\t\t\t접기");
 
-    const desc = descriptionWithOtherTag.slice(0, startIndexOfOtherTag);
+    const desc = descriptionWithOtherTag.slice(8, afterIndexOfDesc);
 
     return desc;
 
@@ -340,7 +337,7 @@ async function getDesc(page: puppeteer.Page, novelPlatform: NovelPlatform) {
   }
 
   if (novelPlatform === "조아라") {
-    const desc = await getInfo(page, selectorsOfNovelPage.joara.desc, "html");
+    const desc = await getInfo(page, selectorsOfNovelPage.joara.desc);
     if (!desc) return;
 
     // when desc includes keywords
