@@ -27,7 +27,7 @@ function getNovelListPage(
     }
 
     if (novelPlatform === "리디북스" && currentPageNo) {
-      // 페이지네이션 + semi 스크롤(페이지 내리면서 dom load) / 최신순(최신화등록일), 성인 제외
+      // 페이지네이션 + semi 스크롤(페이지 내리면서 dom load) / 최신순(최신화등록일), 성인 제외(adult_exclude=y)
       return `https://ridibooks.com/category/books/${String(
         genreNo,
       )}?order=recent&adult_exclude=y&page=${String(currentPageNo)}`;
@@ -37,6 +37,9 @@ function getNovelListPage(
   if (scraperType === "weekly") {
     if (novelPlatform === "카카오페이지") {
       return "https://page.kakao.com/menu/11/screen/16?subcategory_uid=0&ranking_type=weekly";
+
+      // for romance genre to test for age limitation
+      // return "https://page.kakao.com/menu/11/screen/16?subcategory_uid=89&ranking_type=weekly";
     }
 
     if (novelPlatform === "네이버 시리즈") {
@@ -48,6 +51,7 @@ function getNovelListPage(
     if (novelPlatform === "리디북스") {
       return "https://ridibooks.com/category/bestsellers/6050?adult_exclude=y&page=1";
     }
+
     if (novelPlatform === "조아라") {
       return "https://www.joara.com/todaybest?best=weekly";
     }
