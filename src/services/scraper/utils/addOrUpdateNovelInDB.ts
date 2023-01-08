@@ -608,7 +608,10 @@ async function getSameNovelsAndSeveralInfo(
 
   if (!novelTitleFromPage) return;
 
-  const novelTitleWithoutLabels = removeLabelsFromTitle(novelTitleFromPage);
+  // 조아라 소설일 때는 제목 태그 안 뗌
+  //  : 패러디 장르의 경우 제목 앞에 [ ] 태그를 붙이는 게 일반적이기 때문
+  const novelTitleWithoutLabels =
+    novelPlatform !== "조아라" ? removeLabelsFromTitle(novelTitleFromPage) : novelTitleFromPage;
 
   const novelAuthor = await getInfo(page, selectorOfAuthor);
   if (!novelAuthor) return;
