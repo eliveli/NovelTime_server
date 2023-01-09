@@ -34,6 +34,8 @@ function getSelector(
     }
   }
 
+  // 리디북스는 리스트 페이지에서 성인 제외 체크함
+  //  : 19세 소설 판별 불필요 / 추후 변동 가능성 고려, 코드는 작성함
   if (novelPlatform === "리디북스") {
     if (scraperType === "new") {
       return `#__next > main > div > section > ul.fig-1o0lea8 > li:nth-child(${String(
@@ -41,9 +43,6 @@ function getSelector(
       )}) > div > div.fig-5164tm > a > svg`;
     }
 
-    // 리디북스는 리스트 페이지에서 성인 제외 체크함
-    //  : 19세 소설 판별 불필요
-    //    추후 변동 가능성 고려, 코드는 작성함
     if (scraperType === "weekly") {
       return `#__next > main > div > section > ul.fig-1o0lea8 > li:nth-child(${String(
         currentNovelNo,
@@ -64,17 +63,17 @@ async function skipOrNot(page: puppeteer.Page, selector: string) {
 export default async function skipNovelForAge19(
   page: puppeteer.Page,
   currentNovelNo: number,
-  novelPlatform: NovelPlatform,
+  novelPlatform: NovelPlatform, // for kakape or series
   scraperType?: ScraperType,
 ) {
   // this is unnecessary when novelPlatform is "조아라"
   // - newScraper 사용X
-  // - weeklyScraper 비로그인 시 19세 소설이 베스트 란에 나타나지 않음
+  // - weeklyScraper 판별 불필요 : 비로그인 시 19세 소설 게시 X
   if (novelPlatform === "조아라") return;
 
-  // 리디북스는 리스트 페이지에서 성인 제외 체크
-  // : 연령에 따른 스킵 여부 판별 불필요
-  // if (novelPlatform === "리디북스" && scraperType === "weekly") return;
+  // 리디북스는 리스트 페이지에서 성인 제외 체크 또는 해제(url params)
+  // : 스킵 여부 판별 불필요
+  if (novelPlatform === "리디북스") return;
 
   const selector = getSelector(currentNovelNo, novelPlatform, scraperType);
   if (!selector) throw Error("can't get selector before skipping or not novel for age 19");

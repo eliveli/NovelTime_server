@@ -584,7 +584,9 @@ export async function goToDetailPage(
   novelPlatform: NovelPlatform,
 ) {
   if (novelPlatform === "카카오페이지") {
-    await page.goto(`https://${novelUrl}?tab_type=about`); // 상세페이지의 '작품소개' 탭에서 정보 읽기
+    // 상세페이지의 '작품소개' 탭에서 정보 읽기
+    // waitUntil option to wait for elements loading
+    await page.goto(`https://${novelUrl}?tab_type=about`, { waitUntil: "networkidle0" });
     return;
   }
 

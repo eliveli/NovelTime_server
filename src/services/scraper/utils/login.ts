@@ -187,6 +187,7 @@ async function typeLoginInfo(page: puppeteer.Page, novelPlatform: NovelPlatform)
 
 const selectorProfileIcon = {
   kakape: "#__next > div > div > div > div > div > div > div > div > img",
+
   series: "#gnb_my_namebox",
 
   // this is not profile icon. because I can't perceive whether I logged in or not by that
@@ -233,7 +234,7 @@ export default async function login(page: puppeteer.Page, novelPlatform: NovelPl
       "#mainContent > div > div > form > div.confirm_btn > button.btn_g.highlight",
     ); // submit
 
-    await waitForProfileIconAfterLogin(page, novelPlatform);
+    await waitForProfileIconAfterLogin(page, novelPlatform); // this is necessary for kakape
   }
 
   if (novelPlatform === "네이버 시리즈") {
@@ -248,7 +249,7 @@ export default async function login(page: puppeteer.Page, novelPlatform: NovelPl
     await page.waitForSelector("#new\\.save");
     await page.click("#new\\.save"); // 자주 사용하는 기기 등록
 
-    await waitForProfileIconAfterLogin(page, novelPlatform);
+    // await waitForProfileIconAfterLogin(page, novelPlatform);
   }
 
   if (novelPlatform === "리디북스") {
@@ -260,7 +261,7 @@ export default async function login(page: puppeteer.Page, novelPlatform: NovelPl
 
     await page.click("#__next > div > section > div > form > button"); // click login button
 
-    await waitForProfileIconAfterLogin(page, novelPlatform);
+    // await waitForProfileIconAfterLogin(page, novelPlatform);
   }
 
   if (novelPlatform === "조아라") {
@@ -270,6 +271,6 @@ export default async function login(page: puppeteer.Page, novelPlatform: NovelPl
 
     await page.click("#root > div > div > div > button"); // click login button
 
-    await waitForProfileIconAfterLogin(page, novelPlatform);
+    // await waitForProfileIconAfterLogin(page, novelPlatform);
   }
 }

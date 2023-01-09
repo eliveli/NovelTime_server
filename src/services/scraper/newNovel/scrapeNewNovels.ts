@@ -67,10 +67,11 @@ async function getTotalNovelNo(page: puppeteer.Page, novelPlatform: NovelPlatfor
 
 async function getNovelUrlsForRidi(
   page: puppeteer.Page,
-  novelPlatform: NovelPlatform,
   genreNOs: number[],
   totalNovelNoToScrape?: number,
+  isSkipForAge19?: false,
 ) {
+  const novelPlatform = "리디북스";
   const novelUrls: string[] = [];
 
   let currentPageNo = 1; // 현재 페이지 넘버
@@ -86,6 +87,7 @@ async function getNovelUrlsForRidi(
     await goToNovelListPage(page, "new", novelPlatform, {
       genreNo: genreNOs[ctgIdx],
       currentPageNo,
+      isSkipForAge19,
     });
 
     if (currentPageNo === 1) {
@@ -223,6 +225,7 @@ async function getNovelUrlsForRidi(
       await goToNovelListPage(page, "new", novelPlatform, {
         genreNo: genreNOs[ctgIdx],
         currentPageNo,
+        isSkipForAge19,
       });
     }
   }
@@ -237,9 +240,11 @@ async function getNovelUrlsForRidi(
 
 async function getNovelUrlsForKakape(
   page: puppeteer.Page,
-  novelPlatform: NovelPlatform,
   totalNovelNoToScrape: number,
+  isSkipForAge19?: false,
 ) {
+  const novelPlatform = "카카오페이지";
+
   const novelUrls: string[] = [];
 
   let currentNovelNo = 1;
@@ -252,6 +257,11 @@ async function getNovelUrlsForKakape(
       const novelElement = await waitOrLoadNovel(page, novelPlatform, currentNovelNo);
       if (!novelElement) {
         throw Error("can't load novel node");
+      }
+
+      // 19세 소설 스킵(기본)
+      if (isSkipForAge19 === undefined) {
+        await skipNovelForAge19(page, currentNovelNo, novelPlatform, "new");
       }
 
       // read novel url from the novel node
@@ -275,13 +285,13 @@ async function getNovelUrlsForKakape(
 
 async function getNovelUrlsForSeries(
   page: puppeteer.Page,
-  novelPlatform: NovelPlatform,
   genreNo: number,
   totalNo: {
     totalPageNo: number;
     totalNovelNoToScrape: number;
   },
 ) {
+  const novelPlatform = "네이버 시리즈";
   const { totalPageNo, totalNovelNoToScrape } = totalNo;
 
   const novelUrls: string[] = [];
@@ -350,6 +360,7 @@ export default async function newScraper(
   novelPlatform: NovelPlatform,
   genreNo: number | number[], // only ridi gets multiple genres from this
   totalNovelNoToScrapeFromParam?: number,
+  isSkipForAge19?: false,
 ) {
   let isGenreLoopEnd = false; // 전체 카테고리별 목록페이지 조회완료 여부
 
@@ -421,8 +432,8 @@ export default async function newScraper(
 
         const novelUrlsFromPages = await getNovelUrlsForKakape(
           page,
-          novelPlatform,
           totalNovelNoToScrape,
+          isSkipForAge19,
         );
         if (!novelUrlsFromPages) return;
 
@@ -449,8 +460,8 @@ export default async function newScraper(
           totalPageNoForSeries = totalPageNoFromPage;
         }
 
-        // 일단 시리즈만 19세 소설 스킵(in following function)
-        const novelUrlsFromPages = await getNovelUrlsForSeries(page, novelPlatform, genreNo, {
+        // 시리즈 19세 소설 항상 스킵(in following function)
+        const novelUrlsFromPages = await getNovelUrlsForSeries(page, genreNo, {
           totalPageNo: totalPageNoForSeries,
           totalNovelNoToScrape,
         });
@@ -461,9 +472,9 @@ export default async function newScraper(
       if (novelPlatform === "리디북스" && typeof genreNo === "object") {
         const novelUrlsAndTotalNOs = await getNovelUrlsForRidi(
           page,
-          novelPlatform,
           genreNo,
           totalNovelNoToScrapeFromParam ? totalNovelNoToScrape : undefined,
+          isSkipForAge19,
         );
         if (!novelUrlsAndTotalNOs) return;
 

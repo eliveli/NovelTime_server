@@ -9,7 +9,10 @@ import goToNovelListPage from "../utils/goToNovelListPage";
 
 // 각 플랫폼에서 주간베스트 소설 20개 씩 가져오기
 // . 19세 소설 스킵(기본)
-//  : isSkipForAge19 false 설정 시 스킵 X (예외 : 시리즈는 항상 스킵(로그인 함수 버그))
+//  : isSkipForAge19 false 설정 시 스킵 X
+//  (예외 . 시리즈는 항상 스킵(로그인 함수 버그)
+//        . 리디는 리스트 페이지 조회 시 성인 제외 체크.
+//           필요 시 변경 in function goToNovelListPage )
 
 // (유의 : 조아라는 먼저 비로그인 상태로 전체 장르에서 소설 urls 수집)
 //                       로그인 시 선호장르 안에서 베스트 소설 게시되나 활용X)
@@ -26,7 +29,7 @@ export default async function weeklyScraper(novelPlatform: NovelPlatform, isSkip
 
   page.setDefaultTimeout(500000); // set timeout globally
 
-  await goToNovelListPage(page, "weekly", novelPlatform);
+  await goToNovelListPage(page, "weekly", novelPlatform, { isSkipForAge19 });
 
   const novelUrls = await getNovelUrls(page, novelPlatform, isSkipForAge19);
 

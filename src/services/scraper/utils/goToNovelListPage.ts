@@ -4,33 +4,37 @@ import { NovelPlatform, ScraperType } from "./types";
 function getNovelListPage(
   scraperType: ScraperType,
   novelPlatform: NovelPlatform,
-  urlParams?: {
-    genreNo: number;
+  urlParams: {
+    genreNo?: number;
     currentPageNo?: number;
+    isSkipForAge19?: false;
   },
 ) {
-  if (scraperType === "new" && urlParams) {
-    const { genreNo, currentPageNo } = urlParams;
+  const { genreNo, currentPageNo, isSkipForAge19 } = urlParams;
 
+  if (scraperType === "new") {
+    // 무한스크롤 / 최신순(등록일 순)
     if (novelPlatform === "카카오페이지") {
-      // 무한스크롤 / 최신순(등록일 순)
       return `https://page.kakao.com/menu/11/screen/37?subcategory_uid=${String(
         genreNo,
       )}&sort_opt=latest`;
     }
 
+    // 페이지네이션 / 최신순, 완결작 포함 조회
     if (novelPlatform === "네이버 시리즈" && currentPageNo) {
-      // 페이지네이션 / 최신순, 완결작 포함 조회
       return `https://series.naver.com/novel/categoryProductList.series?categoryTypeCode=genre&genreCode=${String(
         genreNo,
       )}&orderTypeCode=new&is&isFinished=false&page=${String(currentPageNo)}`;
     }
 
+    // 페이지네이션 + semi 무한스크롤(페이지 내리면서 dom load) / 최신순(최신화등록일)
     if (novelPlatform === "리디북스" && currentPageNo) {
-      // 페이지네이션 + semi 스크롤(페이지 내리면서 dom load) / 최신순(최신화등록일), 성인 제외(adult_exclude=y)
+      const adultExclude = isSkipForAge19 === false ? "n" : "y";
+      // in url, adult_exclude = n (성인 포함) or y (성인 제외(기본값))
+
       return `https://ridibooks.com/category/books/${String(
         genreNo,
-      )}?order=recent&adult_exclude=y&page=${String(currentPageNo)}`;
+      )}?order=recent&adult_exclude=${adultExclude}&page=${String(currentPageNo)}`;
     }
   }
 
@@ -49,11 +53,9 @@ function getNovelListPage(
     // 리디의 경우 전체 장르 베스트 조회 불가
     //  아래는 로판 웹소설
     if (novelPlatform === "리디북스") {
-      // 성인 작품 제외(adult_exclude=y)
-      return "https://ridibooks.com/category/bestsellers/6050?adult_exclude=y&page=1";
+      const adultExclude = isSkipForAge19 === false ? "n" : "y";
 
-      // 성인 작품 포함 for skipNovelForAge19 함수 테스트
-      // return "https://ridibooks.com/category/bestsellers/6050?adult_exclude=n&page=1";
+      return `https://ridibooks.com/category/bestsellers/6050?adult_exclude=${adultExclude}&page=1`;
     }
 
     if (novelPlatform === "조아라") {
@@ -66,9 +68,10 @@ export default async function goToNovelListPage(
   page: puppeteer.Page,
   scraperType: ScraperType,
   novelPlatform: NovelPlatform,
-  urlParams?: {
-    genreNo: number;
-    currentPageNo: number;
+  urlParams: {
+    genreNo?: number;
+    currentPageNo?: number;
+    isSkipForAge19?: false; // for ridi
   },
 ) {
   const listPage = getNovelListPage(scraperType, novelPlatform, urlParams);
