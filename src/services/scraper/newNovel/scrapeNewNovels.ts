@@ -9,16 +9,12 @@ import setNovels from "./utils/setNovels";
 import { waitForNovel, waitOrLoadNovel } from "../utils/waitOrLoadNovel";
 import skipNovelForAge19 from "../utils/skipNovelForAge19";
 
-function setInitialTotalNovelNo(totalNovelNoToScrapeFromParam?: number) {
-  if (totalNovelNoToScrapeFromParam && totalNovelNoToScrapeFromParam >= 2) {
-    return Math.floor(totalNovelNoToScrapeFromParam);
+function checkNovelNoToScrape(novelNo?: number) {
+  if (novelNo === undefined) return;
+
+  if (novelNo < 1 || novelNo % 1 !== 0) {
+    throw Error("스크랩할 소설 수에 자연수만 넣으세요");
   }
-  // - 1을 반환하는 경우 -
-  //  1. 스크랩 할 소설 수(totalNovelNoToScrapeFromParam)를 넘겨주지 않았을 때
-  //      이 때는 단지 변수를 비워두지 않기 위해 1을 반환.
-  //      totalNovelNoToScrapeFromParam 값이 undefined라면 추후 플랫폼에서 읽어 온 실제 값으로 대체
-  //  2. 해당 값이 1이거나 1이하의 실수일 때
-  return 1; // 단지 변수를 비워두지 않기 위해 반환.
 }
 
 function passTotalPageNo(
@@ -51,7 +47,7 @@ function getTotalNovelNoSelector(novelPlatform: NovelPlatform) {
 }
 async function getTotalNovelNo(page: puppeteer.Page, novelPlatform: NovelPlatform) {
   const totalNovelNoSelector = getTotalNovelNoSelector(novelPlatform);
-  if (!totalNovelNoSelector) return;
+  if (!totalNovelNoSelector) throw Error("can't get total novel number selector from platform");
 
   // 총 작품 수 구하기
   const regex = /[^0-9]/g; // 숫자가 아닌 문자열을 선택하는 정규식
@@ -63,6 +59,16 @@ async function getTotalNovelNo(page: puppeteer.Page, novelPlatform: NovelPlatfor
   )) as string;
 
   return Number(novelNoWithText.replace(regex, "")); // 총 작품 수
+}
+
+function getSmallerThing(one: number, two: number) {
+  if (one < two) return one;
+  return two;
+}
+
+function chooseTotalNovelNo(oneInPlatform: number, oneInParam?: number) {
+  if (oneInParam === undefined) return oneInPlatform;
+  return getSmallerThing(oneInPlatform, oneInParam);
 }
 
 async function getNovelUrlsForRidi(
@@ -240,18 +246,29 @@ async function getNovelUrlsForRidi(
 
 async function getNovelUrlsForKakape(
   page: puppeteer.Page,
-  totalNovelNoToScrape: number,
+  totalNovelNo: { totalNovelNoInPlatform: number; totalNovelNoToScrapeFromParam?: number },
   isSkipForAge19?: false,
 ) {
+  const { totalNovelNoInPlatform, totalNovelNoToScrapeFromParam } = totalNovelNo;
+
   const novelPlatform = "카카오페이지";
 
   const novelUrls: string[] = [];
 
-  let currentNovelNo = 1;
+  let currentNovelNo = 1; // 현재 조회 번호
+
+  let accumulatedNovelNo = 0; // 스크랩한 누적 소설 수
+
+  const totalNovelNoToScrape = chooseTotalNovelNo(
+    totalNovelNoInPlatform,
+    totalNovelNoToScrapeFromParam,
+  );
 
   // repeat : load novel node and read url from it
-  while (currentNovelNo <= totalNovelNoToScrape) {
-    console.log(`currentNovelNo: ${currentNovelNo}, totalNovelNoToScrape: ${totalNovelNoToScrape}`);
+  while (accumulatedNovelNo < totalNovelNoToScrape || currentNovelNo <= totalNovelNoInPlatform) {
+    console.log(
+      `currentNovelNo: ${currentNovelNo}, totalNovelNoToScrape: ${totalNovelNoToScrape}, totalNovelNoInPlatform: ${totalNovelNoInPlatform}`,
+    );
 
     try {
       const novelElement = await waitOrLoadNovel(page, novelPlatform, currentNovelNo);
@@ -272,7 +289,11 @@ async function getNovelUrlsForKakape(
 
       novelUrls.push(novelUrl);
 
-      console.log("noveNO: ", currentNovelNo, " novelUrl: ", novelUrl);
+      accumulatedNovelNo += 1;
+
+      console.log(
+        `accumulatedNovelNo: ${accumulatedNovelNo}/${totalNovelNoToScrape} novelUrl: ${novelUrl}`,
+      );
     } catch (err) {
       console.log(err, "\n 현재 작품 노드 또는 url 읽기 실패");
     }
@@ -280,41 +301,56 @@ async function getNovelUrlsForKakape(
     currentNovelNo += 1; // 다음 작품 노드 읽으러 가기
   }
 
-  return novelUrls;
+  return { novelUrls, accumulatedNovelNo };
 }
 
 async function getNovelUrlsForSeries(
   page: puppeteer.Page,
   genreNo: number,
   totalNo: {
-    totalPageNo: number;
-    totalNovelNoToScrape: number;
+    totalNovelNoInPlatform: number;
+    totalNovelNoToScrapeFromParam?: number;
+    totalPageNoInPlatform: number;
   },
 ) {
+  const { totalNovelNoInPlatform, totalNovelNoToScrapeFromParam, totalPageNoInPlatform } = totalNo;
+
   const novelPlatform = "네이버 시리즈";
-  const { totalPageNo, totalNovelNoToScrape } = totalNo;
 
   const novelUrls: string[] = [];
 
-  let currentPageNo = 1; // 현재 페이지 넘버
-  const novelNoPerPage = 25;
+  let accumulatedNovelNo = 0; // 스크랩한 누적 소설 수
 
-  // 목록 페이지 조회 반복
-  while (currentPageNo <= totalPageNo) {
+  const totalNovelNoToScrape = chooseTotalNovelNo(
+    totalNovelNoInPlatform,
+    totalNovelNoToScrapeFromParam,
+  );
+
+  let currentPageNo = 1; // 현재 페이지 넘버
+
+  const novelNoPerPage = 25; // 페이지 당 소설 수 25
+
+  const novelNoInLastPage = totalNovelNoInPlatform % novelNoPerPage; // 마지막 페이지 작품 수
+
+  // 목록 페이지 조회 반복(최대 마지막 페이지까지)
+  visitPages: while (currentPageNo <= totalPageNoInPlatform) {
     console.log(currentPageNo, "현재 페이지 번호");
 
-    let novelNoOfLastPage = 1;
-
-    // 마지막 페이지 작품 수
-    if (currentPageNo === totalPageNo) {
-      novelNoOfLastPage = totalNovelNoToScrape % novelNoPerPage;
-    }
-
-    // 페이지 내 소설들의 url 읽어오기 (페이지 당 소설 수 25)
-    for (let currentNovelNoOfPage = 1; currentNovelNoOfPage < 26; currentNovelNoOfPage += 1) {
+    // 페이지 내 소설들의 url 읽어오기
+    for (
+      let currentNovelNoOfPage = 1;
+      currentNovelNoOfPage < novelNoPerPage + 1;
+      currentNovelNoOfPage += 1
+    ) {
       try {
-        // 마지막페이지일 때 마지막 페이지의 작품 수 만큼 읽기
-        if (currentPageNo === totalPageNo && novelNoOfLastPage < currentNovelNoOfPage) break;
+        // 마지막페이지일 때 마지막 페이지의 작품 수 만큼 읽기(에러 방지)
+        if (currentPageNo === totalPageNoInPlatform && novelNoInLastPage < currentNovelNoOfPage) {
+          break visitPages;
+        }
+
+        console.log(
+          `novelNoInPage: ${currentNovelNoOfPage}/${novelNoPerPage} pageNo: ${currentPageNo}/${totalPageNoInPlatform}`,
+        );
 
         const novelElement = await waitForNovel(page, novelPlatform, currentNovelNoOfPage);
         if (!novelElement) {
@@ -330,19 +366,23 @@ async function getNovelUrlsForSeries(
 
         novelUrls.push(novelUrl);
 
+        accumulatedNovelNo += 1;
+
         console.log(
-          `novelNo: ${currentNovelNoOfPage}/25 novelUrl: ${novelUrl} currentPageNo: ${currentPageNo} totalPageNo: ${totalPageNo}`,
+          `accumulatedNovelNo: ${accumulatedNovelNo}/${totalNovelNoToScrape}  novelUrl: ${novelUrl}`,
         );
+
+        // 필요한 수만큼 소설 조회 완료
+        if (accumulatedNovelNo === totalNovelNoToScrape) break visitPages;
       } catch (err: any) {
         console.log(err, "\n  현재 작품 노드 또는 url 읽기 실패");
-        continue; // 다음 소설 읽으러 가기
+        continue; // 다음 작품 노드 읽으러 가기
       }
     }
 
-    // 다음 페이지 이동
-    currentPageNo += 1;
+    if (currentPageNo === totalPageNoInPlatform) break;
 
-    if (currentPageNo > totalPageNo) break;
+    currentPageNo += 1; // 다음 페이지 이동
 
     await goToNovelListPage(page, "new", novelPlatform, {
       genreNo,
@@ -350,7 +390,7 @@ async function getNovelUrlsForSeries(
     });
   }
 
-  return novelUrls;
+  return { novelUrls, accumulatedNovelNo, currentPageNo };
 }
 
 // scraper for new novels //
@@ -362,14 +402,15 @@ export default async function newScraper(
   totalNovelNoToScrapeFromParam?: number,
   isSkipForAge19?: false,
 ) {
+  checkNovelNoToScrape(totalNovelNoToScrapeFromParam);
+
   let isGenreLoopEnd = false; // 전체 카테고리별 목록페이지 조회완료 여부
 
   let novelUrls: string[] = [];
 
   let currentNoToGetNovel = 1; // 현재 작품 넘버
 
-  // 리디는 스크래퍼 실행 중에 세부 장르 별 소설 수의 합산 값으로 대체됨
-  let totalNovelNoToScrape = setInitialTotalNovelNo(totalNovelNoToScrapeFromParam);
+  let totalNovelNoToScrape = 1; // 기본값. 이후 실제 스크랩할 수 대입
 
   const totalNovelNoListForRidi = [] as number[]; // for ridi
 
@@ -421,23 +462,17 @@ export default async function newScraper(
           currentPageNo: 1,
         });
 
-        const totalNovelNoFromPage = await getTotalNovelNo(page, novelPlatform);
-        if (
-          totalNovelNoFromPage &&
-          (!totalNovelNoToScrapeFromParam || totalNovelNoToScrape > totalNovelNoFromPage)
-        ) {
-          // reset total novel number from novel platform page
-          totalNovelNoToScrape = totalNovelNoFromPage;
-        }
+        const totalNovelNoInPlatform = await getTotalNovelNo(page, novelPlatform);
 
-        const novelUrlsFromPages = await getNovelUrlsForKakape(
+        const novelUrlsAndNovelNo = await getNovelUrlsForKakape(
           page,
-          totalNovelNoToScrape,
+          { totalNovelNoInPlatform, totalNovelNoToScrapeFromParam },
           isSkipForAge19,
         );
-        if (!novelUrlsFromPages) return;
+        if (!novelUrlsAndNovelNo) return;
 
-        novelUrls = novelUrlsFromPages;
+        novelUrls = novelUrlsAndNovelNo.novelUrls;
+        totalNovelNoToScrape = novelUrlsAndNovelNo.accumulatedNovelNo;
       }
 
       if (novelPlatform === "네이버 시리즈" && typeof genreNo === "number") {
@@ -446,27 +481,20 @@ export default async function newScraper(
           currentPageNo: 1,
         });
 
-        const totalNovelNoFromPage = await getTotalNovelNo(page, novelPlatform);
-        if (
-          totalNovelNoFromPage &&
-          (!totalNovelNoToScrapeFromParam || totalNovelNoToScrape > totalNovelNoFromPage)
-        ) {
-          // reset total novel number from novel platform page
-          totalNovelNoToScrape = totalNovelNoFromPage;
-        }
+        const totalNovelNoInPlatform = await getTotalNovelNo(page, novelPlatform);
 
-        const totalPageNoFromPage = getTotalPageNoForSeries(totalNovelNoToScrape);
-        if (totalPageNoFromPage) {
-          totalPageNoForSeries = totalPageNoFromPage;
-        }
+        const totalPageNoInPlatform = getTotalPageNoForSeries(totalNovelNoInPlatform);
 
         // 시리즈 19세 소설 항상 스킵(in following function)
-        const novelUrlsFromPages = await getNovelUrlsForSeries(page, genreNo, {
-          totalPageNo: totalPageNoForSeries,
-          totalNovelNoToScrape,
+        const novelUrlsAndNOs = await getNovelUrlsForSeries(page, genreNo, {
+          totalNovelNoInPlatform,
+          totalNovelNoToScrapeFromParam,
+          totalPageNoInPlatform,
         });
-        if (!novelUrlsFromPages) return;
-        novelUrls = novelUrlsFromPages;
+
+        novelUrls = novelUrlsAndNOs.novelUrls;
+        totalNovelNoToScrape = novelUrlsAndNOs.accumulatedNovelNo;
+        totalPageNoForSeries = novelUrlsAndNOs.currentPageNo;
       }
 
       if (novelPlatform === "리디북스" && typeof genreNo === "object") {
@@ -500,10 +528,9 @@ export default async function newScraper(
         });
       }
 
-      // to skip age limitation when getting novel
-      // - actually login function is only for kakape where novel for age 15 needs login
-      // - I don't need novel for age 19 which needs login for all platforms
-      //    for series, login doesn't always work. and I won't login for it
+      // login is required for novels for age 19
+      //  and also for age 15 for kakape
+      // but the function doesn't always work for naver-series, so I won't use it for it
       if (novelPlatform !== "네이버 시리즈") {
         await login(page, novelPlatform);
       }
