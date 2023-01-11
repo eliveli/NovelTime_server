@@ -17,20 +17,6 @@ function checkNovelNoToScrape(novelNo?: number) {
   }
 }
 
-function passTotalPageNo(
-  novelPlatform: NovelPlatform,
-  totalPageNoForSeries: number,
-  totalPageNoListForRidi: number[],
-) {
-  if (novelPlatform === "네이버 시리즈") {
-    return totalPageNoForSeries;
-  }
-  if (novelPlatform === "리디북스") {
-    return totalPageNoListForRidi;
-  }
-  return undefined;
-}
-
 // get total page number or total novel number //
 function getTotalPageNoForSeries(totalNovelNoToScrape: number) {
   const calcTotalPageNO: number = Math.floor(totalNovelNoToScrape / 25);
@@ -399,8 +385,9 @@ async function getNovelUrlsForSeries(
 }
 
 // scraper for new novels //
-// note. 시리즈는 목록 페이지 이동 시 한 번에 모든 소설을 요청
-//       카카페, 리디는 목록페이지에서 페이지를 내려야 소설 세트 요청 가능
+// note. pagination for series, infinite scroll for kakape, pagination & scroll for ridi
+//   - for kakape & ridi, it is necessary to move a page down to load new novels in a page
+//   - for series, all novels in a page is loaded at once when entering it
 export default async function newScraper(
   novelPlatform: NovelPlatform,
   genreNo: number | number[], // only ridi gets multiple genres from this
@@ -409,18 +396,18 @@ export default async function newScraper(
 ) {
   checkNovelNoToScrape(totalNovelNoToScrapeFromParam);
 
-  let isGenreLoopEnd = false; // 전체 카테고리별 목록페이지 조회완료 여부
+  let isAfterGettingUrls = false; // 목록 조회 및 소설 urls 가져온 이후
 
   let novelUrls: string[] = [];
 
   let currentNoToGetNovel = 1; // 현재 작품 넘버
 
-  let totalNovelNoToScrape = 1; // 기본값. 이후 실제 스크랩할 수 대입
+  let totalNovelNoToScrape: number | undefined;
 
-  const totalNovelNoListForRidi = [] as number[]; // for ridi
+  let totalPageNoForSeries: number | undefined;
 
-  let totalPageNoForSeries = 1; // for series
-  const totalPageNoListForRidi = [] as number[]; // for ridi
+  const totalNovelNoListForRidi = [] as number[];
+  const totalPageNoListForRidi = [] as number[];
 
   const browser = await puppeteer.launch({
     headless: false, // 브라우저 화면 열려면 false
@@ -458,9 +445,9 @@ export default async function newScraper(
 
     page.setDefaultTimeout(30000);
 
-    // 장르 내 소설 목록 조회, 소설 urls 받아 옴
+    // 소설 목록 조회, 소설 urls 받아 옴
     //  반복문 1회차에만 실행
-    if (!isGenreLoopEnd) {
+    if (!isAfterGettingUrls) {
       if (novelPlatform === "카카오페이지" && typeof genreNo === "number") {
         await goToNovelListPage(page, "new", novelPlatform, {
           genreNo,
@@ -515,14 +502,19 @@ export default async function newScraper(
         totalPageNoListForRidi.push(...novelUrlsAndNOs.totalPageNoListForRidi);
       }
 
-      // 장르 전체 조회 완료 표시
-      isGenreLoopEnd = true;
+      isAfterGettingUrls = true;
+      await context.close();
+      continue; // 시크릿창 닫고 반복문 2회차 진행 - 상세페이지 조회하러 가기
     }
 
-    // urls로 상세페이지 조회, 소설 정보 db에 등록
-    //  장르 전체 조회 완료 후 반복문 2회차부터 실행(시크릿창 닫고 열며)
-    if (isGenreLoopEnd) {
-      if (novelUrls.length === 0) return;
+    // 읽어온 urls로 상세페이지 조회, 소설 정보 db에 등록
+    //  목록 조회 완료 후 반복문 2회차부터 실행(시크릿창 닫고 열며)
+    if (isAfterGettingUrls) {
+      if (novelUrls.length === 0) throw Error("novelUrls was not set");
+      if (totalNovelNoToScrape === undefined) throw Error("totalNovelNoToScrape was not set");
+      if (novelPlatform === "네이버 시리즈" && totalPageNoForSeries === undefined) {
+        throw Error("totalPageNoForSeries was not set");
+      }
 
       if (currentNoToGetNovel !== 1) {
         await goToNovelListPage(page, "new", novelPlatform, {
@@ -548,16 +540,16 @@ export default async function newScraper(
           currentNovelNo: currentNoToGetNovel,
           totalNovelNo: totalNovelNoToScrape,
           totalNovelNoListForRidi,
-          totalPageNo: passTotalPageNo(novelPlatform, totalPageNoForSeries, totalPageNoListForRidi),
+          totalPageNo: totalPageNoForSeries || totalPageNoListForRidi,
         },
         novelPlatform,
         novelUrls,
       );
+
+      await context.close(); // 시크릿창 닫기
+
+      if (currentNoToGetNovel > totalNovelNoToScrape) break; // 전체 작품 조회 완료 후 루프 탈출
     }
-
-    await context.close(); // 시크릿창 닫기
-
-    if (totalNovelNoToScrape < currentNoToGetNovel) break; // 전체 작품 조회 완료 후 루프 탈출
   }
   await browser.close();
 }

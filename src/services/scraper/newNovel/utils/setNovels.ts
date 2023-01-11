@@ -2,14 +2,19 @@ import puppeteer from "puppeteer";
 import addOrUpdateNovelInDB from "../../utils/addOrUpdateNovelInDB";
 import { NovelPlatform } from "../../utils/types";
 
-function markTotalPageNo(totalPageNo: number[] | number | undefined) {
+function showNovelNoListForRidi(noList: number[]) {
+  if (noList.length === 0) return "";
+  return `totalNovelNoListForRidi: ${String(noList)}, `;
+}
+
+function showTotalPageNo(totalPageNo: number[] | number) {
+  if (typeof totalPageNo === "object" && totalPageNo.length === 0) {
+    return ""; // for kakape
+  }
   if (typeof totalPageNo === "object") {
     return `totalPageNoOfEachGenre: ${String(totalPageNo)}`; // for ridi
   }
-  if (typeof totalPageNo === "number") {
-    return `totalPageNo: ${String(totalPageNo)}`; // for series
-  }
-  return ""; // for kakape
+  return `totalPageNo: ${String(totalPageNo)}`; // for series
 }
 
 export default async function setNovels(
@@ -18,52 +23,38 @@ export default async function setNovels(
     currentNovelNo: number;
     totalNovelNo: number;
     totalNovelNoListForRidi: number[]; // for ridi
-    totalPageNo: number[] | number | undefined;
-    // number[] for ridi, number for series, undefined for kakape
+    totalPageNo: number[] | number; // number[] for ridi, number for series
   },
   novelPlatform: NovelPlatform,
   novelUrls: string[],
 ) {
-  const { currentNovelNo, totalNovelNo, totalNovelNoListForRidi, totalPageNo } = novelNoAndPageNo;
-
-  let novelNo = currentNovelNo;
+  const { totalNovelNo, totalNovelNoListForRidi, totalPageNo } = novelNoAndPageNo;
+  let { currentNovelNo } = novelNoAndPageNo;
 
   // 작품 상세페이지 조회 반복
-  while (totalNovelNo >= novelNo) {
+  while (currentNovelNo <= totalNovelNo) {
     console.log(
-      `currentNovelNo: ${novelNo}, totalNovelNo: ${totalNovelNo}, ${
-        totalNovelNoListForRidi.length !== 0
-          ? `totalNovelNoListForRidi: ${String(totalNovelNoListForRidi)}, `
-          : ""
-      } ${markTotalPageNo(totalPageNo)}`,
+      `currentNovelNo: ${currentNovelNo}/${totalNovelNo} ${showNovelNoListForRidi(
+        totalNovelNoListForRidi,
+      )} ${showTotalPageNo(totalPageNo)}`,
     );
 
     try {
-      // 스크랩할 소설 수 보다 읽어온 url 수가 작을 때
-      if (!novelUrls[novelNo - 1]) {
-        console.log("읽을 url이 더 이상 없음");
-        novelNo = totalNovelNo + 1; // 스크래퍼 종료 조건
-        break;
-      }
-
-      const novelId = await addOrUpdateNovelInDB(page, novelUrls[novelNo - 1], novelPlatform);
-      if (!novelId) throw Error("can't get this novel");
-
-      console.log("novelId: ", novelId);
-
-      novelNo += 1; // 작품 번호 +1
-
-      if (novelNo % 100 === 0) break; // 작품 100번째 마다 loop 탈출. for 시크릿창 여닫기
-    } catch (err: any) {
-      console.log(
-        err,
-        `\n 현재작품: ${novelNo}, 마지막작품: ${totalNovelNo}, novelUrl: ${novelUrls[novelNo - 1]}`,
+      const novelId = await addOrUpdateNovelInDB(
+        page,
+        novelUrls[currentNovelNo - 1],
+        novelPlatform,
       );
 
-      // 에러 발생 시 해당 작품은 통과. 계속해서 다음 작품 조회
-      novelNo += 1; // 작품 번호 +1
+      console.log("novelId: ", novelId);
+    } catch (err: any) {
+      console.log(`${String(err)}\n novelUrl: ${novelUrls[currentNovelNo - 1]}`);
     }
+
+    currentNovelNo += 1; // for 다음 작품 조회
+
+    if (currentNovelNo % 100 === 0) break; // 작품 100번째 마다 loop 탈출. for 시크릿창 여닫기
   }
 
-  return novelNo; // 시크릿창을 닫고 열면서 다음에 조회할 작품 번호 표시
+  return currentNovelNo; // for 시크릿창 닫고 열면서 다음에 조회할 작품 번호 표시
 }
