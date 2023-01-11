@@ -71,22 +71,27 @@ function chooseTotalNovelNo(oneInPlatform: number, oneInParam?: number) {
   return getSmallerThing(oneInPlatform, oneInParam);
 }
 
+// note. 리디는 장르 별 전체 소설 수 또는 전체 페이지 수를 미리 알 수 없음
+//       (카카페, 시리즈와 구분)
 async function getNovelUrlsForRidi(
   page: puppeteer.Page,
   genreNOs: number[],
-  totalNovelNoToScrape?: number,
+  totalNovelNoToScrapeFromParam?: number, // undefined or 자연수
   isSkipForAge19?: false,
 ) {
   const novelPlatform = "리디북스";
+
   const novelUrls: string[] = [];
 
+  // 현재 조회하는 세부 장르의 누적 스크랩 소설 수 : 조회 실패 시 카운트X
+  let accumulatedNovelNoInCurrentGenre = 0;
+
   let currentPageNo = 1; // 현재 페이지 넘버
+
   const totalNovelNoPerPage = 60; // 페이지 당 소설 수 60
 
-  let accumulatedNovelNoOfCurrentGenre = 0; // 현재 조회하는 세부 장르의 누적 소설 수
-
-  const totalPageNoListForRidi: number[] = [];
   const totalNovelNoListForRidi: number[] = [];
+  const totalPageNoListForRidi: number[] = [];
 
   // search from each category
   genreLoop: for (let ctgIdx = 0; ctgIdx < genreNOs.length; ctgIdx += 1) {
@@ -104,13 +109,18 @@ async function getNovelUrlsForRidi(
     while (true) {
       console.log("현재 페이지 번호: ", currentPageNo);
 
-      // 각 페이지에서 작품 url 가져오기
+      // 각 페이지에서 소설 노드 조회, url 가져오기
       for (
         let currentNovelNoInCurrentPage = 1;
         currentNovelNoInCurrentPage <= totalNovelNoPerPage;
         currentNovelNoInCurrentPage += 1
       ) {
         try {
+          console.log(
+            `noveNoInPage: ${currentNovelNoInCurrentPage}/${totalNovelNoPerPage} currentPageNo: ${currentPageNo}
+             genre order: ${ctgIdx + 1} genre number: ${genreNOs[ctgIdx]}`,
+          );
+
           const novelElement = await waitOrLoadNovel(
             page,
             novelPlatform,
@@ -127,28 +137,30 @@ async function getNovelUrlsForRidi(
 
           novelUrls.push(novelUrl);
 
+          accumulatedNovelNoInCurrentGenre += 1;
+
           console.log(
-            `noveNO: ${currentNovelNoInCurrentPage}/60 novelUrl: ${novelUrl} currentPageNo: ${currentPageNo}
-             genre order: ${ctgIdx + 1} genre number: ${genreNOs[ctgIdx]}`,
+            `accumulatedNovelNo: ${accumulatedNovelNoInCurrentGenre} totalNovelNoToScrapeFromParam: ${String(
+              totalNovelNoToScrapeFromParam,
+            )} \n novelUrl: ${novelUrl}`,
           );
 
-          accumulatedNovelNoOfCurrentGenre += 1;
-
-          if (totalNovelNoToScrape && accumulatedNovelNoOfCurrentGenre === totalNovelNoToScrape) {
+          if (accumulatedNovelNoInCurrentGenre === totalNovelNoToScrapeFromParam) {
             throw Error("설정한 만큼 스크랩 완료");
           }
 
           if (currentNovelNoInCurrentPage === totalNovelNoPerPage) {
+            throw Error("마지막 페이지인지 확인 : 꽉 채워진 한 페이지의 마지막 소설 노드 읽은 후");
             // 1. 페이지 내 소설이 가득 차 있음(60개)
-            // 2. 조회하는 목록 페이지가 마지막 페이지 이상일 때 마지막 페이지를 불러옴.
+            //     : 마지막 페이지일 때와 아닐 때로 나뉨
+            // 2. url의 페이지 번호에 마지막 페이지 수보다 큰 수를 넣으면 마지막 페이지를 불러옴
             // 1+2
             //   : 현재 페이지가 마지막 페이지라도 페이지 내 소설이 가득 채워져 있다면
             //      이후 같은 페이지를 계속 반복 조회하게 됨.
             //   -> 1의 조건을 만족할 때 마지막 페이지 여부 확인 필요
-            throw Error("꽉 채워진 한 페이지의 마지막 소설 노드 읽은 후");
           }
         } catch (err: any) {
-          // 소설 읽기 실패 시 or 꽉 채워진 한 페이지의 마지막 소설 노드 읽은 후 //
+          // 작업 분기 : 다음 페이지 조회 or 다음 장르 조회 or 다음 작품(in 현재 페이지) 조회 //
 
           // (유의) 리디에서는 마지막 페이지 이상의 수는 마지막 페이지로 인식 (url로 목록 페이지 조회 시)
           // -> 목록 페이지 하단의 페이지 번호 엘리먼트를 읽어 마지막 페이지 여부 파악
@@ -167,54 +179,44 @@ async function getNovelUrlsForRidi(
           )) as boolean;
 
           // 1. 다음 페이지 읽으러 가기 //
-          if (err.message === "꽉 채워진 한 페이지의 마지막 소설 노드 읽은 후" && !isLastPage) {
+          if (
+            err.message ===
+              "마지막 페이지인지 확인 : 꽉 채워진 한 페이지의 마지막 소설 노드 읽은 후" &&
+            !isLastPage
+          ) {
             break;
           }
 
           const novelListElement = await page.waitForSelector(
             "#__next > main > div > section > ul.fig-1o0lea8",
           );
-          const totalNovelNoInCurrentPage = await page.evaluate(
+          const lastNovelNoInCurrentPage = await page.evaluate(
             (element) => Number(element.childElementCount),
             novelListElement,
           );
 
           // 2. 다음 장르 읽으러 가기 //
-          // : 정해 둔 스크랩할 소설 수 만큼
-          //   또는 마지막 페이지의 마지막 소설 노드까지 읽었을 때
-          //    후자는 페이지에 소설이 꽉 채워져 있지 않을 때와 채워져 있을 때로 구분
-          //   (아래 조건문에 차례로 적용)
+          // : 정해 둔 스크랩할 소설 수 만큼 읽었을 때
+          //   또는 덜 채워진 마지막 페이지의 마지막 소설 노드까지 읽었을 때
+          //   또는 꽉 채워진 마지막 페이지 끝까지 읽었을 때
           if (
             err.message === "설정한 만큼 스크랩 완료" ||
-            (isLastPage && currentNovelNoInCurrentPage > totalNovelNoInCurrentPage) ||
-            (isLastPage && err.message === "꽉 채워진 한 페이지의 마지막 소설 노드 읽은 후")
+            (isLastPage && currentNovelNoInCurrentPage > lastNovelNoInCurrentPage) ||
+            (isLastPage &&
+              err.message ===
+                "마지막 페이지인지 확인 : 꽉 채워진 한 페이지의 마지막 소설 노드 읽은 후")
           ) {
+            totalNovelNoListForRidi.push(accumulatedNovelNoInCurrentGenre); // 현재 장르의 누적 소설 수 기억
+            accumulatedNovelNoInCurrentGenre = 0;
+
+            totalPageNoListForRidi.push(currentPageNo); // 현재 장르의 페이지 수 기억
+            currentPageNo = 1;
+
             console.log(
               err,
-              "\n  현재 장르 조회 완료 : 설정한 만큼 스크랩 완료 또는 읽어올 작품이 더 없음",
-            );
-
-            // 플랫폼 내 현재 장르의 페이지 수를 리스트에 추가 //
-            if (currentNovelNoInCurrentPage !== 1 || totalNovelNoToScrape === 1) {
-              // 페이지의 소설 몇 개를 읽고 catch문 실행 시 또는 스크랩할 소설 수가 1일 때
-              //   현재 페이지를 마지막 페이지로 간주
-              totalPageNoListForRidi.push(currentPageNo);
-            } else if (currentNovelNoInCurrentPage === 1) {
-              // 페이지의 첫 번째 소설도 읽지 못하고 catch문 실행 시
-              //     직전 페이지를 마지막 페이지로 간주
-              totalPageNoListForRidi.push(currentPageNo - 1);
-            }
-
-            currentPageNo = 1; // 페이지 넘버 1로 리셋
-
-            totalNovelNoListForRidi.push(accumulatedNovelNoOfCurrentGenre); // 세부 장르 별 소설 수 추가
-            accumulatedNovelNoOfCurrentGenre = 0;
-
-            console.log(
-              "totalPageNoListForRidi: ",
-              totalPageNoListForRidi,
-              " totalNovelNoListForRidi: ",
-              totalNovelNoListForRidi,
+              `현재 장르 조회 완료 \n totalNovelNoListForRidi: ${String(
+                totalNovelNoListForRidi,
+              )} totalPageNoListForRidi: ${String(totalPageNoListForRidi)}`,
             );
 
             continue genreLoop; // 다음 장르 조회
@@ -222,11 +224,12 @@ async function getNovelUrlsForRidi(
 
           // 3. 현재 페이지의 다음 소설 노드 읽으러 가기 //
           //   : 2의 조건문을 만족하지 않으면서 소설 노드 읽기 실패 시
+          //     (마지막 페이지에서도 마지막이 아닌 노드 읽을 때 실패할 수 있음)
           console.log(err, "\n  현재 노드 또는 노드의 url 읽기 실패");
           continue;
         }
       }
-      // 다음 페이지 이동
+      // 다음 페이지 조회
       currentPageNo += 1;
       await goToNovelListPage(page, "new", novelPlatform, {
         genreNo: genreNOs[ctgIdx],
@@ -237,7 +240,7 @@ async function getNovelUrlsForRidi(
   }
 
   return {
-    novelUrlsFromPages: novelUrls,
+    novelUrls,
     totalNovelNoForRidi: totalNovelNoListForRidi.reduce((a, b) => a + b), // 세부 장르 별 소설 수 합산
     totalNovelNoListForRidi,
     totalPageNoListForRidi,
@@ -343,7 +346,8 @@ async function getNovelUrlsForSeries(
       currentNovelNoOfPage += 1
     ) {
       try {
-        // 마지막페이지일 때 마지막 페이지의 작품 수 만큼 읽기(에러 방지)
+        // 마지막페이지일 때 작품이 페이지에 덜 채워 게시된 경우
+        //  마지막 페이지의 작품 수 만큼 읽고 루프 탈출
         if (currentPageNo === totalPageNoInPlatform && novelNoInLastPage < currentNovelNoOfPage) {
           break visitPages;
         }
@@ -380,6 +384,7 @@ async function getNovelUrlsForSeries(
       }
     }
 
+    // 마지막 페이지에 작품이 꽉 채워 게시된 경우
     if (currentPageNo === totalPageNoInPlatform) break;
 
     currentPageNo += 1; // 다음 페이지 이동
@@ -469,7 +474,6 @@ export default async function newScraper(
           { totalNovelNoInPlatform, totalNovelNoToScrapeFromParam },
           isSkipForAge19,
         );
-        if (!novelUrlsAndNovelNo) return;
 
         novelUrls = novelUrlsAndNovelNo.novelUrls;
         totalNovelNoToScrape = novelUrlsAndNovelNo.accumulatedNovelNo;
@@ -498,18 +502,17 @@ export default async function newScraper(
       }
 
       if (novelPlatform === "리디북스" && typeof genreNo === "object") {
-        const novelUrlsAndTotalNOs = await getNovelUrlsForRidi(
+        const novelUrlsAndNOs = await getNovelUrlsForRidi(
           page,
           genreNo,
-          totalNovelNoToScrapeFromParam ? totalNovelNoToScrape : undefined,
+          totalNovelNoToScrapeFromParam,
           isSkipForAge19,
         );
-        if (!novelUrlsAndTotalNOs) return;
 
-        novelUrls = novelUrlsAndTotalNOs.novelUrlsFromPages;
-        totalNovelNoToScrape = novelUrlsAndTotalNOs.totalNovelNoForRidi; // 세부 장르 별 소설 수 합산
-        totalNovelNoListForRidi.push(...novelUrlsAndTotalNOs.totalNovelNoListForRidi);
-        totalPageNoListForRidi.push(...novelUrlsAndTotalNOs.totalPageNoListForRidi);
+        novelUrls = novelUrlsAndNOs.novelUrls;
+        totalNovelNoToScrape = novelUrlsAndNOs.totalNovelNoForRidi;
+        totalNovelNoListForRidi.push(...novelUrlsAndNOs.totalNovelNoListForRidi);
+        totalPageNoListForRidi.push(...novelUrlsAndNOs.totalPageNoListForRidi);
       }
 
       // 장르 전체 조회 완료 표시
