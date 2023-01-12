@@ -46,6 +46,8 @@ export default async function setNovels(
         novelPlatform,
       );
 
+      if (!novelId) throw Error("can't get this novel");
+
       console.log("novelId: ", novelId);
     } catch (err: any) {
       console.log(`${String(err)}\n novelUrl: ${novelUrls[currentNovelNo - 1]}`);

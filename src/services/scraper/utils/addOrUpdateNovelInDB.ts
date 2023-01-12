@@ -121,7 +121,7 @@ const selectorsOfNovelPage = {
 async function getInfo(
   page: puppeteer.Page,
   selector: string,
-  instruction: "attr" | "html" | undefined = undefined,
+  instruction?: "attr" | "html",
   attributeName = "",
 ) {
   try {
@@ -145,7 +145,7 @@ async function getInfo(
     );
     return info;
   } catch (err: any) {
-    console.log("can't get info from element");
+    console.log(err);
     return undefined; // for when there is no certain node
   }
 }
@@ -170,23 +170,27 @@ async function getTitle(
   novelPlatform: NovelPlatform,
   selectorOfTitle: string,
 ) {
-  if (novelPlatform === "네이버 시리즈") {
-    // 제목 앞에 추가정보(from some icon) 붙은 경우 제외하고 가져오기
-    const titleElement = await page.waitForSelector(selectorOfTitle, { timeout: 5000 });
-    // timeout 5초로 시간 절약
-    // : 비로그인 상태에서 19세 작품 페이지 조회 시 실패하므로
-    //   특히 네이버 시리즈 (로그인페이지 나옴)
+  try {
+    if (novelPlatform === "네이버 시리즈") {
+      // 제목 앞에 추가정보(from some icon) 붙은 경우 제외하고 가져오기
+      const titleElement = await page.waitForSelector(selectorOfTitle, { timeout: 5000 });
+      // timeout 5초로 시간 절약
+      // : 비로그인 상태에서 19세 작품 페이지 조회 시 실패하므로
+      //   특히 네이버 시리즈 (로그인페이지 나옴)
 
-    return (await page.evaluate((element) => {
-      if (element.childNodes.length !== 1) {
-        const beforeTitle = element.children[0].innerText;
-        return element.innerText.slice(beforeTitle.length);
-      }
-      return element.innerText;
-    }, titleElement)) as string;
+      return (await page.evaluate((element) => {
+        if (element.childNodes.length !== 1) {
+          const beforeTitle = element.children[0].innerText;
+          return element.innerText.slice(beforeTitle.length);
+        }
+        return element.innerText;
+      }, titleElement)) as string;
+    }
+
+    return await getInfo(page, selectorOfTitle);
+  } catch (err) {
+    console.log(err);
   }
-
-  return await getInfo(page, selectorOfTitle);
 }
 
 async function getDescFromPageForRidi(page: puppeteer.Page) {
@@ -361,7 +365,7 @@ async function getAge(page: puppeteer.Page, novelPlatform: NovelPlatform) {
   }
   if (novelPlatform === "리디북스") {
     const notification = await getInfo(page, selectorsOfNovelPage.ridi.age);
-    if (!notification) return;
+    if (notification === undefined) return;
 
     if (notification.includes("15세")) return "15세 이용가";
     if (notification.includes("12세")) return "12세 이용가";
@@ -555,8 +559,8 @@ function findSameNovelsFromTitlesWithLabels(
 }
 
 function getSelectorsByPlatform(novelPlatform: NovelPlatform) {
-  let selectorOfTitle;
-  let selectorOfAuthor;
+  let selectorOfTitle = "";
+  let selectorOfAuthor = "";
 
   if (novelPlatform === "카카오페이지") {
     selectorOfTitle = selectorsOfNovelPage.kakape.title;
@@ -583,14 +587,18 @@ export async function goToDetailPage(
   novelUrl: string,
   novelPlatform: NovelPlatform,
 ) {
-  if (novelPlatform === "카카오페이지") {
-    // 상세페이지의 '작품소개' 탭에서 정보 읽기
-    // waitUntil option to wait for elements loading
-    await page.goto(`https://${novelUrl}?tab_type=about`, { waitUntil: "networkidle0" });
-    return;
-  }
+  try {
+    if (novelPlatform === "카카오페이지") {
+      // 상세페이지의 '작품소개' 탭에서 정보 읽기
+      // waitUntil option to wait for elements loading
+      await page.goto(`https://${novelUrl}?tab_type=about`, { waitUntil: "networkidle0" });
+      return;
+    }
 
-  await page.goto(`https://${novelUrl}`, { waitUntil: "networkidle0" });
+    await page.goto(`https://${novelUrl}`, { waitUntil: "networkidle0" });
+  } catch (err) {
+    console.log(err);
+  }
 }
 
 async function getSameNovelsAndSeveralInfo(
@@ -598,44 +606,46 @@ async function getSameNovelsAndSeveralInfo(
   novelUrl: string,
   novelPlatform: NovelPlatform,
 ) {
-  await goToDetailPage(page, novelUrl, novelPlatform);
+  try {
+    await goToDetailPage(page, novelUrl, novelPlatform);
 
-  const { selectorOfTitle, selectorOfAuthor } = getSelectorsByPlatform(novelPlatform);
-  if (!(selectorOfTitle && selectorOfAuthor)) return undefined;
+    const { selectorOfTitle, selectorOfAuthor } = getSelectorsByPlatform(novelPlatform);
 
-  const novelTitleFromPage = await getTitle(page, novelPlatform, selectorOfTitle);
+    const novelTitleFromPage = await getTitle(page, novelPlatform, selectorOfTitle);
+    if (!novelTitleFromPage) throw Error("can't get this novel");
 
-  if (!novelTitleFromPage) throw Error("can't get this novel");
+    // 조아라 소설일 때는 제목 태그 안 뗌
+    //  : 패러디 장르의 경우 제목 앞에 [ ] 태그를 붙이는 게 일반적이기 때문
+    const novelTitleWithoutLabels =
+      novelPlatform !== "조아라" ? removeLabelsFromTitle(novelTitleFromPage) : novelTitleFromPage;
 
-  // 조아라 소설일 때는 제목 태그 안 뗌
-  //  : 패러디 장르의 경우 제목 앞에 [ ] 태그를 붙이는 게 일반적이기 때문
-  const novelTitleWithoutLabels =
-    novelPlatform !== "조아라" ? removeLabelsFromTitle(novelTitleFromPage) : novelTitleFromPage;
+    const novelAuthor = await getInfo(page, selectorOfAuthor);
+    if (!novelAuthor) throw Error("can't get this novel");
 
-  const novelAuthor = await getInfo(page, selectorOfAuthor);
-  if (!novelAuthor) throw Error("can't get this novel");
+    // 라벨 뗀 문구가 포함된 제목으로 소설 검색 in DB
+    // get novels that have titles including text without labels in them
+    const existingNovelsInDB = await searchForNovelsByTitleAndAuthor(
+      novelTitleWithoutLabels,
+      novelAuthor,
+    );
 
-  // 라벨 뗀 문구가 포함된 제목으로 소설 검색 in DB
-  // get novels that have titles including text without labels in them
-  const existingNovelsInDB = await searchForNovelsByTitleAndAuthor(
-    novelTitleWithoutLabels,
-    novelAuthor,
-  );
+    const sameNovelsInDB = findSameNovelsFromTitlesWithLabels(
+      existingNovelsInDB,
+      novelTitleWithoutLabels,
+    );
 
-  const sameNovelsInDB = findSameNovelsFromTitlesWithLabels(
-    existingNovelsInDB,
-    novelTitleWithoutLabels,
-  );
+    const isBL = novelTitleFromPage.includes("[BL]"); // only for kakape platform
 
-  const isBL = novelTitleFromPage.includes("[BL]"); // only for kakape platform
-
-  const severalNovelInfo = {
-    novelTitle: novelTitleWithoutLabels,
-    novelAuthor,
-    novelUrl,
-    isBL,
-  };
-  return { sameNovelsInDB, severalNovelInfo };
+    const severalNovelInfo = {
+      novelTitle: novelTitleWithoutLabels,
+      novelAuthor,
+      novelUrl,
+      isBL,
+    };
+    return { sameNovelsInDB, severalNovelInfo };
+  } catch (err: any) {
+    console.log(err);
+  }
 }
 
 async function updateNovel(
@@ -768,22 +778,26 @@ export default async function addOrUpdateNovelInDB(
   novelUrl: string,
   novelPlatform: NovelPlatform,
 ) {
-  const sameNovelsAndInfo = await getSameNovelsAndSeveralInfo(page, novelUrl, novelPlatform);
+  try {
+    const sameNovelsAndInfo = await getSameNovelsAndSeveralInfo(page, novelUrl, novelPlatform);
 
-  if (!sameNovelsAndInfo) throw Error("can't get this novel");
+    if (!sameNovelsAndInfo) throw Error("can't get this novel");
 
-  const { sameNovelsInDB, severalNovelInfo } = sameNovelsAndInfo;
+    const { sameNovelsInDB, severalNovelInfo } = sameNovelsAndInfo;
 
-  // when the novel is not in db //
-  //  add new novel to novelInfo table
-  if (sameNovelsInDB.length === 0) {
-    const novelId = await addNewNovel(page, severalNovelInfo, novelPlatform);
+    // when the novel is not in db //
+    //  add new novel to novelInfo table
+    if (sameNovelsInDB.length === 0) {
+      const novelId = await addNewNovel(page, severalNovelInfo, novelPlatform);
+      return novelId;
+    }
+
+    // when novel is in db //
+    //  update the novel with its platform and url
+    const novelUrlAndTitle = { novelUrl, novelTitle: severalNovelInfo.novelTitle };
+    const novelId = await updateNovelWithPlatform(novelUrlAndTitle, sameNovelsInDB, novelPlatform);
     return novelId;
+  } catch (err: any) {
+    console.log(err);
   }
-
-  // when novel is in db //
-  //  update the novel with its platform and url
-  const novelUrlAndTitle = { novelUrl, novelTitle: severalNovelInfo.novelTitle };
-  const novelId = await updateNovelWithPlatform(novelUrlAndTitle, sameNovelsInDB, novelPlatform);
-  return novelId;
 }
