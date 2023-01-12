@@ -253,8 +253,8 @@ async function getNovelUrlsForKakape(
     totalNovelNoToScrapeFromParam,
   );
 
-  // repeat : load novel node and read url from it
-  while (accumulatedNovelNo < totalNovelNoToScrape || currentNovelNo <= totalNovelNoInPlatform) {
+  // repeat : load novel node and read url from it (최대 전체 소설 수 조회)
+  while (currentNovelNo <= totalNovelNoInPlatform) {
     console.log(
       `currentNovelNo: ${currentNovelNo}, totalNovelNoToScrape: ${totalNovelNoToScrape}, totalNovelNoInPlatform: ${totalNovelNoInPlatform}`,
     );
@@ -283,6 +283,14 @@ async function getNovelUrlsForKakape(
       console.log(
         `accumulatedNovelNo: ${accumulatedNovelNo}/${totalNovelNoToScrape} novelUrl: ${novelUrl}`,
       );
+
+      // 설정한 만큼 url 스크랩 시 조회 종료
+      // - if totalNovelNoToScrapeFromParam is bigger than or the same as totalNovelNoInPlatform,
+      //    accumulatedNovelNo can be smaller than totalNovelNoToScrapeFromParam
+      //    as considering failing scraping urls in the middle
+      if (accumulatedNovelNo === totalNovelNoToScrape) {
+        break;
+      }
     } catch (err) {
       console.log(err, "\n 현재 작품 노드 또는 url 읽기 실패");
     }
