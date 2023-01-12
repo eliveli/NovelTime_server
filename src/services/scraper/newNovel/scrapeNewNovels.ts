@@ -511,20 +511,19 @@ export default async function newScraper(
       }
 
       isAfterGettingUrls = true;
-      await context.close();
-      continue; // 시크릿창 닫고 반복문 2회차 진행 - 상세페이지 조회하러 가기
     }
 
-    // 읽어온 urls로 상세페이지 조회, 소설 정보 db에 등록
-    //  목록 조회 완료 후 반복문 2회차부터 실행(시크릿창 닫고 열며)
-    if (isAfterGettingUrls) {
-      if (novelUrls.length === 0) throw Error("novelUrls was not set");
-      if (totalNovelNoToScrape === undefined) throw Error("totalNovelNoToScrape was not set");
-      if (novelPlatform === "네이버 시리즈" && totalPageNoForSeries === undefined) {
-        throw Error("totalPageNoForSeries was not set");
-      }
+    if (novelUrls.length === 0) throw Error("novelUrls was not set");
+    if (totalNovelNoToScrape === undefined) throw Error("totalNovelNoToScrape was not set");
+    if (novelPlatform === "네이버 시리즈" && totalPageNoForSeries === undefined) {
+      throw Error("totalPageNoForSeries was not set");
+    }
 
+    // 읽어온 urls로 상세페이지 조회, 소설 정보 db 등록
+    //  목록 조회 완료 직후(루프 1회차) 또는 단독으로(루프 2회차부터) 실행 (시크릿창 닫고 열며)
+    if (isAfterGettingUrls) {
       if (currentNoToGetNovel !== 1) {
+        // 루프 1회차에 불필요
         await goToNovelListPage(page, "new", novelPlatform, {
           genreNo: typeof genreNo === "number" ? genreNo : genreNo[0],
           currentPageNo: 1,
