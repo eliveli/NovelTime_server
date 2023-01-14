@@ -249,7 +249,7 @@ export default async function login(page: puppeteer.Page, novelPlatform: NovelPl
     await page.waitForSelector("#new\\.save");
     await page.click("#new\\.save"); // 자주 사용하는 기기 등록
 
-    // await waitForProfileIconAfterLogin(page, novelPlatform);
+    await waitForProfileIconAfterLogin(page, novelPlatform);
   }
 
   if (novelPlatform === "리디북스") {
@@ -261,7 +261,7 @@ export default async function login(page: puppeteer.Page, novelPlatform: NovelPl
 
     await page.click("#__next > div > section > div > form > button"); // click login button
 
-    // await waitForProfileIconAfterLogin(page, novelPlatform);
+    await waitForProfileIconAfterLogin(page, novelPlatform);
   }
 
   if (novelPlatform === "조아라") {
@@ -271,6 +271,6 @@ export default async function login(page: puppeteer.Page, novelPlatform: NovelPl
 
     await page.click("#root > div > div > div > button"); // click login button
 
-    // await waitForProfileIconAfterLogin(page, novelPlatform);
+    await waitForProfileIconAfterLogin(page, novelPlatform);
   }
 }
