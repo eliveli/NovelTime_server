@@ -77,7 +77,7 @@ const selectorsOfNovelPage = {
     img: "#page_detail > div.detail_wrap > div.detail_body_wrap > section > article.detail_header.trackable > div.header_thumbnail_wrap > div.header_thumbnail.book_macro_200.detail_scalable_thumbnail > div > div > div > img",
 
     title:
-      "#page_detail > div.detail_wrap > div.detail_body_wrap > section > article.detail_header.trackable > div.header_info_wrap > div.info_title_wrap > h3",
+      "#page_detail > div.detail_wrap > div.detail_body_wrap > section > article.detail_header.trackable > div.header_info_wrap > div.info_title_wrap > h1",
 
     desc: "article.detail_box_module.detail_introduce_book #introduce_book > p",
 
@@ -612,7 +612,7 @@ async function getSameNovelsAndSeveralInfo(
     const { selectorOfTitle, selectorOfAuthor } = getSelectorsByPlatform(novelPlatform);
 
     const novelTitleFromPage = await getTitle(page, novelPlatform, selectorOfTitle);
-    if (!novelTitleFromPage) throw Error("can't get this novel");
+    if (!novelTitleFromPage) throw Error("can't get this novel when getting novel title");
 
     // 조아라 소설일 때는 제목 태그 안 뗌
     //  : 패러디 장르의 경우 제목 앞에 [ ] 태그를 붙이는 게 일반적이기 때문
@@ -620,7 +620,7 @@ async function getSameNovelsAndSeveralInfo(
       novelPlatform !== "조아라" ? removeLabelsFromTitle(novelTitleFromPage) : novelTitleFromPage;
 
     const novelAuthor = await getInfo(page, selectorOfAuthor);
-    if (!novelAuthor) throw Error("can't get this novel");
+    if (!novelAuthor) throw Error("can't get this novel when getting novel author");
 
     // 라벨 뗀 문구가 포함된 제목으로 소설 검색 in DB
     // get novels that have titles including text without labels in them
