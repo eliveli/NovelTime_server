@@ -396,7 +396,7 @@ async function getNovelUrlsForSeries(
 // note. pagination for series, infinite scroll for kakape, pagination & scroll for ridi
 //   - for kakape & ridi, it is necessary to move a page down to load new novels in a page
 //   - for series, all novels in a page is loaded at once when entering it
-export default async function newScraper(
+export default async function newNovelScraper(
   novelPlatform: NovelPlatform,
   genreNo: number | number[], // only ridi gets multiple genres from this
   totalNovelNoToScrapeFromParam?: number,

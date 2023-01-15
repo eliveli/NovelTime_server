@@ -16,7 +16,10 @@ import goToNovelListPage from "../utils/goToNovelListPage";
 
 // (유의 : 조아라는 먼저 비로그인 상태로 전체 장르에서 소설 urls 수집)
 //                       로그인 시 선호장르 안에서 베스트 소설 게시되나 활용X)
-export default async function weeklyScraper(novelPlatform: NovelPlatform, isSkipForAge19?: false) {
+export default async function weeklyNovelScraper(
+  novelPlatform: NovelPlatform,
+  isSkipForAge19?: false,
+) {
   const browser = await puppeteer.launch({
     headless: false, // 브라우저 화면 열려면 false
     args: [...minimalArgs, "--start-maximized"],

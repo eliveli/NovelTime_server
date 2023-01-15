@@ -67,8 +67,8 @@ export default async function skipNovelForAge19(
   scraperType?: ScraperType,
 ) {
   // this is unnecessary when novelPlatform is "조아라"
-  // - newScraper 사용X
-  // - weeklyScraper 판별 불필요 : 비로그인 시 19세 소설 게시 X
+  // - newNovelScraper 사용X
+  // - weeklyNovelScraper 판별 불필요 : 비로그인 시 19세 소설 게시 X
   if (novelPlatform === "조아라") return;
 
   // 리디북스는 리스트 페이지에서 성인 제외 체크 또는 해제(url params)
