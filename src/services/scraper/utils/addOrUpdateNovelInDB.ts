@@ -588,14 +588,23 @@ export async function goToDetailPage(
   novelPlatform: NovelPlatform,
 ) {
   try {
-    if (novelPlatform === "카카오페이지") {
-      // 상세페이지의 '작품소개' 탭에서 정보 읽기
-      // waitUntil option to wait for elements loading
-      await page.goto(`https://${novelUrl}?tab_type=about`, { waitUntil: "networkidle0" });
+    // - wait longer in joara only as setting { waitUntil: "networkidle0" }
+    // - in other platforms it's okay to set "domcontentloaded"
+    //    to reduce time for scrapping one novel
+    //    "networkidle0" requires more time but it is necessary for joara
+    if (novelPlatform === "조아라") {
+      await page.goto(`https://${novelUrl}`, { waitUntil: "networkidle0" });
       return;
     }
 
-    await page.goto(`https://${novelUrl}`, { waitUntil: "networkidle0" });
+    if (novelPlatform === "카카오페이지") {
+      // 상세페이지의 '작품소개' 탭에서 정보 읽기
+      // waitUntil option to wait for elements loading
+      await page.goto(`https://${novelUrl}?tab_type=about`, { waitUntil: "domcontentloaded" });
+      return;
+    }
+
+    await page.goto(`https://${novelUrl}`, { waitUntil: "domcontentloaded" });
   } catch (err) {
     console.log(err);
   }

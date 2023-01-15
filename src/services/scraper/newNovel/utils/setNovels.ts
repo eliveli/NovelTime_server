@@ -55,7 +55,7 @@ export default async function setNovels(
 
     currentNovelNo += 1; // for 다음 작품 조회
 
-    if (currentNovelNo % 100 === 0) break; // 작품 100번째 마다 loop 탈출. for 시크릿창 여닫기
+    if (currentNovelNo % 500 === 0) break; // 작품 500번째 마다 loop 탈출. for 시크릿창 여닫기
   }
 
   return currentNovelNo; // for 시크릿창 닫고 열면서 다음에 조회할 작품 번호 표시
