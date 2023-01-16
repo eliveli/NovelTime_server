@@ -81,6 +81,7 @@ async function waitForCurrentNovel(
 
   const totalQuantityOfNovelsInOneRequest = novelPlatform === "카카오페이지" ? 24 : 5;
 
+  // 카카오페이지일 때 소설 200개 마다 대기시간 증가 (불러오는 첫 번째 소설에 적용)
   const waitingTimeForFirstNovel =
     novelPlatform === "카카오페이지" ? 1000 * (Math.floor(currentNovelNo / 200) + 1) : 2000;
 
@@ -108,6 +109,20 @@ export async function waitOrLoadNovel(
   currentNovelNo: number,
 ) {
   const downKey = novelPlatform === "카카오페이지" ? "End" : "PageDown";
+
+  // 카카페만 소설 수 in 1 set === 24개 고정
+  //  리디는 페이지 다운으로 몇 줄이 요청되느냐에 따라 다름 (1줄 5개)
+  //  리디는 참고만. 한 번에 한 페이지의 모든 소설을 요청하도록 변경했기 때문
+  //                                                  (from 화면 viewport 설정)
+  const totalQuantityOfNovelsInOneRequest = novelPlatform === "카카오페이지" ? 24 : 5;
+
+  // 요청하는 소설 횟수가 많을 때는 페이지다운 후 delay 시간 증가
+  //  (소설 1000 단위 마다, 최대 6초
+  //      waiting time도 설정하므로 delay time을 지나치게 많이 잡을 필요 없음)
+  // : 페이지를 내려 연속 소설 요청 시 에러 페이지 이동 case 대처
+  //   actually it is for kakape
+  const calcDelayTime = 100 * (Math.floor(currentNovelNo / 1000) * 10);
+  const delayTime = calcDelayTime < 6000 ? calcDelayTime : 6000;
 
   // 변경 사항
   // (기존) 소설 노드를 못 읽으면 페이지 내려 소설 요청
@@ -142,7 +157,13 @@ export async function waitOrLoadNovel(
 
       if (waitingNo === 3) return;
 
-      await page.keyboard.press(downKey, { delay: 100 });
+      // 소설을 새로 요청하는 순서에서만 페이지 다운
+      // 소설을 새로 요청하는 순서가 아니라면 try catch 반복하며 소설 노드 더 기다림
+      //  불필요하게 연속으로 페이지를 내려 에러페이지로 가는 케이스 대처(for 카카페)
+      if (currentNovelNo % totalQuantityOfNovelsInOneRequest === 1) {
+        await page.keyboard.press(downKey, { delay: delayTime });
+      }
+
       continue; // 페이지 다운 후 다시 소설 노드 읽기 시도
 
       // error case for kakape (이전 코드에서 발견. 지금은 참고만 하기)
