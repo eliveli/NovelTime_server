@@ -26,6 +26,30 @@ jest.setTimeout(60000000);
 // [대처]
 //  - 자동절전모드 시간 조정 또는 해제
 
+it("run a new novel scraper for series :", async () => {
+  // await newNovelScraper("네이버 시리즈", genreFilter.series.F);
+  // await newNovelScraper("네이버 시리즈", genreFilter.series.MF);
+  // await newNovelScraper("네이버 시리즈", genreFilter.series.RF);
+  await newNovelScraper("네이버 시리즈", genreFilter.series.R);
+  await newNovelScraper("네이버 시리즈", genreFilter.series.MA);
+  await newNovelScraper("네이버 시리즈", genreFilter.series.Mystery);
+  await newNovelScraper("네이버 시리즈", genreFilter.series.LN);
+  await newNovelScraper("네이버 시리즈", genreFilter.series.BL);
+});
+
+// it("run a new novel scraper for kakape :", async () => {
+//   await newNovelScraper("카카오페이지", genreFilter.kakape.R, 36, false);
+// });
+
+// it("run a new novel scraper for ridi:", async () => {
+//   await newNovelScraper("리디북스", genreFilter.ridi.R, 1, false);
+
+// 리디 소설은 이전에 스크랩한 것 db에서 모두 삭제, 새로 스크랩
+//  : 플랫폼에서 장르 번호 및 작품 번호가 모두 바뀜.
+//    작품 번호가 작품 url에 포함되기에 새로 스크랩이 요구되었음
+//    (사실 작품 번호도 함께 변경되었다고 단정짓기 어려움. 예전 스크래퍼에 결함이 있었을 가능성 때문)
+// });
+
 // it("test : getting desc:", async () => {
 //   // const novelUrl = "series.naver.com/novel/detail.series?productNo=4130558";
 //   const novelUrl = "page.kakao.com/content/60847452";
@@ -37,29 +61,6 @@ jest.setTimeout(60000000);
 //   await goToDetailPage(page, novelUrl, novelPlatform);
 //   const desc = await getDesc(page, novelPlatform);
 //   console.log("desc : ", desc);
-// });
-
-it("run a new scraper for a certain amount of novels for series :", async () => {
-  await newNovelScraper("네이버 시리즈", genreFilter.series.F);
-  await newNovelScraper("네이버 시리즈", genreFilter.series.MF);
-  await newNovelScraper("네이버 시리즈", genreFilter.series.RF);
-  await newNovelScraper("네이버 시리즈", genreFilter.series.R);
-  await newNovelScraper("네이버 시리즈", genreFilter.series.MA);
-  await newNovelScraper("네이버 시리즈", genreFilter.series.Mystery);
-  await newNovelScraper("네이버 시리즈", genreFilter.series.LN);
-  await newNovelScraper("네이버 시리즈", genreFilter.series.BL);
-});
-
-// 리디 소설은 이전에 스크랩한 것 db에서 모두 삭제, 새로 스크랩
-//  : 플랫폼에서 장르 번호 및 작품 번호가 모두 바뀜.
-//    작품 번호가 작품 url에 포함되기에 새로 스크랩이 요구되었음
-//    (사실 작품 번호도 함께 변경되었다고 단정짓기 어려움. 예전 스크래퍼에 결함이 있었을 가능성 때문)
-// it("run a new scraper for a certain amount of novels for ridi:", async () => {
-//   await newNovelScraper("리디북스", genreFilter.ridi.R, 1, false);
-// });
-
-// it("run a new scraper for a certain amount of novels for kakape :", async () => {
-//   await newNovelScraper("카카오페이지", genreFilter.kakape.R, 36, false);
 // });
 
 // it("test setNovels :", async () => {
@@ -74,6 +75,4 @@ it("run a new scraper for a certain amount of novels for series :", async () => 
 //   const page = await browser.newPage();
 //   const novelNo = await setNovels(page, novelNoAndPageNo, "카카오페이지", novelUrls);
 //   console.log("novelNo:", novelNo);
-
-// 카카페 설렉터들이 다른 소설 페이지에서도 잘 적용되는지 확인 >> 1차 완료
 // });

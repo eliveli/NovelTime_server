@@ -511,6 +511,13 @@ export default async function newNovelScraper(
       }
 
       isAfterGettingUrls = true;
+
+      // 장르 전체 스크랩 시 novel urls 수집 후 시크릿창 한 번 닫고 열기
+      //  직전 작업이 지나치게 많을 때 일어날 수도 있는 에러 방지
+      if (totalNovelNoToScrapeFromParam === undefined) {
+        await context.close(); // 시크릿창 닫기
+        continue;
+      }
     }
 
     if (novelUrls.length === 0) throw Error("novelUrls was not set");
@@ -520,7 +527,8 @@ export default async function newNovelScraper(
     }
 
     // 읽어온 urls로 상세페이지 조회, 소설 정보 db 등록
-    //  목록 조회 완료 직후(루프 1회차) 또는 단독으로(루프 2회차부터) 실행 (시크릿창 닫고 열며)
+    //  목록 조회 완료 직후(루프 1회차, 스크랩 수 param 존재)
+    //   또는 단독으로(루프 2회차부터) 실행 (시크릿창 닫고 열며)
     if (isAfterGettingUrls) {
       if (currentNoToGetNovel !== 1) {
         // 루프 1회차에 불필요
