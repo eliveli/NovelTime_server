@@ -530,8 +530,9 @@ export default async function newNovelScraper(
     //  목록 조회 완료 직후(루프 1회차, 스크랩 수 param 존재)
     //   또는 단독으로(루프 2회차부터) 실행 (시크릿창 닫고 열며)
     if (isAfterGettingUrls) {
-      if (currentNoToGetNovel !== 1) {
-        // 루프 1회차에 불필요
+      if (totalNovelNoToScrapeFromParam === undefined || currentNoToGetNovel !== 1) {
+        // 전체 스크랩 시 필수 (url 스크랩 후 시크릿 창 한 번 닫기 때문)
+        //  & 일부 스크랩이면서 루프 1회차일 때 불필요 (url 스크랩 후 시크릿 창 닫지 않고 진행)
         await goToNovelListPage(page, "new", novelPlatform, {
           genreNo: typeof genreNo === "number" ? genreNo : genreNo[0],
           currentPageNo: 1,
