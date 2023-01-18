@@ -1,5 +1,4 @@
 import puppeteer from "puppeteer";
-import sleep from "../../utils/sleep";
 import seeNovelListWithCardForRidi from "./seeNovelListWithCardForRidi";
 import { NovelPlatform } from "./types";
 
@@ -147,24 +146,29 @@ export async function waitOrLoadNovel(
       // and increase waiting time when reading a first novel
       //    right after moving a page down and loading novels
       return await waitForCurrentNovel(page, novelPlatform, currentNovelNo, waitingNo);
-    } catch {
+    } catch (err: any) {
       // 최대 두 번 까지 소설 다시 요청(페이지 다운이 작동하지 않을 경우 고려한 것)
       // if timeout occurs when waitingNo is 1 or 2
       //  move a page down by pressing an End key for kakape, Page Down key for ridi
       //  and request next novel pack
       // and wait for the node again
 
+      if (err.message === "대기 없이 소설 요청") {
+        console.log(err.message);
+      }
+
       console.log("waitingNo:", waitingNo);
 
       if (waitingNo === 3) return;
 
-      // 소설을 새로 요청하는 순서에서만 페이지 다운
-      // 소설을 새로 요청하는 순서가 아니라면 try catch 반복하며 소설 노드 더 기다림
-      //  불필요하게 연속으로 페이지를 내려 에러페이지로 가는 케이스 대처(for 카카페)
+      // (for 카카페)
+      // . 현재 새로 소설을 요청하는 차례라면 페이지 다운
+      //   : 불필요하게 연속으로 페이지를 내려 에러페이지로 가는 케이스 대처
+      // . 페이지 다운 2번 연속
+      //   : 중후반부 페이지다운 동작하지 않는 것 대처
       if (currentNovelNo % totalQuantityOfNovelsInOneRequest === 1) {
-        await page.keyboard.down(downKey);
-        await sleep(delayTime);
-        await page.keyboard.up(downKey);
+        await page.keyboard.press(downKey);
+        await page.keyboard.press(downKey, { delay: delayTime });
       }
 
       continue; // 페이지 다운 후 다시 소설 노드 읽기 시도
