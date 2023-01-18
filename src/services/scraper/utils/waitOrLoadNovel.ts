@@ -1,4 +1,5 @@
 import puppeteer from "puppeteer";
+import sleep from "../../utils/sleep";
 import seeNovelListWithCardForRidi from "./seeNovelListWithCardForRidi";
 import { NovelPlatform } from "./types";
 
@@ -161,7 +162,9 @@ export async function waitOrLoadNovel(
       // 소설을 새로 요청하는 순서가 아니라면 try catch 반복하며 소설 노드 더 기다림
       //  불필요하게 연속으로 페이지를 내려 에러페이지로 가는 케이스 대처(for 카카페)
       if (currentNovelNo % totalQuantityOfNovelsInOneRequest === 1) {
-        await page.keyboard.press(downKey, { delay: delayTime });
+        await page.keyboard.down(downKey);
+        await sleep(delayTime);
+        await page.keyboard.up(downKey);
       }
 
       continue; // 페이지 다운 후 다시 소설 노드 읽기 시도

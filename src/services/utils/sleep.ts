@@ -1,5 +1,5 @@
-export default async function sleep(seconds: number) {
+export default async function sleep(milliSeconds: number) {
   await new Promise((resolve) => {
-    setTimeout(resolve, seconds * 2000);
+    setTimeout(resolve, milliSeconds);
   });
 }
