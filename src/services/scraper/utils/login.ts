@@ -54,11 +54,12 @@ async function waitAndClickLoginBtn(page: puppeteer.Page, novelPlatform: NovelPl
     ); // inner async and await are required
     // "page.click(selector)" doesn't always work for series
 
-    return;
+    return page;
   }
 
   // for ridi, joara
   await page.click(loginSelector); // click and go to the login page in a current tab/window
+  return page;
 }
 
 function getIDandPW(novelPlatform: NovelPlatform) {
@@ -129,7 +130,7 @@ async function typeLoginInfo(page: puppeteer.Page, novelPlatform: NovelPlatform)
   const { platformID, platformPW } = getIDandPW(novelPlatform);
 
   // id //
-  await page.waitForSelector(idSelector, { timeout: 50000 });
+  await page.waitForSelector(idSelector);
   await page.click(idSelector);
   await page.keyboard.type(platformID);
 
@@ -167,64 +168,42 @@ async function waitForProfileIconAfterLogin(page: puppeteer.Page, novelPlatform:
   await page.waitForSelector(profileIcon);
 }
 
+function getSubmitBtnForLogin(novelPlatform: NovelPlatform) {
+  if (novelPlatform === "카카오페이지") {
+    return "#mainContent > div > div > form > div.confirm_btn > button.btn_g.highlight";
+  }
+  if (novelPlatform === "네이버 시리즈") {
+    return "#log\\.login";
+  }
+  if (novelPlatform === "리디북스") {
+    return "#__next > div > section > div > form > button";
+  }
+  if (novelPlatform === "조아라") {
+    return "#root > div > div > div > button";
+  }
+
+  throw Error("can't get submit button for login");
+}
 // login to pass age limitation
 //  :  age 15 for kakape, 19 for all platforms
 export default async function login(page: puppeteer.Page, novelPlatform: NovelPlatform) {
-  if (novelPlatform === "카카오페이지") {
-    // await page.goto(novelListUrl, { waitUntil: "load", timeout: 500000 });
-    // set timeout specifically for navigational events such as page.waitForSelector
+  const submitBtn = getSubmitBtnForLogin(novelPlatform);
 
-    const newPage = await waitAndClickLoginBtn(page, novelPlatform);
-    if (!newPage) return;
+  // only kakape requires new page for login
+  const pageForLogin = await waitAndClickLoginBtn(page, novelPlatform);
 
-    await typeLoginInfo(newPage, novelPlatform);
-
-    await newPage.click(
-      "#mainContent > div > div > form > div.set_login > div > label > span.ico_comm.ico_check",
-    ); // click 로그인상태유지
-
-    // click login button
-    await newPage.click(
-      "#mainContent > div > div > form > div.confirm_btn > button.btn_g.highlight",
-    ); // submit
-
-    await waitForProfileIconAfterLogin(page, novelPlatform); // this is necessary for kakape
+  if (novelPlatform === "카카오페이지" && !pageForLogin) {
+    throw Error("can't get new page for login for kakape");
   }
+
+  await typeLoginInfo(pageForLogin, novelPlatform);
+
+  await pageForLogin.click(submitBtn);
 
   if (novelPlatform === "네이버 시리즈") {
-    await waitAndClickLoginBtn(page, novelPlatform);
-
-    await typeLoginInfo(page, novelPlatform);
-
-    await page.click("#keep"); // 로그인상태유지
-
-    await page.click("#log\\.login"); // click login button
-
-    await page.waitForSelector("#new\\.save");
-    await page.click("#new\\.save"); // 자주 사용하는 기기 등록
-
-    await waitForProfileIconAfterLogin(page, novelPlatform);
+    await pageForLogin.waitForSelector("#new\\.save");
+    await pageForLogin.click("#new\\.save"); // 자주 사용하는 기기 등록
   }
 
-  if (novelPlatform === "리디북스") {
-    await waitAndClickLoginBtn(page, novelPlatform);
-
-    await typeLoginInfo(page, novelPlatform);
-
-    await page.click("#__next > div > section > div > form > div > input"); // 로그인상태유지
-
-    await page.click("#__next > div > section > div > form > button"); // click login button
-
-    await waitForProfileIconAfterLogin(page, novelPlatform);
-  }
-
-  if (novelPlatform === "조아라") {
-    await waitAndClickLoginBtn(page, novelPlatform);
-
-    await typeLoginInfo(page, novelPlatform);
-
-    await page.click("#root > div > div > div > button"); // click login button
-
-    await waitForProfileIconAfterLogin(page, novelPlatform);
-  }
+  await waitForProfileIconAfterLogin(page, novelPlatform);
 }
