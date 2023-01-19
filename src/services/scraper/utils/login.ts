@@ -4,14 +4,34 @@ import { NovelPlatform } from "./types";
 
 dotenv.config();
 
-async function waitAndClickLoginBtn(page: puppeteer.Page, novelPlatform: NovelPlatform) {
+function getLoginSelector(novelPlatform: NovelPlatform) {
   if (novelPlatform === "카카오페이지") {
-    const loginBtn = await page.waitForSelector(
-      "#__next > div > div > div > div > div > img.active\\:opacity-30.cursor-pointer.pr-16pxr",
-    ); // wait object load
+    return "#__next > div > div > div > div > div > img.active\\:opacity-30.cursor-pointer.pr-16pxr";
+  }
 
-    // loginBtn null error handling
+  if (novelPlatform === "네이버 시리즈") {
+    return "#gnb_login_button";
+  }
+
+  if (novelPlatform === "리디북스") {
+    return "#__next > div.fig-16izi9a > div.fig-fs8jml > div > ul.fig-1aswo17 > li:nth-child(2) > a";
+  }
+
+  if (novelPlatform === "조아라") {
+    return "#root > div > div.gnb > div.pc-util-nav > ul > li:nth-child(1) > a";
+  }
+
+  throw Error("error when getting login selector");
+}
+
+async function waitAndClickLoginBtn(page: puppeteer.Page, novelPlatform: NovelPlatform) {
+  const loginSelector = getLoginSelector(novelPlatform);
+
+  const loginBtn = await page.waitForSelector(loginSelector); // wait object load
+
+  if (novelPlatform === "카카오페이지") {
     if (!loginBtn) {
+      // loginBtn null error handling
       throw new Error("login 버튼 null 에러");
     }
 
@@ -25,191 +45,130 @@ async function waitAndClickLoginBtn(page: puppeteer.Page, novelPlatform: NovelPl
     const newPage = (await newPagePromise) as puppeteer.Page;
     return newPage;
   }
+
   if (novelPlatform === "네이버 시리즈") {
     // following login process doesn't always work //
-    // I won't use this when scraper runs before they are necessary
-    //
-    // following three lines are necessary to click the login element exactly
-    const loginSelector = "#gnb_login_button";
-
-    await page.waitForSelector(loginSelector, { timeout: 10000 });
-    // "timeout" option is necessary before clicking
-
     await page.evaluate(
       async (selector) => await document.querySelector(selector).click(),
       loginSelector,
     ); // inner async and await are required
     // "page.click(selector)" doesn't always work for series
+
+    return;
   }
+
+  // for ridi, joara
+  await page.click(loginSelector); // click and go to the login page in a current tab/window
+}
+
+function getIDandPW(novelPlatform: NovelPlatform) {
+  let platformID = "";
+  let platformPW = "";
+
+  // handle undefined env variable
+  if (novelPlatform === "카카오페이지" && process.env.KAKAO_ID && process.env.KAKAO_PW) {
+    platformID = process.env.KAKAO_ID;
+    platformPW = process.env.KAKAO_PW;
+  }
+
+  if (novelPlatform === "네이버 시리즈" && process.env.SERIES_ID && process.env.SERIES_PW) {
+    platformID = process.env.SERIES_ID;
+    platformPW = process.env.SERIES_PW;
+  }
+
+  if (novelPlatform === "리디북스" && process.env.RIDI_ID && process.env.RIDI_PW) {
+    platformID = process.env.RIDI_ID;
+    platformPW = process.env.RIDI_PW;
+  }
+
+  if (novelPlatform === "조아라" && process.env.JOARA_ID && process.env.JOARA_PW) {
+    platformID = process.env.JOARA_ID;
+    platformPW = process.env.JOARA_PW;
+  }
+
+  if (!(platformID && platformPW)) {
+    throw new Error("env for ID or PW was not set");
+  }
+
+  return { platformID, platformPW };
+}
+
+function getSelectorOfIDandPW(novelPlatform: NovelPlatform) {
+  let idSelector = "";
+  let pwSelector = "";
+
+  if (novelPlatform === "카카오페이지") {
+    idSelector = "#input-loginKey";
+    pwSelector = "#input-password";
+  }
+
+  if (novelPlatform === "네이버 시리즈") {
+    idSelector = "#id";
+    pwSelector = "#pw";
+  }
+
   if (novelPlatform === "리디북스") {
-    const loginBtn = await page.waitForSelector(
-      "#__next > div.fig-16izi9a > div.fig-fs8jml > div > ul.fig-1aswo17 > li:nth-child(2) > a",
-    ); // wait object load
-
-    // loginBtn null error handling
-    if (!loginBtn) {
-      throw new Error("login 버튼 null 에러");
-    }
-
-    await page.click(
-      "#__next > div.fig-16izi9a > div.fig-fs8jml > div > ul.fig-1aswo17 > li:nth-child(2) > a",
-    ); // click and go to the login page in a current tab/window
+    idSelector = "#__next > div > section > div > form > input.fig-w58liu.e1yjg41i0";
+    pwSelector = "#__next > div > section > div > form > input.fig-7he7ta.e1yjg41i0";
   }
+
   if (novelPlatform === "조아라") {
-    const loginSelector = "#root > div > div.gnb > div.pc-util-nav > ul > li:nth-child(1) > a";
-    await page.waitForSelector(loginSelector);
-    await page.click(loginSelector);
+    idSelector = "#root > div > div > div > div.input-group > input[type=text]:nth-child(1)";
+    pwSelector = "#root > div > div > div > div.input-group > input[type=password]:nth-child(2)";
   }
+
+  if (!(idSelector && pwSelector)) {
+    throw new Error("selector for ID or PW was not set");
+  }
+
+  return { idSelector, pwSelector };
 }
 
 async function typeLoginInfo(page: puppeteer.Page, novelPlatform: NovelPlatform) {
-  if (novelPlatform === "카카오페이지") {
-    let kakaoID: string;
-    let kakaoPW: string;
+  const { platformID, platformPW } = getIDandPW(novelPlatform);
+  const { idSelector, pwSelector } = getSelectorOfIDandPW(novelPlatform);
 
-    // handle undefined env variable
-    if (process.env.KAKAO_ID) {
-      kakaoID = process.env.KAKAO_ID;
-    } else {
-      throw new Error("KAKAO_ID env was not set");
-    }
-    if (process.env.KAKAO_PW) {
-      kakaoPW = process.env.KAKAO_PW;
-    } else {
-      throw new Error("KAKAO_PW env was not set");
-    }
+  // sometimes it can not work (when playing video or running DBeaver)
+  //  It seems to occur when there are many processes in my computer
+  await page.waitForSelector(idSelector, {
+    timeout: 50000,
+  });
+  await page.type(idSelector, platformID, {
+    delay: 100,
+  });
 
-    // sometimes it can not work (when playing video or running DBeaver)
-    //  It seems to occur when there are many processes in my computer
-    await page.waitForSelector("#input-loginKey", { timeout: 50000 });
-
-    await page.type("#input-loginKey", kakaoID);
-
-    await page.waitForSelector("#input-password");
-
-    await page.type("#input-password", kakaoPW);
-  }
-
-  if (novelPlatform === "네이버 시리즈") {
-    let seriesID: string;
-    let seriesPW: string;
-
-    // handle undefined env variable
-    if (process.env.SERIES_ID) {
-      seriesID = process.env.SERIES_ID;
-    } else {
-      throw new Error("SERIES_ID env was not set");
-    }
-    if (process.env.SERIES_PW) {
-      seriesPW = process.env.SERIES_PW;
-    } else {
-      throw new Error("SERIES_PW env was not set");
-    }
-
-    await page.waitForSelector("#id", { timeout: 50000 });
-
-    // sometimes not all characters of login id is typed
-    //  I guess it's because there are many other process (but I'm not sure)
-    await page.type("#id", seriesID, { delay: 100 });
-
-    await page.waitForSelector("#pw");
-
-    await page.type("#pw", seriesPW, { delay: 100 });
-  }
-
-  if (novelPlatform === "리디북스") {
-    let ridiID: string;
-    let ridiPW: string;
-
-    // handle undefined env variable
-    if (process.env.RIDI_ID) {
-      ridiID = process.env.RIDI_ID;
-    } else {
-      throw new Error("RIDI_ID env was not set");
-    }
-    if (process.env.RIDI_PW) {
-      ridiPW = process.env.RIDI_PW;
-    } else {
-      throw new Error("RIDI_PW env was not set");
-    }
-
-    await page.waitForSelector(
-      "#__next > div > section > div > form > input.fig-w58liu.e1yjg41i0",
-      {
-        timeout: 50000,
-      },
-    );
-
-    await page.type("#__next > div > section > div > form > input.fig-w58liu.e1yjg41i0", ridiID, {
-      delay: 100,
-    });
-
-    await page.waitForSelector("#__next > div > section > div > form > input.fig-7he7ta.e1yjg41i0");
-
-    await page.type("#__next > div > section > div > form > input.fig-7he7ta.e1yjg41i0", ridiPW, {
-      delay: 100,
-    });
-  }
-
-  if (novelPlatform === "조아라") {
-    let joaraID: string;
-    let joaraPW: string;
-
-    // handle undefined env variable
-    if (process.env.JOARA_ID) {
-      joaraID = process.env.JOARA_ID;
-    } else {
-      throw new Error("JOARA_ID env was not set");
-    }
-    if (process.env.JOARA_PW) {
-      joaraPW = process.env.JOARA_PW;
-    } else {
-      throw new Error("JOARA_PW env was not set");
-    }
-
-    const idSelector = "#root > div > div > div > div.input-group > input[type=text]:nth-child(1)";
-    const pwSelector =
-      "#root > div > div > div > div.input-group > input[type=password]:nth-child(2)";
-
-    await page.waitForSelector(idSelector, {
-      timeout: 50000,
-    });
-    await page.type(idSelector, joaraID, {
-      delay: 100,
-    });
-
-    await page.waitForSelector(pwSelector);
-    await page.type(pwSelector, joaraPW, {
-      delay: 100,
-    });
-  }
+  await page.waitForSelector(pwSelector);
+  await page.type(pwSelector, platformPW, {
+    delay: 100,
+  });
 }
 
-const selectorProfileIcon = {
-  kakape: "#__next > div > div > div > div > div > div > div > div > img",
+function getProfileIcon(novelPlatform: NovelPlatform) {
+  if (novelPlatform === "카카오페이지") {
+    return "#__next > div > div > div > div > div > div > div > div > img";
+  }
 
-  series: "#gnb_my_namebox",
+  if (novelPlatform === "네이버 시리즈") {
+    return "#gnb_my_namebox";
+  }
 
-  // this is not profile icon. because I can't perceive whether I logged in or not by that
-  //  this icon show the word "캐시충전"
-  ridi: "#__next > div.fig-16izi9a > div.fig-fs8jml > div > ul.fig-1aswo17 > li > a > span",
+  if (novelPlatform === "리디북스") {
+    // this icon is for both login user and non-login user
+    return "#__next > div.fig-193ya7q > header > nav > div.fig-1r8dvo7 > div:nth-child(2) > div:nth-child(4) > a";
+  }
 
-  joara: "#root > div > div.gnb > div.pc-util-nav > ul > li:nth-child(1) > a",
-};
+  if (novelPlatform === "조아라") {
+    return "#root > div > div.gnb > div.pc-util-nav > ul > li:nth-child(1) > a";
+  }
+
+  throw Error("can't get selector for profile icon");
+}
+
 // this is necessary to wait for element to load to read
 async function waitForProfileIconAfterLogin(page: puppeteer.Page, novelPlatform: NovelPlatform) {
-  if (novelPlatform === "카카오페이지") {
-    await page.waitForSelector(selectorProfileIcon.kakape);
-  }
-  if (novelPlatform === "네이버 시리즈") {
-    await page.waitForSelector(selectorProfileIcon.series);
-  }
-  if (novelPlatform === "리디북스") {
-    await page.waitForSelector(selectorProfileIcon.ridi);
-  }
-  if (novelPlatform === "조아라") {
-    await page.waitForSelector(selectorProfileIcon.joara);
-  }
+  const profileIcon = getProfileIcon(novelPlatform);
+
+  await page.waitForSelector(profileIcon);
 }
 
 // login to pass age limitation
@@ -220,7 +179,6 @@ export default async function login(page: puppeteer.Page, novelPlatform: NovelPl
     // set timeout specifically for navigational events such as page.waitForSelector
 
     const newPage = await waitAndClickLoginBtn(page, novelPlatform);
-
     if (!newPage) return;
 
     await typeLoginInfo(newPage, novelPlatform);
