@@ -125,22 +125,18 @@ function getSelectorOfIDandPW(novelPlatform: NovelPlatform) {
 }
 
 async function typeLoginInfo(page: puppeteer.Page, novelPlatform: NovelPlatform) {
-  const { platformID, platformPW } = getIDandPW(novelPlatform);
   const { idSelector, pwSelector } = getSelectorOfIDandPW(novelPlatform);
+  const { platformID, platformPW } = getIDandPW(novelPlatform);
 
-  // sometimes it can not work (when playing video or running DBeaver)
-  //  It seems to occur when there are many processes in my computer
-  await page.waitForSelector(idSelector, {
-    timeout: 50000,
-  });
-  await page.type(idSelector, platformID, {
-    delay: 100,
-  });
+  // id //
+  await page.waitForSelector(idSelector, { timeout: 50000 });
+  await page.click(idSelector);
+  await page.keyboard.type(platformID);
 
+  // pw //
   await page.waitForSelector(pwSelector);
-  await page.type(pwSelector, platformPW, {
-    delay: 100,
-  });
+  await page.click(pwSelector);
+  await page.keyboard.type(platformPW);
 }
 
 function getProfileIcon(novelPlatform: NovelPlatform) {
