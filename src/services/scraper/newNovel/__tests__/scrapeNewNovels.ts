@@ -26,23 +26,37 @@ jest.setTimeout(60000000);
 // [대처]
 //  - 자동절전모드 시간 조정 또는 해제
 
-it("run a new novel scraper for series :", async () => {
-  // await newNovelScraper("네이버 시리즈", genreFilter.series.F);
-  // await newNovelScraper("네이버 시리즈", genreFilter.series.MF);
-  // await newNovelScraper("네이버 시리즈", genreFilter.series.RF);
-  await newNovelScraper("네이버 시리즈", genreFilter.series.R);
-  await newNovelScraper("네이버 시리즈", genreFilter.series.MA);
-  await newNovelScraper("네이버 시리즈", genreFilter.series.Mystery);
-  await newNovelScraper("네이버 시리즈", genreFilter.series.LN);
-  await newNovelScraper("네이버 시리즈", genreFilter.series.BL);
-});
+// it("run a new novel scraper for series :", async () => {
+// await newNovelScraper("네이버 시리즈", genreFilter.series.F);
+//   await newNovelScraper("네이버 시리즈", genreFilter.series.MF);
+//   await newNovelScraper("네이버 시리즈", genreFilter.series.RF);
+//   await newNovelScraper("네이버 시리즈", genreFilter.series.R);
+//   await newNovelScraper("네이버 시리즈", genreFilter.series.MA);
+//   await newNovelScraper("네이버 시리즈", genreFilter.series.Mystery);
+//   await newNovelScraper("네이버 시리즈", genreFilter.series.LN);
+//   await newNovelScraper("네이버 시리즈", genreFilter.series.BL);
+// });
 
 // it("run a new novel scraper for kakape :", async () => {
-//   await newNovelScraper("카카오페이지", genreFilter.kakape.R, 36, false);
+//   await newNovelScraper("카카오페이지", genreFilter.kakape.F);
+// await newNovelScraper("카카오페이지", genreFilter.kakape.MA);
+// await newNovelScraper("카카오페이지", genreFilter.kakape.MF);
+// await newNovelScraper("카카오페이지", genreFilter.kakape.R);
+// await newNovelScraper("카카오페이지", genreFilter.kakape.RF);
 // });
 
 // it("run a new novel scraper for ridi:", async () => {
-//   await newNovelScraper("리디북스", genreFilter.ridi.R, 1, false);
+// await newNovelScraper("리디북스", genreFilter.ridi.BL);
+// await newNovelScraper("리디북스", genreFilter.ridi.F1);
+// await newNovelScraper("리디북스", genreFilter.ridi.F2);
+// await newNovelScraper("리디북스", genreFilter.ridi.LN);
+// await newNovelScraper("리디북스", genreFilter.ridi.MA);
+// await newNovelScraper("리디북스", genreFilter.ridi.MF);
+// await newNovelScraper("리디북스", genreFilter.ridi.R);
+// await newNovelScraper("리디북스", genreFilter.ridi.RF);
+// 한 번에 여러 장르 스크랩할 때 중간에 타임아웃 됨
+//  : await page.goto(listPage, { waitUntil: "domcontentloaded" }) in goToNovelListPage
+//  그러면 그냥 중단된 곳 장르부터 다시 시작
 
 // 리디 소설은 이전에 스크랩한 것 db에서 모두 삭제, 새로 스크랩
 //  : 플랫폼에서 장르 번호 및 작품 번호가 모두 바뀜.

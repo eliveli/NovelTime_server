@@ -8,6 +8,7 @@ import { NovelPlatform } from "../utils/types";
 import setNovels from "./utils/setNovels";
 import { waitForNovel, waitOrLoadNovel } from "../utils/waitOrLoadNovel";
 import skipNovelForAge19 from "../utils/skipNovelForAge19";
+import errorForAge19ForSeries from "../utils/errorForAge19ForSeries";
 
 function checkNovelNoToScrape(novelNo?: number) {
   if (novelNo === undefined) return;
@@ -404,6 +405,8 @@ export default async function newNovelScraper(
 ) {
   checkNovelNoToScrape(totalNovelNoToScrapeFromParam);
 
+  errorForAge19ForSeries(novelPlatform, isSkipForAge19);
+
   let isAfterGettingUrls = false; // 목록 조회 및 소설 urls 가져온 이후
 
   let novelUrls: string[] = [];
@@ -541,8 +544,7 @@ export default async function newNovelScraper(
 
       // login is required for novels for age 19
       //  and also for age 15 for kakape
-      // but the function doesn't always work for naver-series, so I won't use it for it
-      if (novelPlatform !== "네이버 시리즈") {
+      if (novelPlatform === "카카오페이지" || isSkipForAge19 === false) {
         await login(page, novelPlatform);
       }
 

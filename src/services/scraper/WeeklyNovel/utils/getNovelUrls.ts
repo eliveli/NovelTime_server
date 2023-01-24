@@ -21,8 +21,8 @@ export default async function getNovelUrls(
         throw Error("can't load novel node");
       }
 
-      // 19세 소설 스킵(기본) & 시리즈 항상 스킵
-      if (novelPlatform === "네이버 시리즈" || isSkipForAge19 === undefined) {
+      // 19세 소설 스킵(기본). 시리즈는 항상 스킵
+      if (isSkipForAge19 === undefined || novelPlatform === "네이버 시리즈") {
         await skipNovelForAge19(page, bestNo, novelPlatform, "weekly");
       }
 

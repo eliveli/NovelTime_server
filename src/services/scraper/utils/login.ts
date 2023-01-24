@@ -129,15 +129,17 @@ async function typeLoginInfo(page: puppeteer.Page, novelPlatform: NovelPlatform)
   const { idSelector, pwSelector } = getSelectorOfIDandPW(novelPlatform);
   const { platformID, platformPW } = getIDandPW(novelPlatform);
 
+  const delayWhenTyping = { delay: novelPlatform === "네이버 시리즈" ? 100 : 0 };
+
   // id //
   await page.waitForSelector(idSelector);
   await page.click(idSelector);
-  await page.keyboard.type(platformID);
+  await page.keyboard.type(platformID, delayWhenTyping);
 
   // pw //
   await page.waitForSelector(pwSelector);
   await page.click(pwSelector);
-  await page.keyboard.type(platformPW);
+  await page.keyboard.type(platformPW, delayWhenTyping);
 }
 
 function getProfileIcon(novelPlatform: NovelPlatform) {
@@ -198,9 +200,20 @@ export default async function login(page: puppeteer.Page, novelPlatform: NovelPl
 
   await typeLoginInfo(pageForLogin, novelPlatform);
 
+  // 일단 시리즈는 로그인 함수 사용 안 함 : 종종 동작하지 않기 때문//
+
+  if (novelPlatform === "네이버 시리즈") {
+    // 추측 for 보안입력문자 페이지로 넘어가는 경우 방지
+    await page.click("#keep"); // 로그인상태유지
+  }
+
   await pageForLogin.click(submitBtn);
 
   if (novelPlatform === "네이버 시리즈") {
+    // 이 페이지로 넘어가지 않고 보안입력문자 페이지가 나온다면
+    // 스크래퍼와 별도로 네이버 로그인 새로 하고 스크래퍼 실행
+    //  이 때 저장된 비밀번호 사용X 직접 타이핑하기
+
     await pageForLogin.waitForSelector("#new\\.save");
     await pageForLogin.click("#new\\.save"); // 자주 사용하는 기기 등록
   }

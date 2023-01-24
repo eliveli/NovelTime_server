@@ -6,6 +6,7 @@ import getNovelIDsFromDB from "./utils/getNovelIDsFromDB";
 import addWeeklyNovels from "./utils/addWeeklyNovels";
 import { NovelPlatform } from "../utils/types";
 import goToNovelListPage from "../utils/goToNovelListPage";
+import errorForAge19ForSeries from "../utils/errorForAge19ForSeries";
 
 // 각 플랫폼에서 주간베스트 소설 20개 씩 가져오기
 // . 19세 소설 스킵(기본)
@@ -20,6 +21,8 @@ export default async function weeklyNovelScraper(
   novelPlatform: NovelPlatform,
   isSkipForAge19?: false,
 ) {
+  errorForAge19ForSeries(novelPlatform, isSkipForAge19);
+
   const browser = await puppeteer.launch({
     headless: false, // 브라우저 화면 열려면 false
     args: [...minimalArgs, "--start-maximized"],
@@ -38,11 +41,10 @@ export default async function weeklyNovelScraper(
 
   if (!novelUrls) return;
 
-  // sometimes login for naver series doesn't work
-  // so I skip this process for series
-  //   and even don't get novel urls for age 19 for series above
-  if (novelPlatform !== "네이버 시리즈") {
-    await login(page, novelPlatform); // 카카오 15세 작품 로그인 필요
+  // login is required for novels for age 19
+  //  and also for age 15 for kakape
+  if (novelPlatform === "카카오페이지" || isSkipForAge19 === false) {
+    await login(page, novelPlatform);
   }
 
   const novelIDs = await getNovelIDsFromDB(page, novelPlatform, novelUrls);

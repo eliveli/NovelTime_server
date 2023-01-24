@@ -166,6 +166,7 @@ export async function waitOrLoadNovel(
       //   : 불필요하게 연속으로 페이지를 내려 에러페이지로 가는 케이스 대처
       // . 페이지 다운 2번 연속
       //   : 중후반부 페이지다운 동작하지 않는 것 대처
+      //   : 딜레이 옵션 없이 페이지다운 1번만 하면 로딩만 하다가 에러 남
       if (currentNovelNo % totalQuantityOfNovelsInOneRequest === 1) {
         await page.keyboard.press(downKey);
         await page.keyboard.press(downKey, { delay: delayTime });
