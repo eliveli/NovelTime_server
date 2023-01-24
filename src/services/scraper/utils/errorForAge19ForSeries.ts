@@ -7,7 +7,9 @@ export default function errorForAge19ForSeries(
   isSkipForAge19?: false,
 ) {
   if (novelPlatform === "네이버 시리즈" && isSkipForAge19 === false) {
-    console.error("네이버 시리즈 19세 작품은 스크랩 안 함 : 커스텀 로그인 함수 종종 작동 안 함");
+    console.error(
+      "네이버 시리즈 19세 작품은 스크랩 안 함 : 커스텀 로그인 함수 종종 작동 안 하기 때문",
+    );
     throw Error("네이버 시리즈 19세 작품은 스크랩 안 함");
   }
 }

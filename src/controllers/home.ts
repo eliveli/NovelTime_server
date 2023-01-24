@@ -2,6 +2,7 @@ import { RequestHandler } from "express";
 
 import dotenv from "dotenv";
 import writingHomeService from "../services/home";
+import getNovelListsOfUsers from "../services/home/getNovelListsOfUsers";
 
 dotenv.config();
 
@@ -23,14 +24,33 @@ export const homeController: RequestHandler = (async (req, res) => {
     );
     const recommendUserRank = { recommend, likeReceived: likeReceivedOfRecommend };
 
+    const list = await writingHomeService.getUserRankOfWritings("L", "Create");
+    const likeReceivedOfList = await writingHomeService.getUserRankOfWritings("L", "ReceiveLike");
+    const novelListUserRank = { list, likeReceived: likeReceivedOfList };
+
     res.json({
       talkList,
       talkUserRank,
       recommendList,
       recommendUserRank,
+      novelListUserRank,
     });
   } catch (error: any) {
     console.log("failed to get content in homeController :", error);
+    res.status(500).end();
+  }
+}) as RequestHandler;
+
+export const userNovelListController: RequestHandler = (async (req, res) => {
+  try {
+    const userNovelLists = await getNovelListsOfUsers();
+    if (!userNovelLists) {
+      throw Error("there is no novel list");
+    }
+
+    res.json(userNovelLists);
+  } catch (error: any) {
+    console.log("failed to get content in userNovelListController :", error);
     res.status(500).end();
   }
 }) as RequestHandler;

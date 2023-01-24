@@ -1,9 +1,11 @@
 import express from "express";
 
-import { homeController } from "../controllers/home";
+import { homeController, userNovelListController } from "../controllers/home";
 
 const router = express.Router();
 
 router.get("/", homeController);
+
+router.get("/userNovelList", userNovelListController);
 
 export default router;
