@@ -29,7 +29,7 @@ export async function getNovelsByNovelIDs(novelIDs: NovelIDs) {
 
   return novels;
 }
-export default async function getWeeklyNovelsInPlatform(novelPlatform: NovelPlatform) {
+export default async function getWeeklyNovelsFromPlatform(novelPlatform: NovelPlatform) {
   const novelIDs = await getWeeklyNovelsFromDB(novelPlatform);
 
   if (novelIDs.length === 0) return; // when getting no data from DB

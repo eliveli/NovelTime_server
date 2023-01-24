@@ -2,7 +2,6 @@ import { RequestHandler } from "express";
 
 import dotenv from "dotenv";
 import writingHomeService from "../services/home";
-import getNovelListsOfUsers from "../services/home/getNovelListsOfUsers";
 
 dotenv.config();
 
@@ -28,12 +27,27 @@ export const homeController: RequestHandler = (async (req, res) => {
     const likeReceivedOfList = await writingHomeService.getUserRankOfWritings("L", "ReceiveLike");
     const novelListUserRank = { list, likeReceived: likeReceivedOfList };
 
+    const popularNovelsInNovelTime = writingHomeService.getPopularNovelsInNovelTime();
+
+    const weeklyNovelsFromKakape = writingHomeService.getWeeklyNovelsFromPlatform("카카오페이지");
+    const weeklyNovelsFromSeries = writingHomeService.getWeeklyNovelsFromPlatform("네이버 시리즈");
+    const weeklyNovelsFromRidi = writingHomeService.getWeeklyNovelsFromPlatform("리디북스");
+    const weeklyNovelsFromJoara = writingHomeService.getWeeklyNovelsFromPlatform("조아라");
+    const weeklyNovelsFromPlatforms = {
+      kakape: weeklyNovelsFromKakape,
+      series: weeklyNovelsFromSeries,
+      ridi: weeklyNovelsFromRidi,
+      joara: weeklyNovelsFromJoara,
+    };
+
     res.json({
       talkList,
       talkUserRank,
       recommendList,
       recommendUserRank,
       novelListUserRank,
+      popularNovelsInNovelTime,
+      weeklyNovelsFromPlatforms,
     });
   } catch (error: any) {
     console.log("failed to get content in homeController :", error);
@@ -43,10 +57,7 @@ export const homeController: RequestHandler = (async (req, res) => {
 
 export const userNovelListController: RequestHandler = (async (req, res) => {
   try {
-    const userNovelLists = await getNovelListsOfUsers();
-    if (!userNovelLists) {
-      throw Error("there is no novel list");
-    }
+    const userNovelLists = await writingHomeService.getNovelListsOfUsers();
 
     res.json(userNovelLists);
   } catch (error: any) {
