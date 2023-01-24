@@ -31,12 +31,20 @@ export const homeController: RequestHandler = (async (req, res) => {
 
     const weeklyNovelsFromKakape = await writingHomeService.getWeeklyNovelsFromPlatform(
       "카카오페이지",
+      true,
     );
     const weeklyNovelsFromSeries = await writingHomeService.getWeeklyNovelsFromPlatform(
       "네이버 시리즈",
+      true,
     );
-    const weeklyNovelsFromRidi = await writingHomeService.getWeeklyNovelsFromPlatform("리디북스");
-    const weeklyNovelsFromJoara = await writingHomeService.getWeeklyNovelsFromPlatform("조아라");
+    const weeklyNovelsFromRidi = await writingHomeService.getWeeklyNovelsFromPlatform(
+      "리디북스",
+      true,
+    );
+    const weeklyNovelsFromJoara = await writingHomeService.getWeeklyNovelsFromPlatform(
+      "조아라",
+      true,
+    );
     const weeklyNovelsFromPlatforms = {
       kakape: weeklyNovelsFromKakape,
       series: weeklyNovelsFromSeries,

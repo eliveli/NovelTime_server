@@ -1,6 +1,6 @@
-import getWeeklyNovelsInPlatform from "../getWeeklyNovelsFromPlatform";
+import getWeeklyNovelsFromPlatform from "../getWeeklyNovelsFromPlatform";
 
 it("get weekly novels in a certain platform", async () => {
-  const novels = await getWeeklyNovelsInPlatform("카카오페이지");
+  const novels = await getWeeklyNovelsFromPlatform("카카오페이지", true);
   console.log("novels: ", novels);
 });

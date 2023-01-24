@@ -3,11 +3,14 @@ import db from "../utils/db";
 import getNovelByNovelIdFromDB from "./shared/getNovelByNovelId";
 
 type NovelIDs = { novelId: string }[];
-export async function getWeeklyNovelsFromDB(novelPlatform: NovelPlatform) {
+export async function getWeeklyNovelsFromDB(novelPlatform: NovelPlatform, isAll: boolean) {
   // novelRank column is not necessary in this case
   // because the novel order in the table is the same as the rank and I get novels straightly
+
+  const limitNo = isAll ? 20 : 10;
+
   return (await db(
-    "SELECT novelId FROM weeklyNovel WHERE novelPlatform = (?) AND isLatest = 1",
+    `SELECT novelId FROM weeklyNovel WHERE novelPlatform = (?) AND isLatest = 1 limit ${limitNo}`,
     [novelPlatform],
     "all",
   )) as NovelIDs;
@@ -29,8 +32,12 @@ export async function getNovelsByNovelIDs(novelIDs: NovelIDs) {
 
   return novels;
 }
-export default async function getWeeklyNovelsFromPlatform(novelPlatform: NovelPlatform) {
-  const novelIDs = await getWeeklyNovelsFromDB(novelPlatform);
+export default async function getWeeklyNovelsFromPlatform(
+  novelPlatform: NovelPlatform,
+  isAll: boolean,
+  // true then 20 novels for home page, false then 10 for list page for weekly novels
+) {
+  const novelIDs = await getWeeklyNovelsFromDB(novelPlatform, isAll);
 
   if (novelIDs.length === 0) return; // when getting no data from DB
 

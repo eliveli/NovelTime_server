@@ -17,7 +17,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
 // use Routes
-app.use("/api", home);
+app.use("/api/home", home);
 app.use("/api/novels", novels);
 app.use("/api/user", user);
 app.use("/api/userContent", userContent);
