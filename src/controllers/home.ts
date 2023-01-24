@@ -27,12 +27,16 @@ export const homeController: RequestHandler = (async (req, res) => {
     const likeReceivedOfList = await writingHomeService.getUserRankOfWritings("L", "ReceiveLike");
     const novelListUserRank = { list, likeReceived: likeReceivedOfList };
 
-    const popularNovelsInNovelTime = writingHomeService.getPopularNovelsInNovelTime();
+    const popularNovelsInNovelTime = await writingHomeService.getPopularNovelsInNovelTime();
 
-    const weeklyNovelsFromKakape = writingHomeService.getWeeklyNovelsFromPlatform("카카오페이지");
-    const weeklyNovelsFromSeries = writingHomeService.getWeeklyNovelsFromPlatform("네이버 시리즈");
-    const weeklyNovelsFromRidi = writingHomeService.getWeeklyNovelsFromPlatform("리디북스");
-    const weeklyNovelsFromJoara = writingHomeService.getWeeklyNovelsFromPlatform("조아라");
+    const weeklyNovelsFromKakape = await writingHomeService.getWeeklyNovelsFromPlatform(
+      "카카오페이지",
+    );
+    const weeklyNovelsFromSeries = await writingHomeService.getWeeklyNovelsFromPlatform(
+      "네이버 시리즈",
+    );
+    const weeklyNovelsFromRidi = await writingHomeService.getWeeklyNovelsFromPlatform("리디북스");
+    const weeklyNovelsFromJoara = await writingHomeService.getWeeklyNovelsFromPlatform("조아라");
     const weeklyNovelsFromPlatforms = {
       kakape: weeklyNovelsFromKakape,
       series: weeklyNovelsFromSeries,
