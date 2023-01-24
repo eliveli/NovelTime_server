@@ -8,6 +8,9 @@ async function getNovelInfo(novelId: string) {
     novelId,
     "first",
   )) as Novel;
+
+  if (!novel) return;
+
   return { ...novel, novelIsEnd: !!novel.novelIsEnd };
 }
 async function getNovelTitle(novelId: string) {
