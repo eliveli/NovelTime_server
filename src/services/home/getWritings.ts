@@ -1,5 +1,5 @@
 import db from "../utils/db";
-import { Novel, UserImg, Writing } from "../utils/types";
+import { NovelWithoutId, UserImg, Writing } from "../utils/types";
 import getUserNameAndImg from "./shared/getUserNameAndImg";
 
 async function getNovelInfo(novelId: string) {
@@ -7,7 +7,7 @@ async function getNovelInfo(novelId: string) {
     "SELECT novelImg, novelTitle, novelAuthor, novelGenre, novelIsEnd FROM novelInfo WHERE novelId = (?)",
     novelId,
     "first",
-  )) as Novel;
+  )) as NovelWithoutId;
 
   if (!novel) return;
 
