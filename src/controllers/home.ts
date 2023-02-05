@@ -9,22 +9,19 @@ export const homeController: RequestHandler = (async (req, res) => {
   try {
     const talkList = await writingHomeService.getWritings("T");
 
-    const talk = await writingHomeService.getUserRankOfWritings("T", "Create");
-    const comment = await writingHomeService.getUserRankOfWritings("C", "Create");
-    const likeReceivedOfTalk = await writingHomeService.getUserRankOfWritings("T", "ReceiveLike");
+    const talk = await writingHomeService.getUserRanks("T", "Create");
+    const comment = await writingHomeService.getUserRanks("C", "Create");
+    const likeReceivedOfTalk = await writingHomeService.getUserRanks("T", "ReceiveLike");
     const talkUserRank = { talk, comment, likeReceived: likeReceivedOfTalk };
 
     const recommendList = await writingHomeService.getWritings("R");
 
-    const recommend = await writingHomeService.getUserRankOfWritings("R", "Create");
-    const likeReceivedOfRecommend = await writingHomeService.getUserRankOfWritings(
-      "R",
-      "ReceiveLike",
-    );
+    const recommend = await writingHomeService.getUserRanks("R", "Create");
+    const likeReceivedOfRecommend = await writingHomeService.getUserRanks("R", "ReceiveLike");
     const recommendUserRank = { recommend, likeReceived: likeReceivedOfRecommend };
 
-    const novelList = await writingHomeService.getUserRankOfWritings("L", "Create");
-    const likeReceivedOfList = await writingHomeService.getUserRankOfWritings("L", "ReceiveLike");
+    const novelList = await writingHomeService.getUserRanks("L", "Create");
+    const likeReceivedOfList = await writingHomeService.getUserRanks("L", "ReceiveLike");
     const novelListUserRank = { novelList, likeReceived: likeReceivedOfList };
 
     const popularNovelsInNovelTime = await writingHomeService.getPopularNovelsInNovelTime();
