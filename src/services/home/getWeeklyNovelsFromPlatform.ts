@@ -8,9 +8,10 @@ export async function getWeeklyNovelsFromDB(novelPlatform: NovelPlatform, isAll:
   // because the novel order in the table is the same as the rank and I get novels straightly
 
   const limitNo = isAll ? 20 : 10;
+  // 20 of all weekly novels for its list page. 10 for home page
 
   return (await db(
-    `SELECT novelId FROM weeklyNovel WHERE novelPlatform = (?) AND isLatest = 1 limit ${limitNo}`,
+    `SELECT novelId FROM weeklyNovel WHERE novelPlatform = (?) AND isLatest = 1 LIMIT ${limitNo}`,
     [novelPlatform],
     "all",
   )) as NovelIDs;

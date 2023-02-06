@@ -24,7 +24,7 @@ export const homeController: RequestHandler = (async (req, res) => {
     const likeReceivedOfList = await writingHomeService.getUserRanks("L", "ReceiveLike");
     const novelListUserRank = { novelList, likeReceived: likeReceivedOfList };
 
-    const popularNovelsInNovelTime = await writingHomeService.getPopularNovelsInNovelTime();
+    const popularNovelsInNovelTime = await writingHomeService.getPopularNovelsInNovelTime(true);
 
     res.json({
       talkList,
