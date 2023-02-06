@@ -26,29 +26,6 @@ export const homeController: RequestHandler = (async (req, res) => {
 
     const popularNovelsInNovelTime = await writingHomeService.getPopularNovelsInNovelTime();
 
-    const weeklyNovelsFromKakape = await writingHomeService.getWeeklyNovelsFromPlatform(
-      "카카오페이지",
-      true,
-    );
-    const weeklyNovelsFromSeries = await writingHomeService.getWeeklyNovelsFromPlatform(
-      "네이버 시리즈",
-      true,
-    );
-    const weeklyNovelsFromRidi = await writingHomeService.getWeeklyNovelsFromPlatform(
-      "리디북스",
-      true,
-    );
-    const weeklyNovelsFromJoara = await writingHomeService.getWeeklyNovelsFromPlatform(
-      "조아라",
-      true,
-    );
-    const weeklyNovelsFromPlatforms = {
-      kakape: weeklyNovelsFromKakape,
-      series: weeklyNovelsFromSeries,
-      ridi: weeklyNovelsFromRidi,
-      joara: weeklyNovelsFromJoara,
-    };
-
     res.json({
       talkList,
       talkUserRank,
@@ -56,7 +33,6 @@ export const homeController: RequestHandler = (async (req, res) => {
       recommendUserRank,
       novelListUserRank,
       popularNovelsInNovelTime,
-      weeklyNovelsFromPlatforms,
     });
   } catch (error: any) {
     console.log("failed to get content in homeController :", error);
@@ -71,6 +47,39 @@ export const userNovelListController: RequestHandler = (async (req, res) => {
     res.json(userNovelLists);
   } catch (error: any) {
     console.log("failed to get content in userNovelListController :", error);
+    res.status(500).end();
+  }
+}) as RequestHandler;
+
+export const weeklyNovelsController: RequestHandler = (async (req, res) => {
+  try {
+    const { platform, isAllNovels } = req.params;
+
+    // when isAllNovels is true then get 20 novels : for weekly novels' list page
+    // it not then 10 : for home page
+    const isAll = isAllNovels === "true";
+
+    let weeklyNovels;
+
+    if (platform === "kakape") {
+      weeklyNovels = await writingHomeService.getWeeklyNovelsFromPlatform("카카오페이지", isAll);
+    }
+
+    if (platform === "series") {
+      weeklyNovels = await writingHomeService.getWeeklyNovelsFromPlatform("네이버 시리즈", isAll);
+    }
+
+    if (platform === "ridi") {
+      weeklyNovels = await writingHomeService.getWeeklyNovelsFromPlatform("리디북스", isAll);
+    }
+
+    if (platform === "joara") {
+      weeklyNovels = await writingHomeService.getWeeklyNovelsFromPlatform("조아라", isAll);
+    }
+
+    res.json({ [platform]: weeklyNovels });
+  } catch (error: any) {
+    console.log("failed to get content in weeklyNovelsController :", error);
     res.status(500).end();
   }
 }) as RequestHandler;
