@@ -51,31 +51,22 @@ export const userNovelListController: RequestHandler = (async (req, res) => {
   }
 }) as RequestHandler;
 
+function matchPlatformName(platformGiven: string) {
+  if (platformGiven === "kakape") return "카카오페이지";
+  if (platformGiven === "series") return "네이버 시리즈";
+  if (platformGiven === "ridi") return "리디북스";
+  if (platformGiven === "joara") return "조아라";
+
+  throw Error("플랫폼 선택 오류");
+}
+
 export const weeklyNovelsController: RequestHandler = (async (req, res) => {
   try {
-    const { platform, isAllNovels } = req.params;
+    const { platform } = req.params;
 
-    // when isAllNovels is true then get 20 novels : for weekly novels' list page
-    // it not then 10 : for home page
-    const isAll = isAllNovels === "true";
+    const platformGiven = matchPlatformName(platform);
 
-    let weeklyNovels;
-
-    if (platform === "kakape") {
-      weeklyNovels = await writingHomeService.getWeeklyNovelsFromPlatform("카카오페이지", isAll);
-    }
-
-    if (platform === "series") {
-      weeklyNovels = await writingHomeService.getWeeklyNovelsFromPlatform("네이버 시리즈", isAll);
-    }
-
-    if (platform === "ridi") {
-      weeklyNovels = await writingHomeService.getWeeklyNovelsFromPlatform("리디북스", isAll);
-    }
-
-    if (platform === "joara") {
-      weeklyNovels = await writingHomeService.getWeeklyNovelsFromPlatform("조아라", isAll);
-    }
+    const weeklyNovels = await writingHomeService.getWeeklyNovelsFromPlatform(platformGiven, true);
 
     res.json({ [platform]: weeklyNovels });
   } catch (error: any) {

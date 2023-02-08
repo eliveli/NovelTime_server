@@ -18,7 +18,7 @@ export async function getNovelsByNovelId(novelIDs: string) {
 
   const novels = [];
   for (const novelId of novelIdInArray) {
-    const novel = await getNovelByNovelIdFromDB(novelId);
+    const novel = await getNovelByNovelIdFromDB(novelId, true);
 
     if (!novel) continue;
 

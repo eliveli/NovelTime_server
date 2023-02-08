@@ -12,6 +12,6 @@ router.get("/", homeController);
 
 router.get("/userNovelList", userNovelListController);
 
-router.get("/weeklyNovels/:platform/:isAllNovels", weeklyNovelsController);
+router.get("/weeklyNovels/:platform", weeklyNovelsController);
 
 export default router;

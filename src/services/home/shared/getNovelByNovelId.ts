@@ -1,14 +1,25 @@
 import db from "../../utils/db";
-import { Novel } from "../../utils/types";
+import { Novel, NovelInDetail } from "../../utils/types";
 
-export default async function getNovelByNovelIdFromDB(novelId: string) {
+export default async function getNovelByNovelIdFromDB(novelId: string, isForHome: boolean) {
+  if (isForHome) {
+    const novel = (await db(
+      "SELECT novelId, novelImg, novelTitle, novelAuthor, novelGenre, novelIsEnd FROM novelInfo WHERE novelId = (?)",
+      novelId,
+      "first",
+    )) as Novel;
+
+    if (!novel) return;
+
+    return { ...novel, novelIsEnd: !!novel.novelIsEnd }; // convert tinyInt to boolean
+  }
+
+  // for novel list by category page
   const novel = (await db(
-    "SELECT novelId, novelImg, novelTitle, novelAuthor, novelGenre, novelIsEnd FROM novelInfo WHERE novelId = (?)",
+    "SELECT novelId, novelImg, novelTitle, novelAuthor, novelGenre, novelDesc FROM novelInfo WHERE novelId = (?)",
     novelId,
     "first",
-  )) as Novel;
+  )) as NovelInDetail; // including its desc
 
-  if (!novel) return;
-
-  return { ...novel, novelIsEnd: !!novel.novelIsEnd }; // convert tinyInt to boolean
+  return novel;
 }

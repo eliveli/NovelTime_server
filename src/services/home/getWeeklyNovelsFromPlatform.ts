@@ -3,11 +3,11 @@ import db from "../utils/db";
 import getNovelByNovelIdFromDB from "./shared/getNovelByNovelId";
 
 type NovelIDs = { novelId: string }[];
-export async function getWeeklyNovelsFromDB(novelPlatform: NovelPlatform, isAll: boolean) {
+export async function getWeeklyNovelsFromDB(novelPlatform: NovelPlatform, isForHome: boolean) {
   // novelRank column is not necessary in this case
   // because the novel order in the table is the same as the rank and I get novels straightly
 
-  const limitNo = isAll ? 20 : 10;
+  const limitNo = isForHome ? 10 : 20;
   // 20 of all weekly novels for its list page. 10 for home page
 
   return (await db(
@@ -17,11 +17,11 @@ export async function getWeeklyNovelsFromDB(novelPlatform: NovelPlatform, isAll:
   )) as NovelIDs;
 }
 
-export async function getNovelsByNovelIDs(novelIDs: NovelIDs) {
+export async function getNovelsByNovelIDs(novelIDs: NovelIDs, isForHome: boolean) {
   const novels = [];
 
   for (const { novelId } of novelIDs) {
-    const novel = await getNovelByNovelIdFromDB(novelId);
+    const novel = await getNovelByNovelIdFromDB(novelId, isForHome);
 
     if (!novel) {
       console.log("there is no novel for this novel id:", novelId);
@@ -35,12 +35,13 @@ export async function getNovelsByNovelIDs(novelIDs: NovelIDs) {
 }
 export default async function getWeeklyNovelsFromPlatform(
   novelPlatform: NovelPlatform,
-  isAll: boolean,
-  // true then 20 novels for home page, false then 10 for list page for weekly novels
+  isForHome: boolean,
+  // ㄴtrue then return 10 novels for home page,
+  // ㄴfalse then return 20 with its desc for novel list page by category
 ) {
-  const novelIDs = await getWeeklyNovelsFromDB(novelPlatform, isAll);
+  const novelIDs = await getWeeklyNovelsFromDB(novelPlatform, isForHome);
 
   if (novelIDs.length === 0) return; // when getting no data from DB
 
-  return await getNovelsByNovelIDs(novelIDs);
+  return await getNovelsByNovelIDs(novelIDs, isForHome);
 }
