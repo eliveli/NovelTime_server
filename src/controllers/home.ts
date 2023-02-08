@@ -2,6 +2,7 @@ import { RequestHandler } from "express";
 
 import dotenv from "dotenv";
 import writingHomeService from "../services/home";
+import getWeeklyNovelsForHomeOrListPage from "../services/shared/getWeeklyNovelsForHomeOrListPage";
 
 dotenv.config();
 
@@ -51,22 +52,11 @@ export const userNovelListController: RequestHandler = (async (req, res) => {
   }
 }) as RequestHandler;
 
-function matchPlatformName(platformGiven: string) {
-  if (platformGiven === "kakape") return "카카오페이지";
-  if (platformGiven === "series") return "네이버 시리즈";
-  if (platformGiven === "ridi") return "리디북스";
-  if (platformGiven === "joara") return "조아라";
-
-  throw Error("플랫폼 선택 오류");
-}
-
 export const weeklyNovelsController: RequestHandler = (async (req, res) => {
   try {
     const { platform } = req.params;
 
-    const platformGiven = matchPlatformName(platform);
-
-    const weeklyNovels = await writingHomeService.getWeeklyNovelsFromPlatform(platformGiven, true);
+    const weeklyNovels = await getWeeklyNovelsForHomeOrListPage(platform, true);
 
     res.json({ [platform]: weeklyNovels });
   } catch (error: any) {

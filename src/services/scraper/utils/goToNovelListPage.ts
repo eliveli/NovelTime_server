@@ -14,21 +14,21 @@ function getNovelListPage(
 
   if (scraperType === "new") {
     // 무한스크롤 / 최신순(등록일 순)
-    if (novelPlatform === "카카오페이지") {
+    if (novelPlatform === "카카오페이지" && genreNo) {
       return `https://page.kakao.com/menu/11/screen/37?subcategory_uid=${String(
         genreNo,
       )}&sort_opt=latest`;
     }
 
     // 페이지네이션 / 최신순, 완결작 포함 조회
-    if (novelPlatform === "네이버 시리즈" && currentPageNo) {
+    if (novelPlatform === "네이버 시리즈" && genreNo && currentPageNo) {
       return `https://series.naver.com/novel/categoryProductList.series?categoryTypeCode=genre&genreCode=${String(
         genreNo,
       )}&orderTypeCode=new&is&isFinished=false&page=${String(currentPageNo)}`;
     }
 
     // 페이지네이션 + semi 무한스크롤(페이지 내리면서 dom load) / 최신순(최신화등록일)
-    if (novelPlatform === "리디북스" && currentPageNo) {
+    if (novelPlatform === "리디북스" && genreNo && currentPageNo) {
       const adultExclude = isSkipForAge19 === false ? "n" : "y";
       // in url, adult_exclude = n (성인 포함) or y (성인 제외(기본값))
 

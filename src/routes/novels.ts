@@ -1,6 +1,6 @@
 import express from "express";
 
-import { searchByTitle, getNovelById } from "../controllers/novels";
+import { searchByTitle, getNovelById, getNovelListByCategory } from "../controllers/novels";
 
 const router = express.Router();
 
@@ -10,8 +10,6 @@ router.get("/search/:title", searchByTitle);
 
 router.get("/detail/:novelId", getNovelById);
 
-// Book.find()
-// .then((books) => res.json(books))
-// .catch((err) => res.status(404).json({ nobooksfound: "No Books found" }));
+router.get("/:category/:platform/:novelId", getNovelListByCategory);
 
 export default router;
