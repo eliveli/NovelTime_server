@@ -1,4 +1,7 @@
-import { getNovelsByNovelIDs, getPopularNovelsFromDB } from "../getPopularNovelsInNovelTime";
+import {
+  getNovelsByNovelIDs,
+  getPopularNovelsFromDB,
+} from "../../shared/getPopularNovelsInNovelTime";
 
 jest.mock("../getPopularNovelsInNovelTime", () => {
   const originalModule = jest.requireActual("../getPopularNovelsInNovelTime");
@@ -10,8 +13,8 @@ jest.mock("../getPopularNovelsInNovelTime", () => {
 });
 
 it("case not to occur error when passing [] arg to getNovelsByNovelIDs where novelIDs-typed one is expected", async () => {
-  const novelIDs = await getPopularNovelsFromDB(); // it is [] as mock data
-  await expect(getNovelsByNovelIDs(novelIDs)).rejects.toThrow(Error); // fail
+  const novelIDs = await getPopularNovelsFromDB(true); // it is [] as mock data
+  await expect(getNovelsByNovelIDs(novelIDs, true)).rejects.toThrow(Error); // fail
   // Received promise resolved instead of rejected
   // Resolved to value: []
 

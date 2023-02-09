@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction, RequestHandler } from "express";
-import { getNovels, getNovel } from "../services/novels";
+import getPopularNovelsInNovelTime from "../services/shared/getPopularNovelsInNovelTime";
 import getWeeklyNovelsForHomeOrListPage from "../services/shared/getWeeklyNovelsForHomeOrListPage";
+import { getNovels, getNovel } from "../services/novels";
 
 export const searchByTitle: RequestHandler = (req, res) => {
   getNovels(req.params.title)
@@ -28,6 +29,10 @@ export const getNovelListByCategory: RequestHandler = (async (req, res) => {
 
     if (category === "weeklyNovelsFromPlatform") {
       novelsInDetail = await getWeeklyNovelsForHomeOrListPage(platform, false);
+    }
+
+    if (category === "popularNovelsInNovelTime") {
+      novelsInDetail = await getPopularNovelsInNovelTime(false);
     }
 
     res.json(novelsInDetail);

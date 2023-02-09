@@ -1,6 +1,6 @@
 import { NovelPlatform } from "../scraper/utils/types";
 import db from "../utils/db";
-import getNovelByNovelIdFromDB from "./shared/getNovelByNovelId";
+import getNovelByNovelIdFromDB from "./getNovelByNovelId";
 
 type NovelIDs = { novelId: string }[];
 export async function getWeeklyNovelsFromDB(novelPlatform: NovelPlatform, isForHome: boolean) {

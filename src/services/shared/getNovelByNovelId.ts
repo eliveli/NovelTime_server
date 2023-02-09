@@ -1,5 +1,5 @@
-import db from "../../utils/db";
-import { Novel, NovelInDetail } from "../../utils/types";
+import db from "../utils/db";
+import { Novel, NovelInDetail } from "../utils/types";
 
 export default async function getNovelByNovelIdFromDB(novelId: string, isForHome: boolean) {
   if (isForHome) {

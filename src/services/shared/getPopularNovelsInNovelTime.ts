@@ -1,5 +1,5 @@
 import db from "../utils/db";
-import getNovelByNovelIdFromDB from "./shared/getNovelByNovelId";
+import getNovelByNovelIdFromDB from "./getNovelByNovelId";
 
 type NovelIDs = { novelId: string }[];
 export async function getPopularNovelsFromDB(isForHome: boolean) {
@@ -21,11 +21,11 @@ export async function getPopularNovelsFromDB(isForHome: boolean) {
   )) as NovelIDs;
 }
 
-export async function getNovelsByNovelIDs(novelIDs: NovelIDs) {
+export async function getNovelsByNovelIDs(novelIDs: NovelIDs, isForHome: boolean) {
   const novels = [];
 
   for (const { novelId } of novelIDs) {
-    const novel = await getNovelByNovelIdFromDB(novelId, true);
+    const novel = await getNovelByNovelIdFromDB(novelId, isForHome);
 
     if (!novel) {
       console.log("there is no novel for this novel id:", novelId);
@@ -42,5 +42,5 @@ export default async function getPopularNovelsInNovelTime(isForHome: boolean) {
 
   if (novelIDs.length === 0) return; // when getting no data from DB
 
-  return await getNovelsByNovelIDs(novelIDs);
+  return await getNovelsByNovelIDs(novelIDs, isForHome);
 }

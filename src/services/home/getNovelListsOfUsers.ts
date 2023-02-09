@@ -1,6 +1,6 @@
 import db from "../utils/db";
 import { NovelListInfo } from "../utils/types";
-import getNovelByNovelIdFromDB from "./shared/getNovelByNovelId";
+import getNovelByNovelIdFromDB from "../shared/getNovelByNovelId";
 import getUserNameAndImg from "./shared/getUserNameAndImg";
 
 export async function getNovelListsOfUsersFromDB() {

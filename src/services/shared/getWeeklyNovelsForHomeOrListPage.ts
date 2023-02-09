@@ -1,4 +1,4 @@
-import writingHomeService from "../home";
+import getWeeklyNovelsFromPlatform from "./getWeeklyNovelsFromPlatform";
 
 function matchPlatformName(platformGiven: string) {
   if (platformGiven === "kakape") return "카카오페이지";
@@ -15,5 +15,5 @@ export default async function getWeeklyNovelsForHomeOrListPage(
 ) {
   const platformGiven = matchPlatformName(platform);
 
-  return await writingHomeService.getWeeklyNovelsFromPlatform(platformGiven, isForHome);
+  return await getWeeklyNovelsFromPlatform(platformGiven, isForHome);
 }

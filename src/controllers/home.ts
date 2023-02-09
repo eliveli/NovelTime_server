@@ -1,8 +1,8 @@
 import { RequestHandler } from "express";
-
 import dotenv from "dotenv";
 import writingHomeService from "../services/home";
 import getWeeklyNovelsForHomeOrListPage from "../services/shared/getWeeklyNovelsForHomeOrListPage";
+import getPopularNovelsInNovelTime from "../services/shared/getPopularNovelsInNovelTime";
 
 dotenv.config();
 
@@ -25,7 +25,7 @@ export const homeController: RequestHandler = (async (req, res) => {
     const likeReceivedOfList = await writingHomeService.getUserRanks("L", "ReceiveLike");
     const novelListUserRank = { novelList, likeReceived: likeReceivedOfList };
 
-    const popularNovelsInNovelTime = await writingHomeService.getPopularNovelsInNovelTime(true);
+    const popularNovelsInNovelTime = await getPopularNovelsInNovelTime(true);
 
     res.json({
       talkList,
