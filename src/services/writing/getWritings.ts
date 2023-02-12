@@ -24,16 +24,26 @@ function matchSortType(sortBy: string) {
   throw Error("error when matching sorting type");
 }
 
+function setQueryPartForNovelGenre(novelGenre: string) {
+  const queryPart = "AND novelGenre";
+
+  if (novelGenre === "all") return `${queryPart} = novelGenre`;
+
+  if (novelGenre === "extra") return `${queryPart} LIKE '%extra%'`;
+
+  return `${queryPart} = '${novelGenre}'`;
+}
+
 export default async function getWritings(
   listType: "T" | "R",
   novelGenre: string,
   search: { searchType: "writingTitle" | "writingDesc" | "userName" | "no"; searchWord: string },
   sortBy: string, // 작성일 up/down, 댓글 up/down, 좋아요 up/down
-  pageNo: number,
+  pageNo: number, // 글 수 제한하면서 특정 페이지/무한스크롤 번호에 맞게 가져오기
 ) {
   const { searchType, searchWord } = search;
 
-  const queryPartForNovelGenre = novelGenre === "all" ? "novelGenre" : `'${novelGenre}'`;
+  const queryPartForNovelGenre = setQueryPartForNovelGenre(novelGenre);
 
   const sortType = matchSortType(sortBy);
 
@@ -50,7 +60,7 @@ export default async function getWritings(
     queryPartForUserIDs = `(${queryPartForUserIDs})`; // "( )" is necessary to set the exact query in multiple "and" and "or"
 
     return await db(
-      `SELECT * FROM writing WHERE ${queryPartForUserIDs} AND talkOrRecommend = (?) AND novelGenre = ${queryPartForNovelGenre} ORDER BY ${sortType}`,
+      `SELECT * FROM writing WHERE ${queryPartForUserIDs} AND talkOrRecommend = (?) ${queryPartForNovelGenre} ORDER BY ${sortType}`,
       [...userIDs, listType],
       "all",
     );
@@ -58,7 +68,7 @@ export default async function getWritings(
 
   if (["writingTitle", "writingDesc"].includes(searchType)) {
     return await db(
-      `SELECT * FROM writing WHERE talkOrRecommend = (?) ${searchType} = (?) AND novelGenre = ${queryPartForNovelGenre} ORDER BY ${sortType}`,
+      `SELECT * FROM writing WHERE talkOrRecommend = (?) ${searchType} = (?) ${queryPartForNovelGenre} ORDER BY ${sortType}`,
       [listType, searchWord],
       "all",
     );
@@ -66,7 +76,7 @@ export default async function getWritings(
 
   if (searchType === "no") {
     return await db(
-      `SELECT * FROM writing WHERE talkOrRecommend = (?) AND novelGenre = ${queryPartForNovelGenre} ORDER BY ${sortType}`,
+      `SELECT * FROM writing WHERE talkOrRecommend = (?) ${queryPartForNovelGenre} ORDER BY ${sortType}`,
       [listType],
       "all",
     );

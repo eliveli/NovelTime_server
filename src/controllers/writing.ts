@@ -18,9 +18,10 @@ export const writingController: RequestHandler = (async (req, res) => {
 
     const writings = await getWritings(
       listType as "T" | "R",
-      novelGenre,
+      novelGenre, // "all" or "extra" or something else
       { searchType: searchType as "writingTitle" | "writingDesc" | "userName" | "no", searchWord },
       sortBy,
+      // ㄴ"newDate" or "oldDate" or "manyComments" or "fewComments" or "manyLikes" or "fewLikes"
       Number(pageNo),
     );
 
