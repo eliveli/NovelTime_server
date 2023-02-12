@@ -1,7 +1,7 @@
 import { RequestHandler } from "express";
 
 import dotenv from "dotenv";
-import getUserId from "../services/userContent/getUserId";
+import getUserId from "../services/shared/getUserId";
 import userWritingService from "../services/userContent/writings";
 import userCommentService from "../services/userContent/comments";
 import userNovelListService from "../services/userContent/novelLists";

@@ -10,10 +10,16 @@ export const writingController: RequestHandler = (async (req, res) => {
 
     if (!["T", "R"].includes(listType)) throw Error;
 
+    if (!["writingTitle", "writingDesc", "userName", "no"].includes(searchType)) throw Error;
+
+    // params must not an empty string
+    // . if searchType is "no" then do not search
+    //  ㄴif searchWord was not set then searchType should be "no" in front side work
+
     const writings = await getWritings(
       listType as "T" | "R",
       novelGenre,
-      { searchType, searchWord },
+      { searchType: searchType as "writingTitle" | "writingDesc" | "userName" | "no", searchWord },
       sortBy,
       Number(pageNo),
     );
