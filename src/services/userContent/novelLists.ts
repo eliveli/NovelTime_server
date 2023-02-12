@@ -59,7 +59,7 @@ async function getNovelInfoByNovelId(novelId: string) {
     novelId,
     "first",
   )) as Novel;
-  return { ...novel, novelIsEnd: !!novel.novelIsEnd };
+  return { ...novel, novelIsEnd: !!novel?.novelIsEnd };
 }
 type UserInfo = {
   userName: string;
