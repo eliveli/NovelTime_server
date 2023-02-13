@@ -45,12 +45,15 @@ export default async function getWritings(
 
   const queryPartForNovelGenre = setQueryPartForNovelGenre(novelGenre);
 
+  const writingNoPerPage = 10;
+  const queryPartForPageLimit = `LIMIT ${(pageNo - 1) * writingNoPerPage}, writingNoPerPage`;
+
   const sortType = matchSortType(sortBy);
 
   if (searchType === "userName") {
     const userIDs = await getUserIdBySimilarUserName(searchWord);
 
-    if (!userIDs) return;
+    if (!userIDs) return; // do I should change this returned value?
 
     let queryPartForUserIDs = "userId = (?)";
     for (let i = 0; i < userIDs.length - 1; i += 1) {
@@ -60,7 +63,7 @@ export default async function getWritings(
     queryPartForUserIDs = `(${queryPartForUserIDs})`; // "( )" is necessary to set the exact query in multiple "and" and "or"
 
     return await db(
-      `SELECT * FROM writing WHERE ${queryPartForUserIDs} AND talkOrRecommend = (?) ${queryPartForNovelGenre} ORDER BY ${sortType}`,
+      `SELECT * FROM writing WHERE ${queryPartForUserIDs} AND talkOrRecommend = (?) ${queryPartForNovelGenre} ORDER BY ${sortType} ${queryPartForPageLimit}`,
       [...userIDs, listType],
       "all",
     );
@@ -68,7 +71,7 @@ export default async function getWritings(
 
   if (["writingTitle", "writingDesc"].includes(searchType)) {
     return await db(
-      `SELECT * FROM writing WHERE talkOrRecommend = (?) ${searchType} = (?) ${queryPartForNovelGenre} ORDER BY ${sortType}`,
+      `SELECT * FROM writing WHERE talkOrRecommend = (?) ${searchType} = (?) ${queryPartForNovelGenre} ORDER BY ${sortType} ${queryPartForPageLimit}`,
       [listType, searchWord],
       "all",
     );
@@ -76,7 +79,7 @@ export default async function getWritings(
 
   if (searchType === "no") {
     return await db(
-      `SELECT * FROM writing WHERE talkOrRecommend = (?) ${queryPartForNovelGenre} ORDER BY ${sortType}`,
+      `SELECT * FROM writing WHERE talkOrRecommend = (?) ${queryPartForNovelGenre} ORDER BY ${sortType} ${queryPartForPageLimit}`,
       [listType],
       "all",
     );
