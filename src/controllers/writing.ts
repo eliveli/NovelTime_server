@@ -16,7 +16,7 @@ export const writingController: RequestHandler = (async (req, res) => {
     // . if searchType is "no" then do not search
     //  ㄴif searchWord was not set then searchType should be "no" in front side work
 
-    const writings = await getWritings(
+    const data = await getWritings(
       listType as "T" | "R",
       novelGenre, // "all" or "extra" or specific genre
       { searchType: searchType as "writingTitle" | "writingDesc" | "userName" | "no", searchWord },
@@ -25,7 +25,13 @@ export const writingController: RequestHandler = (async (req, res) => {
       Number(pageNo),
     );
 
-    res.json(writings);
+    // *** it can be changed when working for front side ***
+    if (data === undefined) {
+      res.json(undefined);
+      return;
+    }
+
+    res.json({ writings: data?.writings, isLastPage: data?.isLastPage });
   } catch (error: any) {
     console.log("failed to get content in writingController :", error);
     res.status(500).end();

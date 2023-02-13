@@ -8,8 +8,6 @@ export async function getUserIdBySimilarUserName(userName: string) {
     "all",
   )) as UserId[];
 
-  console.log("userIdArray:", userIdArray);
-
   if (userIdArray.length === 0) return;
 
   const userIDs = [];
