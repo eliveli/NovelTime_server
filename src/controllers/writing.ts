@@ -19,7 +19,9 @@ export const writingController: RequestHandler = (async (req, res) => {
 
     const data = await getWritings(
       listType as "T" | "R",
-      novelGenre, // "all" or "extra" or specific genre
+      novelGenre,
+      // ㄴ "all" or "extra"
+      // ㄴ or specific genre : "패러디", "로판", "로맨스", "현판", "판타지", "무협", "라이트노벨", "BL", "미스터리"
       { searchType: searchType as "writingTitle" | "writingDesc" | "userName" | "no", searchWord },
       sortBy,
       // ㄴ"newDate" or "oldDate" or "manyComments" or "fewComments" or "manyLikes" or "fewLikes"
@@ -27,13 +29,20 @@ export const writingController: RequestHandler = (async (req, res) => {
     );
 
     if (data === undefined) {
-      res.json({ writings: undefined, isLastPage: undefined });
+      res.json(undefined);
       return;
     }
 
     const writings = await composeWritings(listType as "T" | "R", data.writings);
 
-    res.json({ writings, isLastPage: data.isLastPage });
+    if (listType === "T") {
+      res.json({
+        talks: writings,
+        recommends: undefined,
+        isLastPage: data.isLastPage,
+      });
+    }
+    res.json({ talks: undefined, recommends: writings, isLastPage: data.isLastPage });
   } catch (error: any) {
     console.log("failed to get content in writingController :", error);
     res.status(500).end();
