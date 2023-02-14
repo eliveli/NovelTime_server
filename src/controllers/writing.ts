@@ -1,6 +1,7 @@
 import { RequestHandler } from "express";
 import dotenv from "dotenv";
 import getWritings from "../services/writing/getWritings";
+import { composeWritings } from "../services/home/getWritings";
 
 dotenv.config();
 
@@ -25,13 +26,14 @@ export const writingController: RequestHandler = (async (req, res) => {
       Number(pageNo),
     );
 
-    // *** it can be changed when working for front side ***
     if (data === undefined) {
-      res.json(undefined);
+      res.json({ writings: undefined, isLastPage: undefined });
       return;
     }
 
-    res.json({ writings: data?.writings, isLastPage: data?.isLastPage });
+    const writings = await composeWritings(listType as "T" | "R", data.writings);
+
+    res.json({ writings, isLastPage: data.isLastPage });
   } catch (error: any) {
     console.log("failed to get content in writingController :", error);
     res.status(500).end();

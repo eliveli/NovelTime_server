@@ -97,6 +97,9 @@ export type Writing = {
   likeNO: number;
   commentNO: number;
   talkOrRecommend: "T" | "R";
+  novelGenre: string;
+  // ㄴ actually this wasn't considered in src\services\userContent\writings
+  // ㄴㄴ but the functions worked well in the file
 };
 export type Recommend = {
   recommendId: string;

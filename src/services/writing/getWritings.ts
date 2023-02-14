@@ -1,5 +1,6 @@
 import { getUserIdBySimilarUserName } from "../shared/getUserId";
 import db from "../utils/db";
+import { Writing } from "../utils/types";
 
 function matchSortType(sortBy: string) {
   if (sortBy === "newDate") {
@@ -87,7 +88,7 @@ export default async function getWritings(
       `SELECT * FROM writing WHERE ${queryPartForUserIDs} AND talkOrRecommend = (?) ${queryPartForNovelGenre} ORDER BY ${sortType} ${queryPartForPageLimit}`,
       [...userIDs, listType],
       "all",
-    )) as any; // ****** change this data and its type later ********
+    )) as Writing[];
 
     if (writings.length === 0) return;
 
@@ -108,7 +109,7 @@ export default async function getWritings(
       `SELECT * FROM writing WHERE talkOrRecommend = (?) AND ${searchType} = (?) ${queryPartForNovelGenre} ORDER BY ${sortType} ${queryPartForPageLimit}`,
       [listType, searchWord],
       "all",
-    )) as any; // ****** change this data and its type later ********
+    )) as Writing[];
 
     if (writings.length === 0) return;
 
@@ -129,7 +130,7 @@ export default async function getWritings(
       `SELECT * FROM writing WHERE talkOrRecommend = (?) ${queryPartForNovelGenre} ORDER BY ${sortType} ${queryPartForPageLimit}`,
       [listType],
       "all",
-    )) as any; // ****** change this data and its type later ********
+    )) as Writing[];
 
     if (writings.length === 0) return;
 
