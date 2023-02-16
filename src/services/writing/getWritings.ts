@@ -106,16 +106,16 @@ export default async function getWritings(
 
   if (["writingTitle", "writingDesc"].includes(searchType)) {
     const writings = (await db(
-      `SELECT * FROM writing WHERE talkOrRecommend = (?) AND ${searchType} = (?) ${queryPartForNovelGenre} ORDER BY ${sortType} ${queryPartForPageLimit}`,
-      [listType, searchWord],
+      `SELECT * FROM writing WHERE talkOrRecommend = (?) AND ${searchType} LIKE (?) ${queryPartForNovelGenre} ORDER BY ${sortType} ${queryPartForPageLimit}`,
+      [listType, `%${searchWord}%`],
       "all",
     )) as Writing[];
 
     if (writings.length === 0) return;
 
     const { totalNoAsBigInt } = (await db(
-      `SELECT count(*) AS totalNoAsBigInt FROM writing WHERE talkOrRecommend = (?) AND ${searchType} = (?) ${queryPartForNovelGenre}`,
-      [listType, searchWord],
+      `SELECT count(*) AS totalNoAsBigInt FROM writing WHERE talkOrRecommend = (?) AND ${searchType} LIKE (?) ${queryPartForNovelGenre}`,
+      [listType, `%${searchWord}%`],
       "first",
     )) as { totalNoAsBigInt: BigInt };
 
