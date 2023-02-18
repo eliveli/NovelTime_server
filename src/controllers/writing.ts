@@ -11,7 +11,9 @@ export const writingController: RequestHandler = (async (req, res) => {
 
     if (!["T", "R"].includes(listType)) throw Error;
 
-    if (!["writingTitle", "writingDesc", "userName", "no"].includes(searchType)) throw Error;
+    if (!["writingTitle", "writingDesc", "novelTitle", "userName", "no"].includes(searchType)) {
+      throw Error;
+    }
 
     // params must not an empty string
     // . if searchType is "no" then do not search
@@ -22,7 +24,10 @@ export const writingController: RequestHandler = (async (req, res) => {
       novelGenre,
       // ㄴ "all" or "extra"
       // ㄴ or specific genre : "패러디", "로판", "로맨스", "현판", "판타지", "무협", "라이트노벨", "BL", "미스터리"
-      { searchType: searchType as "writingTitle" | "writingDesc" | "userName" | "no", searchWord },
+      {
+        searchType: searchType as "writingTitle" | "writingDesc" | "userName" | "novelTitle" | "no",
+        searchWord,
+      },
       sortBy,
       // ㄴ"newDate" or "oldDate" or "manyComments" or "fewComments" or "manyLikes" or "fewLikes"
       Number(pageNo),

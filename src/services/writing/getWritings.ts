@@ -1,3 +1,4 @@
+import { getNovelIDsByNovelTitle } from "../novels";
 import { getUserIdBySimilarUserName } from "../shared/getUserId";
 import db from "../utils/db";
 import { Writing } from "../utils/types";
@@ -60,7 +61,10 @@ function setIsLastPage(totalNoAsBigInt: BigInt, writingNoPerPage: number, curren
 export default async function getWritings(
   listType: "T" | "R",
   novelGenre: string,
-  search: { searchType: "writingTitle" | "writingDesc" | "userName" | "no"; searchWord: string },
+  search: {
+    searchType: "writingTitle" | "writingDesc" | "userName" | "novelTitle" | "no";
+    searchWord: string;
+  },
   sortBy: string, // 작성일 up/down, 댓글 up/down, 좋아요 up/down
   pageNo: number,
 ) {
@@ -116,6 +120,37 @@ export default async function getWritings(
     const { totalNoAsBigInt } = (await db(
       `SELECT count(*) AS totalNoAsBigInt FROM writing WHERE talkOrRecommend = (?) AND ${searchType} LIKE (?) ${queryPartForNovelGenre}`,
       [listType, `%${searchWord}%`],
+      "first",
+    )) as { totalNoAsBigInt: BigInt };
+
+    const isLastPage = setIsLastPage(totalNoAsBigInt, writingNoPerPage, pageNo);
+    if (isLastPage === undefined) return;
+
+    return { writings, isLastPage };
+  }
+
+  if (searchType === "novelTitle") {
+    const novelIDs = await getNovelIDsByNovelTitle(searchWord);
+    if (!novelIDs) return;
+
+    let queryPartForNovelIDs = "novelId = (?)";
+    for (let i = 0; i < novelIDs.length - 1; i += 1) {
+      queryPartForNovelIDs += " OR novelId = (?)";
+    }
+
+    queryPartForNovelIDs = `(${queryPartForNovelIDs})`; // "( )" is necessary to set the exact query in multiple "and" and "or"
+
+    const writings = (await db(
+      `SELECT * FROM writing WHERE ${queryPartForNovelIDs} AND talkOrRecommend = (?) ${queryPartForNovelGenre} ORDER BY ${sortType} ${queryPartForPageLimit}`,
+      [...novelIDs, listType],
+      "all",
+    )) as Writing[];
+
+    if (writings.length === 0) return;
+
+    const { totalNoAsBigInt } = (await db(
+      `SELECT count(*) AS totalNoAsBigInt FROM writing WHERE ${queryPartForNovelIDs} AND talkOrRecommend = (?) ${queryPartForNovelGenre}`,
+      [...novelIDs, listType],
       "first",
     )) as { totalNoAsBigInt: BigInt };
 
