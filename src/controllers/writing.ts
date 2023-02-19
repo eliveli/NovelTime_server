@@ -44,10 +44,11 @@ export const writingController: RequestHandler = (async (req, res) => {
       res.json({
         talks: writings,
         recommends: undefined,
-        isLastPage: data.isLastPage,
+        lastPageNo: data.lastPageNo,
       });
+      return;
     }
-    res.json({ talks: undefined, recommends: writings, isLastPage: data.isLastPage });
+    res.json({ talks: undefined, recommends: writings, lastPageNo: data.lastPageNo });
   } catch (error: any) {
     console.log("failed to get content in writingController :", error);
     res.status(500).end();

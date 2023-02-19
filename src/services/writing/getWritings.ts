@@ -36,26 +36,20 @@ function setQueryPartForNovelGenre(novelGenre: string) {
   return `${queryPart} = '${novelGenre}'`;
 }
 
-function checkIfItIsLastPageOrNot(
-  totalWritingNo: number,
-  writingNoPerPage: number,
-  currentPageNo: number,
-) {
+function calcLastPageNo(totalWritingNo: number, writingNoPerPage: number) {
   if (totalWritingNo % writingNoPerPage === 0) {
-    if (Math.floor(totalWritingNo / writingNoPerPage) === currentPageNo) return true;
-    return false;
+    return totalWritingNo / writingNoPerPage;
   }
   if (totalWritingNo % writingNoPerPage !== 0) {
-    if (Math.floor(totalWritingNo / writingNoPerPage) + 1 === currentPageNo) return true;
-    return false;
+    return Math.floor(totalWritingNo / writingNoPerPage) + 1;
   }
 }
 
-function setIsLastPage(totalNoAsBigInt: BigInt, writingNoPerPage: number, currentPageNo: number) {
+function getLastPageNo(totalNoAsBigInt: BigInt, writingNoPerPage: number) {
   const totalWritingNo = Number(totalNoAsBigInt);
   if (totalWritingNo === 0) return;
 
-  return checkIfItIsLastPageOrNot(totalWritingNo, writingNoPerPage, currentPageNo);
+  return calcLastPageNo(totalWritingNo, writingNoPerPage);
 }
 
 export default async function getWritings(
@@ -102,10 +96,10 @@ export default async function getWritings(
       "first",
     )) as { totalNoAsBigInt: BigInt };
 
-    const isLastPage = setIsLastPage(totalNoAsBigInt, writingNoPerPage, pageNo);
-    if (isLastPage === undefined) return;
+    const lastPageNo = getLastPageNo(totalNoAsBigInt, writingNoPerPage);
+    if (lastPageNo === undefined) return;
 
-    return { writings, isLastPage };
+    return { writings, lastPageNo };
   }
 
   if (["writingTitle", "writingDesc"].includes(searchType)) {
@@ -123,10 +117,10 @@ export default async function getWritings(
       "first",
     )) as { totalNoAsBigInt: BigInt };
 
-    const isLastPage = setIsLastPage(totalNoAsBigInt, writingNoPerPage, pageNo);
-    if (isLastPage === undefined) return;
+    const lastPageNo = getLastPageNo(totalNoAsBigInt, writingNoPerPage);
+    if (lastPageNo === undefined) return;
 
-    return { writings, isLastPage };
+    return { writings, lastPageNo };
   }
 
   if (searchType === "novelTitle") {
@@ -154,10 +148,10 @@ export default async function getWritings(
       "first",
     )) as { totalNoAsBigInt: BigInt };
 
-    const isLastPage = setIsLastPage(totalNoAsBigInt, writingNoPerPage, pageNo);
-    if (isLastPage === undefined) return;
+    const lastPageNo = getLastPageNo(totalNoAsBigInt, writingNoPerPage);
+    if (lastPageNo === undefined) return;
 
-    return { writings, isLastPage };
+    return { writings, lastPageNo };
   }
 
   if (searchType === "no") {
@@ -175,10 +169,10 @@ export default async function getWritings(
       "first",
     )) as { totalNoAsBigInt: BigInt };
 
-    const isLastPage = setIsLastPage(totalNoAsBigInt, writingNoPerPage, pageNo);
-    if (isLastPage === undefined) return;
+    const lastPageNo = getLastPageNo(totalNoAsBigInt, writingNoPerPage);
+    if (lastPageNo === undefined) return;
 
-    return { writings, isLastPage };
+    return { writings, lastPageNo };
   }
 
   throw Error("error was occurred because of searchType");
