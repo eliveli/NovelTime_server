@@ -1,10 +1,13 @@
 import express from "express";
-import writingController from "../controllers/writing";
+import { writingDetailController, writingListController } from "../controllers/writing";
 
 const router = express.Router();
 
-router.get("/:listType/:novelGenre/:searchType/:searchWord/:sortBy/:pageNo", writingController);
+router.get(
+  "/:writingType/:novelGenre/:searchType/:searchWord/:sortBy/:pageNo",
+  writingListController,
+);
 
-// router.get("/:writingType/:writingId", writingController);
+router.get("/:writingType/:writingId", writingDetailController);
 
 export default router;

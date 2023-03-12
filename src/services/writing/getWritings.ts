@@ -53,7 +53,7 @@ function getLastPageNo(totalNoAsBigInt: BigInt, writingNoPerPage: number) {
 }
 
 export default async function getWritings(
-  listType: "T" | "R",
+  writingType: "T" | "R",
   novelGenre: string,
   search: {
     searchType: "writingTitle" | "writingDesc" | "userName" | "novelTitle" | "no";
@@ -84,7 +84,7 @@ export default async function getWritings(
 
     const writings = (await db(
       `SELECT * FROM writing WHERE ${queryPartForUserIDs} AND talkOrRecommend = (?) ${queryPartForNovelGenre} ORDER BY ${sortType} ${queryPartForPageLimit}`,
-      [...userIDs, listType],
+      [...userIDs, writingType],
       "all",
     )) as Writing[];
 
@@ -92,7 +92,7 @@ export default async function getWritings(
 
     const { totalNoAsBigInt } = (await db(
       `SELECT count(*) AS totalNoAsBigInt FROM writing WHERE ${queryPartForUserIDs} AND talkOrRecommend = (?) ${queryPartForNovelGenre}`,
-      [...userIDs, listType],
+      [...userIDs, writingType],
       "first",
     )) as { totalNoAsBigInt: BigInt };
 
@@ -105,7 +105,7 @@ export default async function getWritings(
   if (["writingTitle", "writingDesc"].includes(searchType)) {
     const writings = (await db(
       `SELECT * FROM writing WHERE talkOrRecommend = (?) AND ${searchType} LIKE (?) ${queryPartForNovelGenre} ORDER BY ${sortType} ${queryPartForPageLimit}`,
-      [listType, `%${searchWord}%`],
+      [writingType, `%${searchWord}%`],
       "all",
     )) as Writing[];
 
@@ -113,7 +113,7 @@ export default async function getWritings(
 
     const { totalNoAsBigInt } = (await db(
       `SELECT count(*) AS totalNoAsBigInt FROM writing WHERE talkOrRecommend = (?) AND ${searchType} LIKE (?) ${queryPartForNovelGenre}`,
-      [listType, `%${searchWord}%`],
+      [writingType, `%${searchWord}%`],
       "first",
     )) as { totalNoAsBigInt: BigInt };
 
@@ -136,7 +136,7 @@ export default async function getWritings(
 
     const writings = (await db(
       `SELECT * FROM writing WHERE ${queryPartForNovelIDs} AND talkOrRecommend = (?) ${queryPartForNovelGenre} ORDER BY ${sortType} ${queryPartForPageLimit}`,
-      [...novelIDs, listType],
+      [...novelIDs, writingType],
       "all",
     )) as Writing[];
 
@@ -144,7 +144,7 @@ export default async function getWritings(
 
     const { totalNoAsBigInt } = (await db(
       `SELECT count(*) AS totalNoAsBigInt FROM writing WHERE ${queryPartForNovelIDs} AND talkOrRecommend = (?) ${queryPartForNovelGenre}`,
-      [...novelIDs, listType],
+      [...novelIDs, writingType],
       "first",
     )) as { totalNoAsBigInt: BigInt };
 
@@ -157,7 +157,7 @@ export default async function getWritings(
   if (searchType === "no") {
     const writings = (await db(
       `SELECT * FROM writing WHERE talkOrRecommend = (?) ${queryPartForNovelGenre} ORDER BY ${sortType} ${queryPartForPageLimit}`,
-      [listType],
+      [writingType],
       "all",
     )) as Writing[];
 
@@ -165,7 +165,7 @@ export default async function getWritings(
 
     const { totalNoAsBigInt } = (await db(
       `SELECT count(*) AS totalNoAsBigInt FROM writing WHERE talkOrRecommend = (?) ${queryPartForNovelGenre}`,
-      [listType],
+      [writingType],
       "first",
     )) as { totalNoAsBigInt: BigInt };
 
