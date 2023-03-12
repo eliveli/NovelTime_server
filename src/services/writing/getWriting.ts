@@ -58,6 +58,69 @@ async function getCommentsByWritingId(writingId: string) {
   return (await db("SELECT * FROM comment WHERE writingId = (?)", writingId, "all")) as Comment[];
 }
 
+async function setComment(comment: Comment) {
+  const {
+    commentId,
+    userId,
+    commentContent,
+    createDate,
+    originalCommentIdForReComment,
+    reComment, // it can be undefined
+  } = comment;
+
+  // * 모든 리코멘트는 원본 코멘트 아래에 작성 순으로 나열됨
+
+  const user = await getUserNameAndImg(userId);
+  if (!user) return;
+
+  let reCommentComposed: any[] = [];
+
+  // set reComments
+  if (reComment) {
+    const reComments = [];
+    const commentsUserNames: { [commentId: string]: string } = {
+      [commentId]: user.userName,
+    }; // to set originalCommentUserName
+
+    // compose reComments
+    for (const recom of reComment) {
+      const reCommentSet1st = await setComment(recom);
+      if (!reCommentSet1st) continue;
+      const originalCommentId = recom.originalCommentIdForReComment;
+
+      commentsUserNames[commentId] = reCommentSet1st.userName;
+
+      reComments.push({
+        commentId: reCommentSet1st.commentId,
+        originalCommentId,
+        originalCommentUserName: "",
+        userName: reCommentSet1st.userName,
+        userImg: reCommentSet1st.userImg,
+        commentContent: reCommentSet1st.commentContent,
+        createDate: reCommentSet1st.createDate,
+      });
+    }
+
+    // add original comment's user names to reComments
+    const reCommentsWithOriginalCommentsUserNames = reComments.map((_) => {
+      const r = _;
+      r.originalCommentUserName = commentsUserNames[r.originalCommentId];
+      return r;
+    });
+
+    reCommentComposed = reCommentsWithOriginalCommentsUserNames;
+  }
+
+  return {
+    commentId,
+    userName: user.userName,
+    userImg: user.userImg,
+    commentContent,
+    createDate,
+    reComment: reCommentComposed,
+  };
+}
+
 function setCommentsWithReComments(commentsFromServer: Comment[]) {
   // 코멘트 분류 : 1차, 2차, 3차
 
@@ -142,6 +205,22 @@ function setCommentsWithReComments(commentsFromServer: Comment[]) {
   return commentsWithReComments;
 }
 
+async function composeComments(comments: Comment[]) {
+  const commentsComposed = [];
+
+  for (const comment of comments) {
+    const commentComposed = await setComment(comment);
+
+    if (!commentComposed) continue;
+
+    commentsComposed.push(commentComposed);
+  }
+
+  return commentsComposed;
+
+  // * 코멘트 정렬 필요. parameter 추가하기 new or old
+}
+
 export default async function getWriting(writingType: "T" | "R", writingId: string) {
   if (writingType === "T") {
     const writing = (await db(
@@ -165,6 +244,8 @@ export default async function getWriting(writingType: "T" | "R", writingId: stri
       // 아무 데이터도 받아오지 못했을 때 undefined인지 빈배열[]인지 체크 필요
     }
     const commentsWithReComments = setCommentsWithReComments(commentsFromDB);
+
+    const comments = await composeComments(commentsWithReComments);
 
     composeTalkDetail(writing, user, isLike, novel);
   }
