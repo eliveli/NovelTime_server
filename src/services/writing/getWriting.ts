@@ -54,6 +54,76 @@ async function getNovelByNovelId(novelId: string) {
   return { ...novel };
 }
 
+async function getCommentsByWritingId(writingId: string) {
+  return (await db("SELECT * FROM comment WHERE writingId = (?)", writingId, "all")) as Comment[];
+}
+
+function setCommentsWithReComments(commentsFromServer: Comment[]) {
+  // 코멘트 분류 : 1차, 2차, 3차
+
+  // 1차 코멘트 - 리코멘트가 아닌 것
+  const comments1st = commentsFromServer.filter((_) => !_.originalCommentIdForReComment);
+
+  // 모든 리코멘트 - 2차, 3차 코멘트
+  const allReComments = commentsFromServer.filter((_) => !!_.originalCommentIdForReComment);
+
+  if (allReComments.length === 0) {
+    return comments1st; // 리코멘트가 없는 경우
+  }
+
+  // 2차 코멘트 (1차 코멘트의 리코멘트)
+  const comments2nd = allReComments.filter((r) => {
+    const comment2nd = comments1st.filter((c) => r.originalCommentIdForReComment === c.commentId);
+    return !!comment2nd.length;
+  });
+
+  // { 원본코멘트아이디 : 2차 코멘트[] }
+  const comments2ndWithOriginalIDs: { [x: string]: Comment[] } = {};
+  comments2nd.forEach((c) => {
+    comments2ndWithOriginalIDs[c.originalCommentIdForReComment] = [
+      ...comments2ndWithOriginalIDs[c.originalCommentIdForReComment],
+      c,
+    ];
+  });
+
+  const commentIDsOfComments2nd = comments2nd.map((c) => c.commentId);
+
+  // 3차 코멘트 (2차 코멘트의 리코멘트)
+  const comments3rd = allReComments.filter((r) => !commentIDsOfComments2nd.includes(r.commentId));
+
+  // 1차 코멘트에 리코멘트 속성 추가 (1,2,3차 코멘트 합치기)
+  const commentsWithReComments = comments1st.map((_) => {
+    const c = _;
+    const reComment: Comment[] = [];
+
+    const comments2ndOfThisOne = comments2ndWithOriginalIDs[c.commentId];
+
+    // 1차 코멘트의 리코멘트로 2차 코멘트 넣기
+    if (comments2ndOfThisOne) {
+      reComment.push(...comments2ndOfThisOne);
+    }
+
+    // 1차 코멘트의 리코멘트로 ((이 1차의 리코멘인 2차)의 리코멘인) 3차 코멘트 넣기
+    if (comments2ndOfThisOne && comments3rd.length) {
+      const commentsIDsOfComments2ndOfThisOne = comments2ndOfThisOne.map((cc) => cc.commentId);
+
+      comments3rd.forEach((ccc, idx) => {
+        if (commentsIDsOfComments2ndOfThisOne.includes(ccc.originalCommentIdForReComment)) {
+          reComment.push(ccc);
+          comments3rd.splice(idx, 1); // 해당 3차 코멘트 배열에서 삭제 (for 다음 번 탐색 시간 감소)
+        }
+      });
+    }
+
+    if (reComment.length) {
+      c.reComment = reComment;
+    }
+    return c;
+  });
+
+  return commentsWithReComments;
+}
+
 export default async function getWriting(writingType: "T" | "R", writingId: string) {
   if (writingType === "T") {
     const writing = (await db(
@@ -69,6 +139,11 @@ export default async function getWriting(writingType: "T" | "R", writingId: stri
 
     const novel = await getNovelByNovelId(writing.novelId);
     if (!novel) return;
+
+    const commentsFromDB = await getCommentsByWritingId(writingId);
+    // * comments can be empty
+
+    const commentsWithReComments = setCommentsWithReComments(commentsFromDB);
 
     composeTalkDetail(writing, user, isLike, novel);
   }

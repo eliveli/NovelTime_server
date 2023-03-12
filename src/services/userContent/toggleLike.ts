@@ -23,7 +23,7 @@ async function setContentLike(
 
   await db(querySelected, [userId, writingId]);
 }
-async function getContentLike(
+export async function getContentLike(
   contentType: "writing" | "novelList",
   userId: string,
   writingId: string,

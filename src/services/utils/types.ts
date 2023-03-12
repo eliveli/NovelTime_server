@@ -129,4 +129,5 @@ export type Comment = {
   createDate: string;
   commentContent: string;
   originalCommentIdForReComment: string; // if it is not "" empty string, get the info for it
+  reComment?: Comment[]; // used in src\services\writing\getWriting.ts
 };
