@@ -94,29 +94,47 @@ function setCommentsWithReComments(commentsFromServer: Comment[]) {
   // 1차 코멘트에 리코멘트 속성 추가 (1,2,3차 코멘트 합치기)
   const commentsWithReComments = comments1st.map((_) => {
     const c = _;
-    const reComment: Comment[] = [];
+    const reComments: Comment[] = []; // 2차 코멘트 + 3차 코멘트
+    const reReCommentsIDs: string[] = [];
+    // ㄴ2차의 리코멘트인 3차 코멘트 아이디s
+    // ㄴnot 3차의 리코멘트인 3차 코멘트 아이디s
 
     const comments2ndOfThisOne = comments2ndWithOriginalIDs[c.commentId];
 
     // 1차 코멘트의 리코멘트로 2차 코멘트 넣기
     if (comments2ndOfThisOne) {
-      reComment.push(...comments2ndOfThisOne);
+      reComments.push(...comments2ndOfThisOne);
     }
 
-    // 1차 코멘트의 리코멘트로 ((이 1차의 리코멘인 2차)의 리코멘인) 3차 코멘트 넣기
+    // 1차 코멘트의 리코멘트로 2차의 리코멘트인 3차 코멘트 넣기
     if (comments2ndOfThisOne && comments3rd.length) {
       const commentsIDsOfComments2ndOfThisOne = comments2ndOfThisOne.map((cc) => cc.commentId);
 
       comments3rd.forEach((ccc, idx) => {
         if (commentsIDsOfComments2ndOfThisOne.includes(ccc.originalCommentIdForReComment)) {
-          reComment.push(ccc);
+          reComments.push(ccc);
+          reReCommentsIDs.push(ccc.commentId); // 2차의 리코멘트인 3차 코멘트 아이디 배열 추가
           comments3rd.splice(idx, 1); // 해당 3차 코멘트 배열에서 삭제 (for 다음 번 탐색 시간 감소)
         }
       });
     }
 
-    if (reComment.length) {
-      c.reComment = reComment;
+    // 1차 코멘트의 리코멘트로 3차의 리코멘트인 3차 코멘트 넣기
+    if (reReCommentsIDs.length) {
+      comments3rd.forEach((ccc, idx) => {
+        if (reReCommentsIDs.includes(ccc.originalCommentIdForReComment)) {
+          reComments.push(ccc);
+
+          const idxOfReReComment = reReCommentsIDs.indexOf(ccc.originalCommentIdForReComment);
+          reReCommentsIDs.splice(idxOfReReComment, 1); // 3차 코멘트 아이디 배열에서 삭제
+
+          comments3rd.splice(idx, 1);
+        }
+      });
+    }
+
+    if (reComments.length) {
+      c.reComment = reComments;
     }
     return c;
   });
@@ -141,8 +159,11 @@ export default async function getWriting(writingType: "T" | "R", writingId: stri
     if (!novel) return;
 
     const commentsFromDB = await getCommentsByWritingId(writingId);
-    // * comments can be empty
 
+    if (commentsFromDB.length) {
+      // * when comments empty
+      // 아무 데이터도 받아오지 못했을 때 undefined인지 빈배열[]인지 체크 필요
+    }
     const commentsWithReComments = setCommentsWithReComments(commentsFromDB);
 
     composeTalkDetail(writing, user, isLike, novel);
