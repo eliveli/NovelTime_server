@@ -58,11 +58,13 @@ export const writingListController: RequestHandler = (async (req, res) => {
 
 export const writingDetailController: RequestHandler = (async (req, res) => {
   try {
-    const { writingType, writingId } = req.params;
+    const { writingType, writingId, sortType } = req.params;
 
     if (!["T", "R"].includes(writingType)) throw Error;
 
-    const data = await getWriting(writingType as "T" | "R", writingId);
+    if (!["new", "old"].includes(sortType)) throw Error;
+
+    const data = await getWriting(writingType as "T" | "R", writingId, sortType as "new" | "old");
 
     if (data === undefined) {
       res.json(undefined);

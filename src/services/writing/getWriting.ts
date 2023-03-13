@@ -20,7 +20,19 @@ type NovelDetail = {
   novelDesc: string;
 };
 
-function composeTalkDetail(writing: Writing, user: User, isLike: boolean, novel: NovelDetail) {
+type CommentComposed = {
+  commentId: string;
+  userName: string;
+  userImg: {
+    src: string;
+    position: string;
+  };
+  commentContent: string;
+  createDate: string;
+  reComment: any[];
+};
+
+function composeTalkDetail(writing: Writing, user: User, isLike: boolean) {
   return {
     talkId: writing.writingId,
 
@@ -37,8 +49,6 @@ function composeTalkDetail(writing: Writing, user: User, isLike: boolean, novel:
     talkTitle: writing.writingTitle,
     talkDesc: writing.writingDesc,
     talkImg: writing.writingImg,
-
-    novel,
   };
 }
 
@@ -51,7 +61,7 @@ async function getNovelByNovelId(novelId: string) {
 
   if (!novel) return;
 
-  return { ...novel };
+  return novel;
 }
 
 async function getCommentsByWritingId(writingId: string) {
@@ -64,7 +74,6 @@ async function setComment(comment: Comment) {
     userId,
     commentContent,
     createDate,
-    originalCommentIdForReComment,
     reComment, // it can be undefined
   } = comment;
 
@@ -217,11 +226,48 @@ async function composeComments(comments: Comment[]) {
   }
 
   return commentsComposed;
-
-  // * 코멘트 정렬 필요. parameter 추가하기 new or old
 }
 
-export default async function getWriting(writingType: "T" | "R", writingId: string) {
+function sortCommentsOld(c1: CommentComposed, c2: CommentComposed) {
+  if (c1.createDate < c2.createDate) return -1;
+  if (c1.createDate > c2.createDate) return 1;
+  return 0;
+}
+function sortCommentsNew(c1: CommentComposed, c2: CommentComposed) {
+  if (c1.createDate < c2.createDate) return 1;
+  if (c1.createDate > c2.createDate) return -1;
+  return 0;
+}
+
+function sortComments(comments: CommentComposed[], sortType: "new" | "old") {
+  // sort comments
+  if (sortType === "old") {
+    comments.sort(sortCommentsOld);
+  } else {
+    comments.sort(sortCommentsNew);
+  }
+
+  // sort reComments
+  const commentsSorted = comments.map((_) => {
+    const c = _;
+    if (c.reComment.length) {
+      if (sortType === "old") {
+        c.reComment.sort(sortCommentsOld);
+      } else {
+        c.reComment.sort(sortCommentsNew);
+      }
+    }
+    return c;
+  });
+
+  return commentsSorted;
+}
+
+export default async function getWriting(
+  writingType: "T" | "R",
+  writingId: string,
+  sortType: "new" | "old",
+) {
   if (writingType === "T") {
     const writing = (await db(
       "SELECT * FROM writing WHERE writingId = (?)",
@@ -238,15 +284,20 @@ export default async function getWriting(writingType: "T" | "R", writingId: stri
     if (!novel) return;
 
     const commentsFromDB = await getCommentsByWritingId(writingId);
+    if (!commentsFromDB.length) {
+      //  when comments empty
+      const talk = composeTalkDetail(writing, user, isLike);
 
-    if (commentsFromDB.length) {
-      // * when comments empty
-      // 아무 데이터도 받아오지 못했을 때 undefined인지 빈배열[]인지 체크 필요
+      return { talk, novel, commentList: [] };
     }
     const commentsWithReComments = setCommentsWithReComments(commentsFromDB);
 
-    const comments = await composeComments(commentsWithReComments);
+    const commentsComposed = await composeComments(commentsWithReComments);
 
-    composeTalkDetail(writing, user, isLike, novel);
+    const commentList = sortComments(commentsComposed, sortType);
+
+    const talk = composeTalkDetail(writing, user, isLike);
+
+    return { talk, novel, commentList };
   }
 }
