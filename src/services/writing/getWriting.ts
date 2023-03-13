@@ -154,8 +154,8 @@ function setCommentsWithReComments(commentsFromServer: Comment[]) {
   comments2nd.forEach((c) => {
     if (!comments2ndWithOriginalIDs[c.originalCommentIdForReComment]) {
       comments2ndWithOriginalIDs[c.originalCommentIdForReComment] = [c];
-    }
-    if (comments2ndWithOriginalIDs[c.originalCommentIdForReComment]) {
+      //
+    } else if (comments2ndWithOriginalIDs[c.originalCommentIdForReComment]) {
       comments2ndWithOriginalIDs[c.originalCommentIdForReComment] = [
         ...comments2ndWithOriginalIDs[c.originalCommentIdForReComment],
         c,
