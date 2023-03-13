@@ -152,10 +152,15 @@ function setCommentsWithReComments(commentsFromServer: Comment[]) {
   // { 원본코멘트아이디 : 2차 코멘트[] }
   const comments2ndWithOriginalIDs: { [x: string]: Comment[] } = {};
   comments2nd.forEach((c) => {
-    comments2ndWithOriginalIDs[c.originalCommentIdForReComment] = [
-      ...comments2ndWithOriginalIDs[c.originalCommentIdForReComment],
-      c,
-    ];
+    if (!comments2ndWithOriginalIDs[c.originalCommentIdForReComment]) {
+      comments2ndWithOriginalIDs[c.originalCommentIdForReComment] = [c];
+    }
+    if (comments2ndWithOriginalIDs[c.originalCommentIdForReComment]) {
+      comments2ndWithOriginalIDs[c.originalCommentIdForReComment] = [
+        ...comments2ndWithOriginalIDs[c.originalCommentIdForReComment],
+        c,
+      ];
+    }
   });
 
   const commentIDsOfComments2nd = comments2nd.map((c) => c.commentId);
