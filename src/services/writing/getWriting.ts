@@ -165,7 +165,7 @@ function setCommentsWithReComments(commentsFromServer: Comment[]) {
 
   const commentIDsOfComments2nd = comments2nd.map((c) => c.commentId);
 
-  // 3차 코멘트 (2차 코멘트의 리코멘트)
+  // 3차 코멘트 (2차 코멘트의 리코멘트 또는 3차 코멘트의 리코멘트)
   const comments3rd = allReComments.filter((r) => !commentIDsOfComments2nd.includes(r.commentId));
 
   // 1차 코멘트에 리코멘트 속성 추가 (1,2,3차 코멘트 합치기)
@@ -187,25 +187,27 @@ function setCommentsWithReComments(commentsFromServer: Comment[]) {
     if (comments2ndOfThisOne && comments3rd.length) {
       const commentsIDsOfComments2ndOfThisOne = comments2ndOfThisOne.map((cc) => cc.commentId);
 
-      comments3rd.forEach((ccc, idx) => {
+      comments3rd.forEach((ccc) => {
         if (commentsIDsOfComments2ndOfThisOne.includes(ccc.originalCommentIdForReComment)) {
           reComments.push(ccc);
           reReCommentsIDs.push(ccc.commentId); // 2차의 리코멘트인 3차 코멘트 아이디 배열 추가
-          comments3rd.splice(idx, 1); // 해당 3차 코멘트 배열에서 삭제 (for 다음 번 탐색 시간 감소)
+
+          // comments3rd.splice(idx, 1); // 해당 3차 코멘트 배열에서 삭제 (for 다음 번 탐색 시간 감소)
+          //  ㄴ 지우면 안 됨. 다음 탐색에 comments3rd의 idx가 달라짐
         }
       });
     }
 
     // 1차 코멘트의 리코멘트로 3차의 리코멘트인 3차 코멘트 넣기
     if (reReCommentsIDs.length) {
-      comments3rd.forEach((ccc, idx) => {
+      comments3rd.forEach((ccc) => {
         if (reReCommentsIDs.includes(ccc.originalCommentIdForReComment)) {
           reComments.push(ccc);
 
           const idxOfReReComment = reReCommentsIDs.indexOf(ccc.originalCommentIdForReComment);
           reReCommentsIDs.splice(idxOfReReComment, 1); // 3차 코멘트 아이디 배열에서 삭제
 
-          comments3rd.splice(idx, 1);
+          // comments3rd.splice(idx, 1);
         }
       });
     }
