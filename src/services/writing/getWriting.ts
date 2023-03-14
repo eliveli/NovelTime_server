@@ -77,8 +77,6 @@ async function setComment(comment: Comment) {
     reComment, // it can be undefined
   } = comment;
 
-  // * 모든 리코멘트는 원본 코멘트 아래에 작성 순으로 나열됨
-
   const user = await getUserNameAndImg(userId);
   if (!user) return;
 
@@ -89,20 +87,20 @@ async function setComment(comment: Comment) {
     const reComments = [];
     const commentsUserNames: { [commentId: string]: string } = {
       [commentId]: user.userName,
-    }; // to set originalCommentUserName
+    }; // to set parentCommentUserName
 
     // compose reComments
-    for (const recom of reComment) {
-      const reCommentSet1st = await setComment(recom);
+    for (const recomm of reComment) {
+      const { parentCommentId } = recomm;
+      const reCommentSet1st = await setComment(recomm);
       if (!reCommentSet1st) continue;
-      const originalCommentId = recom.originalCommentIdForReComment;
 
       commentsUserNames[commentId] = reCommentSet1st.userName;
 
       reComments.push({
         commentId: reCommentSet1st.commentId,
-        originalCommentId,
-        originalCommentUserName: "",
+        parentCommentId,
+        parentCommentUserName: "",
         userName: reCommentSet1st.userName,
         userImg: reCommentSet1st.userImg,
         commentContent: reCommentSet1st.commentContent,
@@ -110,10 +108,10 @@ async function setComment(comment: Comment) {
       });
     }
 
-    // add original comment's user names to reComments
+    // add parent comments' user names to reComments
     const reCommentsWithOriginalCommentsUserNames = reComments.map((_) => {
       const r = _;
-      r.originalCommentUserName = commentsUserNames[r.originalCommentId];
+      r.parentCommentUserName = commentsUserNames[r.parentCommentId];
       return r;
     });
 
@@ -131,89 +129,53 @@ async function setComment(comment: Comment) {
 }
 
 function setCommentsWithReComments(commentsFromServer: Comment[]) {
-  // 코멘트 분류 : 1차, 2차, 3차
+  // 코멘트 분류 : 루트 코멘트 (상위코멘트 X)
+  //               리코멘트 (상위코멘트가 존재하는 모든 코멘트. 루트의 리코멘트의 리코멘트... 식으로 이어질 수 있음)
+  //   i.e. 루트코멘트1 - 루트1의 리코멘트1 - 리코멘트1의 리코멘트1 - 리코멘트1의 리코멘트1의 리코멘트1 - ...
+  //                                        - 리코멘트1의 리코멘트2
+  //        루트코멘트2 - 루트2의 리코멘트1
+  //                    - 루트2의 리코멘트2
+  //
+  //   < 코멘트 분류를 위한 db columns >
+  //     . parentCommentId
+  //          for 루트 코멘트와 리코멘트 구분
+  //              리코멘트하는 바로 상위의 코멘트 표시
+  //               ㄴ프론트에서. 이건 모든 리코멘트는 작성일로 정렬되기 때문에 넣은 기능
+  //     . firstAncestorCommentId
+  //          for 같은 루트 코멘트 표시
 
-  // 1차 코멘트 - 리코멘트가 아닌 것
-  const comments1st = commentsFromServer.filter((_) => !_.originalCommentIdForReComment);
+  // 루트 코멘트 - 부모코멘트가 없는 것
+  const rootComments = commentsFromServer.filter((_) => !_.parentCommentId);
 
-  // 모든 리코멘트 - 2차, 3차 코멘트
-  const allReComments = commentsFromServer.filter((_) => !!_.originalCommentIdForReComment);
+  // 모든 리코멘트 - 부모코멘트가 있는 것
+  const allReComments = commentsFromServer.filter((_) => !!_.parentCommentId);
 
   if (allReComments.length === 0) {
-    return comments1st; // 리코멘트가 없는 경우
+    return rootComments; // 리코멘트가 없는 경우
   }
 
-  // 2차 코멘트 (1차 코멘트의 리코멘트)
-  const comments2nd = allReComments.filter((r) => {
-    const comment2nd = comments1st.filter((c) => r.originalCommentIdForReComment === c.commentId);
-    return !!comment2nd.length;
-  });
+  // 리코멘트 분류 - 첫번째 조상 코멘트, 즉 같은 루트 코멘트를 둔 것끼리 분류
+  // { 조상코멘트아이디 : 리코멘트[] }
+  //                        ㄴ(2차, 3차, ... 모든 리코멘트)
+  const reCommentsWithFirstAncestorID: { [x: string]: Comment[] } = {};
 
-  // { 원본코멘트아이디 : 2차 코멘트[] }
-  const comments2ndWithOriginalIDs: { [x: string]: Comment[] } = {};
-  comments2nd.forEach((c) => {
-    if (!comments2ndWithOriginalIDs[c.originalCommentIdForReComment]) {
-      comments2ndWithOriginalIDs[c.originalCommentIdForReComment] = [c];
+  allReComments.forEach((c) => {
+    if (!reCommentsWithFirstAncestorID[c.firstAncestorCommentId]) {
+      reCommentsWithFirstAncestorID[c.firstAncestorCommentId] = [c];
       //
-    } else if (comments2ndWithOriginalIDs[c.originalCommentIdForReComment]) {
-      comments2ndWithOriginalIDs[c.originalCommentIdForReComment] = [
-        ...comments2ndWithOriginalIDs[c.originalCommentIdForReComment],
+    } else if (reCommentsWithFirstAncestorID[c.firstAncestorCommentId]) {
+      reCommentsWithFirstAncestorID[c.firstAncestorCommentId] = [
+        ...reCommentsWithFirstAncestorID[c.firstAncestorCommentId],
         c,
       ];
     }
   });
 
-  const commentIDsOfComments2nd = comments2nd.map((c) => c.commentId);
-
-  // 3차 코멘트 (2차 코멘트의 리코멘트 또는 3차 코멘트의 리코멘트)
-  const comments3rd = allReComments.filter((r) => !commentIDsOfComments2nd.includes(r.commentId));
-
-  // 1차 코멘트에 리코멘트 속성 추가 (1,2,3차 코멘트 합치기)
-  const commentsWithReComments = comments1st.map((_) => {
+  // 각 루트 코멘트 아래에 리코멘트 넣기
+  const commentsWithReComments = rootComments.map((_) => {
     const c = _;
-    const reComments: Comment[] = []; // 2차 코멘트 + 3차 코멘트
-    const reReCommentsIDs: string[] = [];
-    // ㄴ2차의 리코멘트인 3차 코멘트 아이디s
-    // ㄴnot 3차의 리코멘트인 3차 코멘트 아이디s
-
-    const comments2ndOfThisOne = comments2ndWithOriginalIDs[c.commentId];
-
-    // 1차 코멘트의 리코멘트로 2차 코멘트 넣기
-    if (comments2ndOfThisOne) {
-      reComments.push(...comments2ndOfThisOne);
-    }
-
-    // 1차 코멘트의 리코멘트로 2차의 리코멘트인 3차 코멘트 넣기
-    if (comments2ndOfThisOne && comments3rd.length) {
-      const commentsIDsOfComments2ndOfThisOne = comments2ndOfThisOne.map((cc) => cc.commentId);
-
-      comments3rd.forEach((ccc) => {
-        if (commentsIDsOfComments2ndOfThisOne.includes(ccc.originalCommentIdForReComment)) {
-          reComments.push(ccc);
-          reReCommentsIDs.push(ccc.commentId); // 2차의 리코멘트인 3차 코멘트 아이디 배열 추가
-
-          // comments3rd.splice(idx, 1); // 해당 3차 코멘트 배열에서 삭제 (for 다음 번 탐색 시간 감소)
-          //  ㄴ 지우면 안 됨. 다음 탐색에 comments3rd의 idx가 달라짐
-        }
-      });
-    }
-
-    // 1차 코멘트의 리코멘트로 3차의 리코멘트인 3차 코멘트 넣기
-    if (reReCommentsIDs.length) {
-      comments3rd.forEach((ccc) => {
-        if (reReCommentsIDs.includes(ccc.originalCommentIdForReComment)) {
-          reComments.push(ccc);
-
-          const idxOfReReComment = reReCommentsIDs.indexOf(ccc.originalCommentIdForReComment);
-          reReCommentsIDs.splice(idxOfReReComment, 1); // 3차 코멘트 아이디 배열에서 삭제
-
-          // comments3rd.splice(idx, 1);
-        }
-      });
-    }
-
-    if (reComments.length) {
-      c.reComment = reComments;
+    if (reCommentsWithFirstAncestorID[c.commentId]) {
+      c.reComment = reCommentsWithFirstAncestorID[c.commentId];
     }
     return c;
   });

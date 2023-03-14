@@ -128,7 +128,8 @@ export type Comment = {
   novelTitle: string;
   createDate: string;
   commentContent: string;
-  originalCommentIdForReComment: string; // if it is not "" empty string, get the info for it
+  parentCommentId: string; // for reComment
+  firstAncestorCommentId: string; // for reComment
   reComment?: Comment[];
   // ㄴused in src\services\writing\getWriting.ts
   // ㄴactually it isn't in DB
