@@ -36,7 +36,6 @@ function composeTalkDetail(writing: Writing, user: User, isLike: boolean) {
   return {
     talkId: writing.writingId,
 
-    userId: writing.userId,
     userName: user.userName,
     userImg: user.userImg,
 
