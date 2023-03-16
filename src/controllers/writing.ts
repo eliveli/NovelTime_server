@@ -2,7 +2,7 @@ import { RequestHandler } from "express";
 import dotenv from "dotenv";
 import getWritings from "../services/writing/getWritings";
 import { composeWritings } from "../services/home/getWritings";
-import getWriting from "../services/writing/getWriting";
+import { getWriting } from "../services/writing/getWriting";
 
 dotenv.config();
 
@@ -58,13 +58,11 @@ export const writingListController: RequestHandler = (async (req, res) => {
 
 export const writingDetailController: RequestHandler = (async (req, res) => {
   try {
-    const { writingType, writingId, sortType } = req.params;
+    const { writingType, writingId } = req.params;
 
     if (!["T", "R"].includes(writingType)) throw Error;
 
-    if (!["new", "old"].includes(sortType)) throw Error;
-
-    const data = await getWriting(writingType as "T" | "R", writingId, sortType as "new" | "old");
+    const data = await getWriting(writingType as "T" | "R", writingId);
 
     if (data === undefined) {
       res.json(undefined);

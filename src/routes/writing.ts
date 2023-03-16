@@ -8,6 +8,6 @@ router.get(
   writingListController,
 );
 
-router.get("/:writingType/:writingId/:sortType", writingDetailController);
+router.get("/:writingType/:writingId", writingDetailController);
 
 export default router;

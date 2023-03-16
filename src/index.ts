@@ -4,6 +4,7 @@ import { Server } from "socket.io";
 import cookieParser from "cookie-parser";
 import home from "./routes/home";
 import writing from "./routes/writing";
+import comment from "./routes/comment";
 import novels from "./routes/novels";
 import user from "./routes/user";
 import userContent from "./routes/userContent";
@@ -20,6 +21,7 @@ app.use(express.urlencoded({ extended: false }));
 // use Routes
 app.use("/api/home", home);
 app.use("/api/writing", writing);
+app.use("/api/comment", comment);
 app.use("/api/novels", novels);
 app.use("/api/user", user);
 app.use("/api/userContent", userContent);
