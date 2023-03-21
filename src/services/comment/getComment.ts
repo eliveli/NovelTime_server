@@ -40,12 +40,12 @@ async function setComment(comment: Comment) {
     }; // to set parentCommentUserName
 
     // compose reComments
-    for (const recomm of reComment) {
-      const { parentCommentId } = recomm;
-      const reCommentSet1st = await setComment(recomm);
+    for (const _ of reComment) {
+      const { parentCommentId } = _;
+      const reCommentSet1st = await setComment(_);
       if (!reCommentSet1st) continue;
 
-      commentsUserNames[commentId] = reCommentSet1st.userName;
+      commentsUserNames[reCommentSet1st.commentId] = reCommentSet1st.userName;
 
       reComments.push({
         commentId: reCommentSet1st.commentId,
@@ -62,6 +62,7 @@ async function setComment(comment: Comment) {
     const reCommentsWithOriginalCommentsUserNames = reComments.map((_) => {
       const r = _;
       r.parentCommentUserName = commentsUserNames[r.parentCommentId];
+
       return r;
     });
 
