@@ -130,7 +130,11 @@ export type Comment = {
   commentContent: string;
   parentCommentId: string; // for reComment
   firstAncestorCommentId: string; // for reComment
-  reComment?: Comment[];
+  reCommentNoForRootComment: number;
+  // ㄴnumber of reComments included in certain root comment
+  // ㄴif the comment is not root comment, it will be null or 0
+
+  // reComment?: Comment[];
   // ㄴused in src\services\writing\getWriting.ts
   // ㄴactually it isn't in DB
 };

@@ -14,8 +14,55 @@ type CommentComposed = {
   reComment: any[];
 };
 
-async function getCommentsByWritingId(talkId: string) {
-  return (await db("SELECT * FROM comment WHERE writingId = (?)", talkId, "all")) as Comment[];
+async function getRootCommentsByWritingId(
+  talkId: string,
+  commentSortType: "new" | "old",
+  commentPageNo: number,
+) {
+  const queryPartForSorting = commentSortType === "old" ? "createDate" : "createDate DESC";
+
+  const commentNoPerPage = 50;
+  const queryPartForCommentPageLimit = `LIMIT ${
+    (commentPageNo - 1) * commentNoPerPage
+  }, ${commentNoPerPage}`;
+
+  return (await db(
+    `SELECT * FROM comment WHERE writingId = (?) AND parentCommentId IS NULL ORDER BY ${queryPartForSorting} ${queryPartForCommentPageLimit}`,
+    talkId,
+    "all",
+  )) as Comment[];
+}
+
+function checkIfItHasNextPage(totalCommentNo: number, currentPageNo: number) {
+  const commentNoPerPage = 20;
+
+  if (totalCommentNo % commentNoPerPage === 0) {
+    if (Math.floor(totalCommentNo / commentNoPerPage) === currentPageNo) return false;
+    return true;
+  }
+  if (totalCommentNo % commentNoPerPage !== 0) {
+    if (Math.floor(totalCommentNo / commentNoPerPage) + 1 === currentPageNo) return false;
+    return true;
+  }
+
+  throw Error("error when checking if comment has next page or not");
+}
+
+async function getTotalCommentNoFromDB(talkId: string) {
+  return (await db(
+    "SELECT count(*) AS totalCommentNoAsBigInt FROM comment WHERE writingId = (?) AND parentCommentId IS NULL",
+    [talkId],
+    "first",
+  )) as { totalCommentNoAsBigInt: BigInt };
+}
+
+async function hasNextCommentPage(talkId: string, commentPageNo: number) {
+  const { totalCommentNoAsBigInt } = await getTotalCommentNoFromDB(talkId);
+
+  const totalCommentNo = Number(totalCommentNoAsBigInt);
+  if (totalCommentNo === 0) return false;
+
+  return checkIfItHasNextPage(totalCommentNo, commentPageNo);
 }
 
 async function setComment(comment: Comment) {
@@ -24,50 +71,51 @@ async function setComment(comment: Comment) {
     userId,
     commentContent,
     createDate,
-    reComment, // it can be undefined
+    reCommentNoForRootComment,
+    // reComment, // it can be undefined
   } = comment;
 
   const user = await getUserNameAndImg(userId);
   if (!user) return;
 
-  let reCommentComposed: any[] = [];
+  // const reCommentComposed: any[] = [];
 
-  // set reComments
-  if (reComment) {
-    const reComments = [];
-    const commentsUserNames: { [commentId: string]: string } = {
-      [commentId]: user.userName,
-    }; // to set parentCommentUserName
+  // // set reComments
+  // if (reComment) {
+  //   const reComments = [];
+  //   const commentsUserNames: { [commentId: string]: string } = {
+  //     [commentId]: user.userName,
+  //   }; // to set parentCommentUserName
 
-    // compose reComments
-    for (const _ of reComment) {
-      const { parentCommentId } = _;
-      const reCommentSet1st = await setComment(_);
-      if (!reCommentSet1st) continue;
+  //   // compose reComments
+  //   for (const _ of reComment) {
+  //     const { parentCommentId } = _;
+  //     const reCommentSet1st = await setComment(_);
+  //     if (!reCommentSet1st) continue;
 
-      commentsUserNames[reCommentSet1st.commentId] = reCommentSet1st.userName;
+  //     commentsUserNames[reCommentSet1st.commentId] = reCommentSet1st.userName;
 
-      reComments.push({
-        commentId: reCommentSet1st.commentId,
-        parentCommentId,
-        parentCommentUserName: "",
-        userName: reCommentSet1st.userName,
-        userImg: reCommentSet1st.userImg,
-        commentContent: reCommentSet1st.commentContent,
-        createDate: reCommentSet1st.createDate,
-      });
-    }
+  //     reComments.push({
+  //       commentId: reCommentSet1st.commentId,
+  //       parentCommentId,
+  //       parentCommentUserName: "",
+  //       userName: reCommentSet1st.userName,
+  //       userImg: reCommentSet1st.userImg,
+  //       commentContent: reCommentSet1st.commentContent,
+  //       createDate: reCommentSet1st.createDate,
+  //     });
+  //   }
 
-    // add parent comments' user names to reComments
-    const reCommentsWithOriginalCommentsUserNames = reComments.map((_) => {
-      const r = _;
-      r.parentCommentUserName = commentsUserNames[r.parentCommentId];
+  //   // add parent comments' user names to reComments
+  //   const reCommentsWithOriginalCommentsUserNames = reComments.map((_) => {
+  //     const r = _;
+  //     r.parentCommentUserName = commentsUserNames[r.parentCommentId];
 
-      return r;
-    });
+  //     return r;
+  //   });
 
-    reCommentComposed = reCommentsWithOriginalCommentsUserNames;
-  }
+  //   reCommentComposed = reCommentsWithOriginalCommentsUserNames;
+  // }
 
   return {
     commentId,
@@ -75,7 +123,8 @@ async function setComment(comment: Comment) {
     userImg: user.userImg,
     commentContent,
     createDate,
-    reComment: reCommentComposed,
+    reCommentNo: reCommentNoForRootComment || 0,
+    // reComment: reCommentComposed,
   };
 }
 
@@ -183,18 +232,21 @@ function sortComments(comments: CommentComposed[], sortType: "new" | "old") {
   return commentsSorted;
 }
 
-export default async function getComments(talkId: string, sortType: "new" | "old") {
-  const commentsFromDB = await getCommentsByWritingId(talkId);
+export async function getRootComments(
+  talkId: string,
+  commentSortType: "new" | "old",
+  commentPageNo: number,
+) {
+  const commentsFromDB = await getRootCommentsByWritingId(talkId, commentSortType, commentPageNo);
 
   if (!commentsFromDB.length) {
     //  when comments empty
-    return { commentList: [] };
+    return { commentList: [], hasNext: false };
   }
-  const commentsWithReComments = setCommentsWithReComments(commentsFromDB);
 
-  const commentsComposed = await composeComments(commentsWithReComments);
+  const commentsComposed = await composeComments(commentsFromDB);
 
-  const commentList = sortComments(commentsComposed, sortType);
+  const hasNext = await hasNextCommentPage(talkId, commentPageNo);
 
-  return { commentList };
+  return { commentList: commentsComposed, hasNext };
 }
