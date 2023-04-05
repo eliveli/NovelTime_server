@@ -1,6 +1,7 @@
 import { RequestHandler } from "express";
 import dotenv from "dotenv";
-import { getRootComments } from "../services/comment/getComment";
+import getRootComments from "../services/comment/getComment";
+import getReComments from "../services/comment/getReComments";
 
 dotenv.config();
 
@@ -19,6 +20,25 @@ export const rootCommentsController: RequestHandler = (async (req, res) => {
       commentSortType as "new" | "old",
       commentPageNoAsNumber,
     );
+
+    if (data === undefined) {
+      res.json(undefined);
+      return;
+    }
+
+    res.json(data);
+  } catch (error: any) {
+    res.status(500).end();
+  }
+}) as RequestHandler;
+
+export const reCommentsController: RequestHandler = (async (req, res) => {
+  try {
+    const { rootCommentId, commentSortType } = req.params;
+
+    if (!["new", "old"].includes(commentSortType)) throw Error("sort type is wrong");
+
+    const data = await getReComments(rootCommentId, commentSortType as "new" | "old");
 
     if (data === undefined) {
       res.json(undefined);
