@@ -1,6 +1,6 @@
 import { RequestHandler } from "express";
 import dotenv from "dotenv";
-import getRootComments from "../services/comment/getComment";
+import getRootComments from "../services/comment/getRootComments";
 import getReComments from "../services/comment/getReComments";
 
 dotenv.config();
