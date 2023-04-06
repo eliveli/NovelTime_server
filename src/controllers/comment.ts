@@ -40,11 +40,6 @@ export const reCommentsController: RequestHandler = (async (req, res) => {
 
     const data = await getReComments(rootCommentId, commentSortType as "new" | "old");
 
-    if (data === undefined) {
-      res.json(undefined);
-      return;
-    }
-
     res.json(data);
   } catch (error: any) {
     res.status(500).end();

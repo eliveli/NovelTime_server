@@ -9,7 +9,7 @@ async function getRootCommentsByWritingId(
 ) {
   const queryPartForSorting = commentSortType === "old" ? "createDate" : "createDate DESC";
 
-  const commentNoPerPage = 50;
+  const commentNoPerPage = 20;
   const queryPartForCommentPageLimit = `LIMIT ${
     (commentPageNo - 1) * commentNoPerPage
   }, ${commentNoPerPage}`;

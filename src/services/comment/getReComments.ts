@@ -17,14 +17,13 @@ async function getUserNameByUserId(userId: string) {
 async function getUserNameByCommentId(commentId: string) {
   const { userId } = await getUserIdByCommentId(commentId);
 
-  if (!userId) return; // * fix?
+  if (!userId) return;
 
   const { userName } = await getUserNameByUserId(userId);
 
   return userName;
 }
 
-// * needed to change for reComments
 async function setReComment(comment: Comment) {
   const { commentId, userId, commentContent, createDate, parentCommentId } = comment;
 
@@ -33,7 +32,7 @@ async function setReComment(comment: Comment) {
 
   const parentCommentUserName = await getUserNameByCommentId(parentCommentId);
 
-  if (!parentCommentUserName) return; // * fix?
+  if (!parentCommentUserName) return;
 
   return {
     commentId,
@@ -76,7 +75,7 @@ export default async function getReComments(rootCommentId: string, commentSortTy
 
   if (!reCommentsFromDB.length) {
     // when comments are empty
-    return {}; // * check whether I should fix
+    return [];
   }
 
   const reCommentsComposed = await composeReComments(reCommentsFromDB);
