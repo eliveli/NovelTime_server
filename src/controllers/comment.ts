@@ -2,6 +2,7 @@ import { RequestHandler } from "express";
 import dotenv from "dotenv";
 import getRootComments from "../services/comment/getRootComments";
 import getReComments from "../services/comment/getReComments";
+import createRootComment from "../services/comment/createRootComment";
 
 dotenv.config();
 
@@ -43,5 +44,28 @@ export const reCommentsController: RequestHandler = (async (req, res) => {
     res.json(data);
   } catch (error: any) {
     res.status(500).end();
+  }
+}) as RequestHandler;
+
+export const createRootCommentController: RequestHandler = (async (req, res) => {
+  try {
+    const { talkId, novelTitle, commentContent } = req.body;
+
+    const loginUserId = req.userId;
+
+    if (!loginUserId) throw Error("user id is empty");
+
+    if (!talkId || !novelTitle || !commentContent) throw Error("some property is empty");
+
+    await createRootComment(
+      talkId as string,
+      novelTitle as string,
+      commentContent as string,
+      loginUserId,
+    );
+
+    res.json("new root comment was added");
+  } catch (error: any) {
+    res.status(500).json("failed to add a new comment");
   }
 }) as RequestHandler;
