@@ -27,13 +27,6 @@ export default async function createRootComment(
   commentContent: string,
   loginUserId: string,
 ) {
-  // set unique comment id
-  // - user creates comment one by one
-  //  -> Date.now()
-  // - some users can create comment simultaneously
-  //  -> insert "loginUserId"
-  // - commend id is only used to be divided between comments
-  //  -> don't need to insert its category like "comment" in the id
   const commentId = `${loginUserId}${Date.now().toString()}`;
 
   const createDate = getCurrentTimeExceptMilliSec();
