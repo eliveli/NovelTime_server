@@ -12,6 +12,6 @@ router.get("/:talkId/:commentSortType/:commentPageNo", rootCommentsController);
 
 router.get("/:rootCommentId/:commentSortType", reCommentsController);
 
-router.post("/", getUserIdByTokenMiddleware, createRootCommentController);
+router.post("/rootComment", getUserIdByTokenMiddleware, createRootCommentController);
 
 export default router;
