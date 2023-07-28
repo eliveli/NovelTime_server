@@ -10,9 +10,10 @@ async function getRootCommentsByWritingId(
   const queryPartForSorting = commentSortType === "old" ? "createDate" : "createDate DESC";
 
   const commentNoPerPage = 20;
-  const queryPartForCommentPageLimit = `LIMIT ${
-    (commentPageNo - 1) * commentNoPerPage
-  }, ${commentNoPerPage}`;
+  const queryPartForCommentPageLimit =
+    commentPageNo === 0
+      ? "" // get the all comment pages
+      : `LIMIT ${(commentPageNo - 1) * commentNoPerPage}, ${commentNoPerPage}`;
 
   return (await db(
     `SELECT * FROM comment WHERE writingId = (?) AND parentCommentId IS NULL ORDER BY ${queryPartForSorting} ${queryPartForCommentPageLimit}`,
@@ -45,6 +46,8 @@ async function getTotalCommentNoFromDB(talkId: string) {
 }
 
 async function hasNextCommentPage(talkId: string, commentPageNo: number) {
+  if (commentPageNo === 0) return false; // when getting the all pages
+
   const { totalCommentNoAsBigInt } = await getTotalCommentNoFromDB(talkId);
 
   const totalCommentNo = Number(totalCommentNoAsBigInt);
