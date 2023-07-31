@@ -1,0 +1,85 @@
+import { getCurrentTimeExceptMilliSec } from "../scraper/utils/getCurrentTime";
+import db from "../utils/db";
+import { Comment } from "../utils/types";
+
+async function getFirstAncestorCommentId(parentCommentId: string) {
+  const query = "SELECT firstAncestorCommentId FROM comment WHERE commentId = (?)";
+
+  const { firstAncestorCommentId } = (await db(query, [parentCommentId], "first")) as {
+    firstAncestorCommentId: string;
+  };
+
+  // value just got from DB will be falsy value when the parent comment is root comment
+  if (!firstAncestorCommentId) return parentCommentId;
+
+  return firstAncestorCommentId;
+}
+
+async function addNewReComment(
+  talkId: string, // -> writingId
+  novelTitle: string,
+  commentContent: string,
+  loginUserId: string, // -> userId
+  commentId: string,
+  createDate: string,
+  parentCommentId: string,
+  firstAncestorCommentId: string,
+) {
+  const query =
+    "INSERT INTO comment SET commentId = (?), writingId = (?), userId = (?), createDate = (?), commentContent = (?), novelTitle = (?), parentCommentId = (?), firstAncestorCommentId = (?)";
+
+  await db(query, [
+    commentId,
+    talkId,
+    loginUserId,
+    createDate,
+    commentContent,
+    novelTitle,
+    parentCommentId,
+    firstAncestorCommentId,
+  ]);
+}
+
+async function changeCommentNo(talkId: string) {
+  const query = "UPDATE writing SET commentNO = commentNO + 1 WHERE writingId = (?)";
+
+  await db(query, [talkId]);
+}
+
+// firstAncestorCommentId is always a root comment that has reComments
+//  add 1 into "reCommentNoForRootComment" column of the root comment
+async function changeReCommentNoForRootComment(rootCommentId: string) {
+  const query =
+    "UPDATE comment SET reCommentNoForRootComment = reCommentNoForRootComment + 1 WHERE commentId = (?)";
+
+  await db(query, [rootCommentId]);
+}
+
+export default async function createReComment(
+  talkId: string,
+  novelTitle: string,
+  commentContent: string,
+  loginUserId: string,
+  parentCommentId: string,
+) {
+  const commentId = `${loginUserId}${Date.now().toString()}`;
+
+  const createDate = getCurrentTimeExceptMilliSec();
+
+  const firstAncestorCommentId = await getFirstAncestorCommentId(parentCommentId);
+
+  await addNewReComment(
+    talkId,
+    novelTitle,
+    commentContent,
+    loginUserId,
+    commentId,
+    createDate,
+    parentCommentId,
+    firstAncestorCommentId,
+  );
+
+  await changeCommentNo(talkId);
+
+  await changeReCommentNoForRootComment(firstAncestorCommentId);
+}
