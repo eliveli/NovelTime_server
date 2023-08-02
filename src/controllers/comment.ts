@@ -5,6 +5,7 @@ import getReComments from "../services/comment/getReComments";
 import createRootComment from "../services/comment/createRootComment";
 import createReComment from "../services/comment/createReComment";
 import editComment from "../services/comment/editRootComment";
+import deleteComment from "../services/comment/deleteComment";
 
 dotenv.config();
 
@@ -102,18 +103,30 @@ export const editCommentController: RequestHandler = (async (req, res) => {
   try {
     const { commentId, commentContent } = req.body;
 
-    const loginUserId = req.userId;
-
-    if (!loginUserId) throw Error("user id is empty");
-
     if (!commentId || !commentContent) {
       throw Error("some property is empty");
     }
 
-    await editComment(commentId as string, commentContent as string, loginUserId);
+    await editComment(commentId as string, commentContent as string);
 
     res.json("a comment was edited");
   } catch (error: any) {
     res.status(500).json("failed to edit a comment");
+  }
+}) as RequestHandler;
+
+export const deleteCommentController: RequestHandler = (async (req, res) => {
+  try {
+    const { commentId } = req.body;
+
+    if (!commentId) {
+      throw Error("commentId is empty");
+    }
+
+    await deleteComment(commentId as string);
+
+    res.json("a comment was deleted");
+  } catch (error: any) {
+    res.status(500).json("failed to delete a comment");
   }
 }) as RequestHandler;

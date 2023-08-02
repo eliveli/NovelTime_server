@@ -1,6 +1,5 @@
 import { getCurrentTimeExceptMilliSec } from "../scraper/utils/getCurrentTime";
 import db from "../utils/db";
-import { Comment } from "../utils/types";
 
 async function getFirstAncestorCommentId(parentCommentId: string) {
   const query = "SELECT firstAncestorCommentId FROM comment WHERE commentId = (?)";
@@ -40,15 +39,15 @@ async function addNewReComment(
   ]);
 }
 
-async function changeCommentNo(talkId: string) {
+async function increaseCommentNo(talkId: string) {
   const query = "UPDATE writing SET commentNO = commentNO + 1 WHERE writingId = (?)";
 
   await db(query, [talkId]);
 }
 
 // firstAncestorCommentId is always a root comment that has reComments
-//  add 1 into "reCommentNoForRootComment" column of the root comment
-async function changeReCommentNoForRootComment(rootCommentId: string) {
+//  increase value in "reCommentNoForRootComment" the column of the root comment
+async function increaseReCommentNoForRootComment(rootCommentId: string) {
   const query =
     "UPDATE comment SET reCommentNoForRootComment = reCommentNoForRootComment + 1 WHERE commentId = (?)";
 
@@ -79,7 +78,7 @@ export default async function createReComment(
     firstAncestorCommentId,
   );
 
-  await changeCommentNo(talkId);
+  await increaseCommentNo(talkId);
 
-  await changeReCommentNoForRootComment(firstAncestorCommentId);
+  await increaseReCommentNoForRootComment(firstAncestorCommentId);
 }
