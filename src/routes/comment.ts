@@ -4,6 +4,7 @@ import {
   reCommentsController,
   createRootCommentController,
   createReCommentController,
+  editCommentController,
 } from "../controllers/comment";
 import { getUserIdByTokenMiddleware } from "../controllers/user";
 
@@ -16,5 +17,7 @@ router.get("/:rootCommentId/:commentSortType", reCommentsController);
 router.post("/rootComment", getUserIdByTokenMiddleware, createRootCommentController);
 
 router.post("/reComment", getUserIdByTokenMiddleware, createReCommentController);
+
+router.put("/comment", getUserIdByTokenMiddleware, editCommentController);
 
 export default router;

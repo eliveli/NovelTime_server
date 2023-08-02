@@ -4,6 +4,7 @@ import getRootComments from "../services/comment/getRootComments";
 import getReComments from "../services/comment/getReComments";
 import createRootComment from "../services/comment/createRootComment";
 import createReComment from "../services/comment/createReComment";
+import editComment from "../services/comment/editRootComment";
 
 dotenv.config();
 
@@ -94,5 +95,25 @@ export const createReCommentController: RequestHandler = (async (req, res) => {
     res.json("new reComment was added");
   } catch (error: any) {
     res.status(500).json("failed to add a reComment");
+  }
+}) as RequestHandler;
+
+export const editCommentController: RequestHandler = (async (req, res) => {
+  try {
+    const { commentId, commentContent } = req.body;
+
+    const loginUserId = req.userId;
+
+    if (!loginUserId) throw Error("user id is empty");
+
+    if (!commentId || !commentContent) {
+      throw Error("some property is empty");
+    }
+
+    await editComment(commentId as string, commentContent as string, loginUserId);
+
+    res.json("a comment was edited");
+  } catch (error: any) {
+    res.status(500).json("failed to edit a comment");
   }
 }) as RequestHandler;
