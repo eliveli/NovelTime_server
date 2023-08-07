@@ -134,6 +134,9 @@ export type Comment = {
   // ㄴnumber of reComments included in certain root comment
   // ㄴif the comment is not root comment, it will be null or 0
 
+  isDeleted: 0 | 1,
+  isEdited: 0 | 1
+
   // reComment?: Comment[];
   // ㄴused in src\services\writing\getWriting.ts
   // ㄴactually it isn't in DB

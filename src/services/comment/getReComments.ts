@@ -25,14 +25,27 @@ async function getUserNameByCommentId(commentId: string) {
 }
 
 async function setReComment(comment: Comment) {
-  const { commentId, userId, commentContent, createDate, parentCommentId } = comment;
-
-  const user = await getUserNameAndImg(userId);
-  if (!user) return;
+  const { commentId, userId, commentContent, createDate, parentCommentId, isDeleted } = comment;
 
   const parentCommentUserName = await getUserNameByCommentId(parentCommentId);
 
-  if (!parentCommentUserName) return;
+  if (isDeleted === 1) {
+    return {
+      commentId,
+      userName: "",
+      userImg: "",
+      commentContent: "",
+      createDate,
+
+      parentCommentId,
+      parentCommentUserName,
+
+      isDeleted,
+    };
+  }
+
+  const user = await getUserNameAndImg(userId);
+  if (!user) return;
 
   return {
     commentId,
@@ -43,6 +56,7 @@ async function setReComment(comment: Comment) {
 
     parentCommentId,
     parentCommentUserName,
+    isDeleted,
   };
 }
 

@@ -57,7 +57,20 @@ async function hasNextCommentPage(talkId: string, commentPageNo: number) {
 }
 
 async function setComment(comment: Comment) {
-  const { commentId, userId, commentContent, createDate, reCommentNoForRootComment } = comment;
+  const { commentId, userId, commentContent, createDate, reCommentNoForRootComment, isDeleted } =
+    comment;
+
+  if (isDeleted === 1) {
+    return {
+      commentId,
+      userName: "",
+      userImg: "",
+      commentContent: "",
+      createDate,
+      reCommentNo: reCommentNoForRootComment || 0,
+      isDeleted,
+    };
+  }
 
   const user = await getUserNameAndImg(userId);
   if (!user) return;
@@ -69,6 +82,7 @@ async function setComment(comment: Comment) {
     commentContent,
     createDate,
     reCommentNo: reCommentNoForRootComment || 0,
+    isDeleted,
   };
 }
 // 코멘트 분류 : 루트 코멘트 (상위코멘트 X)

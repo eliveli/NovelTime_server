@@ -17,7 +17,8 @@ async function deleteCommentWithCommentId(commentId: string) {
 }
 
 async function regardAsDeleted(commentId: string) {
-  const query = "UPDATE comment SET isDeleted = 1 WHERE commentId = (?)";
+  const query =
+    "UPDATE comment SET isDeleted = 1, userId = '', commentContent = '' WHERE commentId = (?)";
 
   await db(query, [commentId]);
 }
