@@ -57,8 +57,15 @@ async function hasNextCommentPage(talkId: string, commentPageNo: number) {
 }
 
 async function setComment(comment: Comment) {
-  const { commentId, userId, commentContent, createDate, reCommentNoForRootComment, isDeleted } =
-    comment;
+  const {
+    commentId,
+    userId,
+    commentContent,
+    createDate,
+    reCommentNoForRootComment,
+    isDeleted,
+    isEdited,
+  } = comment;
 
   if (isDeleted === 1) {
     return {
@@ -69,6 +76,7 @@ async function setComment(comment: Comment) {
       createDate,
       reCommentNo: reCommentNoForRootComment || 0,
       isDeleted,
+      isEdited,
     };
   }
 
@@ -83,6 +91,7 @@ async function setComment(comment: Comment) {
     createDate,
     reCommentNo: reCommentNoForRootComment || 0,
     isDeleted,
+    isEdited,
   };
 }
 // 코멘트 분류 : 루트 코멘트 (상위코멘트 X)

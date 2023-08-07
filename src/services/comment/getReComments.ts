@@ -25,24 +25,26 @@ async function getUserNameByCommentId(commentId: string) {
 }
 
 async function setReComment(comment: Comment) {
-  const { commentId, userId, commentContent, createDate, parentCommentId, isDeleted } = comment;
-
-  const parentCommentUserName = await getUserNameByCommentId(parentCommentId);
+  const { commentId, userId, commentContent, createDate, parentCommentId, isDeleted, isEdited } =
+    comment;
 
   if (isDeleted === 1) {
     return {
-      commentId,
+      commentId, // it is required to know which comment is the parent of other reComment
       userName: "",
       userImg: "",
       commentContent: "",
       createDate,
 
-      parentCommentId,
-      parentCommentUserName,
+      parentCommentId: "",
+      parentCommentUserName: "",
 
       isDeleted,
+      isEdited,
     };
   }
+
+  const parentCommentUserName = await getUserNameByCommentId(parentCommentId);
 
   const user = await getUserNameAndImg(userId);
   if (!user) return;
@@ -55,8 +57,9 @@ async function setReComment(comment: Comment) {
     createDate,
 
     parentCommentId,
-    parentCommentUserName,
+    parentCommentUserName, // it can be empty if its parent was deleted
     isDeleted,
+    isEdited,
   };
 }
 

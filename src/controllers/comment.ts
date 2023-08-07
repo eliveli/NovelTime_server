@@ -4,7 +4,7 @@ import getRootComments from "../services/comment/getRootComments";
 import getReComments from "../services/comment/getReComments";
 import createRootComment from "../services/comment/createRootComment";
 import createReComment from "../services/comment/createReComment";
-import editComment from "../services/comment/editRootComment";
+import editComment from "../services/comment/editComment";
 import deleteComment from "../services/comment/deleteComment";
 
 dotenv.config();
