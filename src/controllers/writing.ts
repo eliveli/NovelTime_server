@@ -60,9 +60,11 @@ export const writingDetailController: RequestHandler = (async (req, res) => {
   try {
     const { writingType, writingId } = req.params;
 
+    const loginUserId = req.userId; // it can be undefined if the user didn't log in
+
     if (!["T", "R"].includes(writingType)) throw Error;
 
-    const data = await getWriting(writingType as "T" | "R", writingId);
+    const data = await getWriting(writingType as "T" | "R", writingId, loginUserId);
 
     if (data === undefined) {
       res.json(undefined);

@@ -88,6 +88,7 @@ export const getUserIdByTokenMiddleware: RequestHandler = (req, res, next) => {
       const payload = jwt.verify(token, privateKey) as ChangedUserInfo;
       req.userId = payload.userId;
     }
+    // if the user didn't log in, req.userId would be undefined
     next();
   } catch (error) {
     console.log(error);

@@ -51,7 +51,7 @@ async function getNovelByNovelId(novelId: string) {
   return novel;
 }
 
-export async function getWriting(writingType: "T" | "R", writingId: string) {
+export async function getWriting(writingType: "T" | "R", writingId: string, loginUserId?: string) {
   if (writingType === "T") {
     const writing = (await db(
       "SELECT * FROM writing WHERE writingId = (?)",
@@ -62,7 +62,10 @@ export async function getWriting(writingType: "T" | "R", writingId: string) {
     const user = await getUserNameAndImg(writing.userId);
     if (!user) return;
 
-    const isLike = await getContentLike("writing", writing.userId, writingId);
+    let isLike = false;
+    if (loginUserId) {
+      isLike = await getContentLike("writing", loginUserId, writingId);
+    }
 
     const novel = await getNovelByNovelId(writing.novelId);
     if (!novel) return;
