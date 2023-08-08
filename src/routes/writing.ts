@@ -1,6 +1,7 @@
 import express from "express";
 import { writingDetailController, writingListController } from "../controllers/writing";
-import { getUserIdByTokenMiddleware } from "../controllers/user";
+import { authenticateAccessTokenMiddleware, getUserIdByTokenMiddleware } from "../controllers/user";
+import { toggleLikeController } from "../controllers/userContent";
 
 const router = express.Router();
 
@@ -10,5 +11,11 @@ router.get(
 );
 
 router.get("/:writingType/:writingId", getUserIdByTokenMiddleware, writingDetailController);
+
+router.put(
+  "/toggleLike/:contentType/:contentId",
+  authenticateAccessTokenMiddleware,
+  toggleLikeController,
+);
 
 export default router;

@@ -1,7 +1,7 @@
 import db from "../utils/db";
 import { Writing } from "../utils/types";
 import getUserNameAndImg from "../home/shared/getUserNameAndImg";
-import { getContentLike } from "../userContent/toggleLike";
+import { getContentLike } from "../shared/toggleLike";
 
 type User = {
   userName: string;

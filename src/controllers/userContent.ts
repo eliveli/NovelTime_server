@@ -5,7 +5,7 @@ import getUserId from "../services/shared/getUserId";
 import userWritingService from "../services/userContent/writings";
 import userCommentService from "../services/userContent/comments";
 import userNovelListService from "../services/userContent/novelLists";
-import toggleLike from "../services/userContent/toggleLike";
+import toggleLike from "../services/shared/toggleLike";
 
 dotenv.config();
 
@@ -160,14 +160,14 @@ export const toggleLikeController: RequestHandler = (async (req, res) => {
     const { contentType, contentId } = req.params;
     const loginUserId = req.userId;
 
-    const { isLike } = await toggleLike(
+    const { isLike, likeNo } = await toggleLike(
       contentType as "writing" | "novelList",
       contentId,
       loginUserId as string,
     );
     if (isLike === undefined) throw new Error("error occurred as toggling LIKE");
 
-    res.json({ isLike });
+    res.json({ isLike, likeNo });
   } catch (error: any) {
     console.log("failed to toggle Like in toggleLikeController :", error);
     res.status(500).end();
