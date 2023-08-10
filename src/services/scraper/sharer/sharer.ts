@@ -1,6 +1,6 @@
 import puppeteer, { ElementHandle } from "puppeteer";
 import dotenv from "dotenv";
-import { setNovel } from "../../novels";
+import { setNovel } from "../../novel/novels";
 import getCurrentTime from "../utils/getCurrentTime";
 
 dotenv.config(); // 여기(이 명령어를 실행한 파일)에서만 환경변수 사용 가능

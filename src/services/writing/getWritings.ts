@@ -1,4 +1,4 @@
-import { getNovelIDsByNovelTitle } from "../novels";
+import { getNovelIDsByNovelTitle } from "../novel/novels";
 import { getUserIdBySimilarUserName } from "../shared/getUserId";
 import db from "../utils/db";
 import { Writing } from "../utils/types";

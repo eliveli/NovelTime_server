@@ -1,5 +1,5 @@
 import puppeteer, { SerializableOrJSHandle } from "puppeteer";
-import { setNovel } from "../../novels";
+import { setNovel } from "../../novel/novels";
 import db from "../../utils/db";
 import removeLabelsFromTitle from "./removeLabelsFromTitle";
 import getCurrentTime from "./getCurrentTime";
