@@ -1,7 +1,8 @@
 import { Request, Response, NextFunction, RequestHandler } from "express";
 import getPopularNovelsInNovelTime from "../services/shared/getPopularNovelsInNovelTime";
 import getWeeklyNovelsForHomeOrListPage from "../services/shared/getWeeklyNovelsForHomeOrListPage";
-import { getNovels, getNovel } from "../services/novels";
+import { getNovels, getNovel } from "../services/novel/novels";
+import searchForNovels from "../services/novel/searchForNovels";
 
 export const searchByTitle: RequestHandler = (req, res) => {
   getNovels(req.params.title)
@@ -38,6 +39,32 @@ export const getNovelListByCategory: RequestHandler = (async (req, res) => {
     res.json(novelsInDetail);
   } catch (error: any) {
     console.log("failed to get content in getNovelListByCategory controller :", error);
+    res.status(500).end();
+  }
+}) as RequestHandler;
+
+export const searchForNovelController: RequestHandler = (async (req, res) => {
+  try {
+    const { searchType, searchWord, pageNo } = req.params;
+
+    if (!["novelTitle", "novelDesc", "novelAuthor", "sample"].includes(searchType)) {
+      throw Error("searchType is not correct");
+    }
+
+    const data = await searchForNovels(
+      searchType as "novelTitle" | "novelDesc" | "novelAuthor" | "sample",
+      searchWord,
+      Number(pageNo),
+    );
+
+    if (data === undefined) {
+      res.json(undefined);
+      return;
+    }
+
+    res.json({ ...data });
+  } catch (error: any) {
+    console.log("failed to get novels in searchForNovelController :", error);
     res.status(500).end();
   }
 }) as RequestHandler;

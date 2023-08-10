@@ -1,10 +1,17 @@
 import express from "express";
 
-import { searchByTitle, getNovelById, getNovelListByCategory } from "../controllers/novels";
+import {
+  searchByTitle,
+  searchForNovelController,
+  getNovelById,
+  getNovelListByCategory,
+} from "../controllers/novels";
 
 const router = express.Router();
 
 router.get("/search/:title", searchByTitle);
+
+router.get("/:searchType/:searchWord/:pageNo", searchForNovelController);
 
 // router.get("/category/:category", searchByTitle);
 
