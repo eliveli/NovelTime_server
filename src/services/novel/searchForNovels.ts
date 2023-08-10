@@ -18,9 +18,9 @@ function getLastPageNo(totalNoAsBigInt: BigInt, novelNoPerPage: number) {
 }
 
 async function getTotalNovelNo(searchType: string, searchWord: string) {
-  const dbQuery = `SELECT count(*) AS totalNoAsBigInt FROM novelInfo WHERE (?) LIKE '%${searchWord}%'`;
+  const dbQuery = `SELECT count(*) AS totalNoAsBigInt FROM novelInfo WHERE ${searchType} LIKE '%${searchWord}%'`;
 
-  const { totalNoAsBigInt } = (await db(dbQuery, [searchType], "first")) as {
+  const { totalNoAsBigInt } = (await db(dbQuery, undefined, "first")) as {
     totalNoAsBigInt: BigInt;
   };
 
@@ -41,9 +41,9 @@ async function getNovelsFromDB(
   searchWord: string,
   queryPartForPageLimit: string,
 ) {
-  const dbQuery = `SELECT novelId, novelImg, novelTitle, novelAuthor, novelGenre, novelDesc FROM novelInfo WHERE (?) LIKE '%${searchWord}%' ${queryPartForPageLimit}`;
+  const dbQuery = `SELECT novelId, novelImg, novelTitle, novelAuthor, novelGenre, novelDesc FROM novelInfo WHERE ${searchType} LIKE '%${searchWord}%' ${queryPartForPageLimit}`;
 
-  const novels = (await db(dbQuery, searchType, "all")) as NovelInDetail[];
+  const novels = (await db(dbQuery, undefined, "all")) as NovelInDetail[];
 
   return novels;
 }
