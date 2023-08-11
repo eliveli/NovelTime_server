@@ -5,6 +5,7 @@ import {
   searchForNovelController,
   getNovelById,
   getNovelListByCategory,
+  addNovelWithURLController,
 } from "../controllers/novels";
 
 const router = express.Router();
@@ -12,6 +13,8 @@ const router = express.Router();
 router.get("/search/:title", searchByTitle);
 
 router.get("/:searchType/:searchWord/:pageNo", searchForNovelController);
+
+router.post("/addNovelWithURL", addNovelWithURLController);
 
 // router.get("/category/:category", searchByTitle);
 

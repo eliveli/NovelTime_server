@@ -3,6 +3,7 @@ import getPopularNovelsInNovelTime from "../services/shared/getPopularNovelsInNo
 import getWeeklyNovelsForHomeOrListPage from "../services/shared/getWeeklyNovelsForHomeOrListPage";
 import { getNovels, getNovel } from "../services/novel/novels";
 import searchForNovels from "../services/novel/searchForNovels";
+import addNovelWithURL from "../services/scraper/novelAddedWithURL/novelAddedAutomatically";
 
 export const searchByTitle: RequestHandler = (req, res) => {
   getNovels(req.params.title)
@@ -65,6 +66,23 @@ export const searchForNovelController: RequestHandler = (async (req, res) => {
     res.json({ ...data });
   } catch (error: any) {
     console.log("failed to get novels in searchForNovelController :", error);
+    res.status(500).end();
+  }
+}) as RequestHandler;
+
+export const addNovelWithURLController: RequestHandler = (async (req, res) => {
+  try {
+    const { novelURL } = req.body;
+
+    if (!novelURL) throw Error("novel url is empty");
+
+    const novelIdAndTitle = await addNovelWithURL(novelURL as string);
+
+    if (!novelIdAndTitle) throw Error;
+
+    res.json({ ...novelIdAndTitle });
+  } catch (error: any) {
+    console.log("failed to add a novel in addNovelWithURLController :", error);
     res.status(500).end();
   }
 }) as RequestHandler;

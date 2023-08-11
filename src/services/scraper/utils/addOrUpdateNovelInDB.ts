@@ -496,7 +496,7 @@ export async function searchForNovelsByTitleAndAuthor(novelTitle: string, novelA
   )) as Array<NovelForChecking>;
 }
 
-async function addNewNovel(
+export async function addNewNovel(
   page: puppeteer.Page,
   severalNovelInfo: SeveralNovelInfo,
   novelPlatform: NovelPlatform,
@@ -593,24 +593,24 @@ export async function goToDetailPage(
     //    to reduce time for scrapping one novel
     //    "networkidle0" requires more time but it is necessary for joara
     if (novelPlatform === "조아라") {
-      await page.goto(`https://${novelUrl}`, { waitUntil: "networkidle0" });
+      await page.goto(`${novelUrl}`, { waitUntil: "networkidle0" });
       return;
     }
 
     if (novelPlatform === "카카오페이지") {
       // 상세페이지의 '작품소개' 탭에서 정보 읽기
       // waitUntil option to wait for elements loading
-      await page.goto(`https://${novelUrl}?tab_type=about`, { waitUntil: "domcontentloaded" });
+      await page.goto(`${novelUrl}?tab_type=about`, { waitUntil: "domcontentloaded" });
       return;
     }
 
-    await page.goto(`https://${novelUrl}`, { waitUntil: "domcontentloaded" });
+    await page.goto(`${novelUrl}`, { waitUntil: "domcontentloaded" });
   } catch (err) {
     console.log(err);
   }
 }
 
-async function getSameNovelsAndSeveralInfo(
+export async function getSameNovelsAndSeveralInfo(
   page: puppeteer.Page,
   novelUrl: string,
   novelPlatform: NovelPlatform,
@@ -703,7 +703,7 @@ async function makeNovelOne(
   return novelIdForUpdate;
 }
 
-async function updateNovelWithPlatform(
+export async function updateNovelWithPlatform(
   novelUrlAndTitle: NovelUrlAndTitle,
   novelsInDB: NovelForChecking[],
   novelPlatform: NovelPlatform,

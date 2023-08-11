@@ -22,14 +22,7 @@ interface SystemError {
   name: string;
 }
 
-// 공유하기 카카페용------------------------------------------------------------------------------------------------//
-async function shareKakape(inputUrl: string) {
-  const browser = await puppeteer.launch({ headless: true });
-  const page = await browser.newPage(); // 창 열기
-  page.setDefaultTimeout(10000); // 대기 시간 줄이기
-
-  await page.goto("https://page.kakao.com/main"); // 카카오페이지 이동
-
+export async function loginKakao(page: puppeteer.Page) {
   // 카카페 로그인 바로 하기 : 작품url 이동 시 로그인이 필요한 작품은 바로 홈으로 가기 때문
   const loginBtn = (await page.waitForSelector(
     "#kpw-header > div > div > button > div:nth-child(3)",
@@ -41,8 +34,10 @@ async function shareKakape(inputUrl: string) {
 
   const newPagePromise = new Promise((x) => page.once("popup", x)); // declare promise for popup event
 
-  await loginBtn.click(); // click, a new tab/window opens
-  const newPage = (await newPagePromise) as puppeteer.Page; // declare new tab/window, now you can work with it
+  // click, a new tab/window opens
+  await loginBtn.click();
+  // declare new tab/window, now you can work with it
+  const newPage = (await newPagePromise) as puppeteer.Page;
 
   // -카카페 회원정보 입력
   // set id, pw
@@ -61,15 +56,127 @@ async function shareKakape(inputUrl: string) {
   }
 
   const idElement = await newPage.waitForSelector("#id_email_2");
-  await newPage.evaluate((kakaoID, idElement) => (idElement.value = kakaoID), kakaoID, idElement); // email
+  await newPage.evaluate((kakaoID, idElement) => (idElement.value = kakaoID), kakaoID, idElement);
   const pwElement = await newPage.waitForSelector("#id_password_3");
-  await newPage.evaluate((kakaoPW, pwElement) => (pwElement.value = kakaoPW), kakaoPW, pwElement); // password
+  await newPage.evaluate((kakaoPW, pwElement) => (pwElement.value = kakaoPW), kakaoPW, pwElement);
   await newPage.click(
     "#login-form > fieldset > div.set_login > div > label > span.ico_account.ico_check",
   ); // check 로그인상태유지
   await newPage.click("#login-form > fieldset > div.wrap_btn > button.btn_g.btn_confirm.submit"); // submit
+}
 
-  // -----------------------------------------------------------------------------------------//
+export const loginSeries = (page: puppeteer.Page) =>
+  new Promise<void>(async (resolve) => {
+    // set id, pw
+    let seriesID: string;
+    let seriesPW: string;
+    // handle undefined env variable
+    if (process.env.SERIES_ID) {
+      seriesID = process.env.SERIES_ID;
+    } else {
+      throw new Error("SERIES_ID env is not set");
+    }
+    if (process.env.SERIES_PW) {
+      seriesPW = process.env.SERIES_PW;
+    } else {
+      throw new Error("SERIES_PW env is not set");
+    }
+
+    // 타임아웃 에러 시 주소 오류
+    try {
+      await page.waitForSelector("#id");
+    } catch (error) {
+      const err = error as SystemError;
+      if (err.name === "TimeoutError") {
+        throw new Error("주소가 올바르지 않아요"); // 오류 표시 후 실행 종료
+      }
+    }
+    const idElement = await page.waitForSelector("#id");
+    await page.evaluate((seriesID, idElement) => (idElement.value = seriesID), seriesID, idElement); // id
+    const pwElement = await page.waitForSelector("#pw");
+    await page.evaluate((seriesPW, pwElement) => (pwElement.value = seriesPW), seriesPW, pwElement); // password
+    await page.click("#login_keep_wrap > div.keep_check > label"); // check 로그인상태유지
+    await page.click("#frmNIDLogin > ul > li > div > div.btn_login_wrap"); // submit
+    await page.waitForSelector("#frmNIDLogin > fieldset > span.btn_upload");
+    await page.click("#frmNIDLogin > fieldset > span.btn_upload");
+    resolve();
+  });
+
+export const loginRidi = (page: puppeteer.Page) =>
+  new Promise<void>(async (resolve) => {
+    // set id, pw
+    let ridiID: string;
+    let ridiPW: string;
+    // handle undefined env variable
+    if (process.env.RIDI_ID) {
+      ridiID = process.env.RIDI_ID;
+    } else {
+      throw new Error("RIDI_ID env is not set");
+    }
+    if (process.env.RIDI_PW) {
+      ridiPW = process.env.RIDI_PW;
+    } else {
+      throw new Error("RIDI_PW env is not set");
+    }
+
+    // 타임아웃 에러 시 주소 오류
+    try {
+      await page.waitForSelector("#login_id");
+    } catch (error) {
+      const err = error as SystemError;
+      if (err.name === "TimeoutError") {
+        throw new Error("시간초과. 주소가 올바르지 않아요"); // 오류 표시 후 실행 종료
+      }
+    }
+
+    const idElement = await page.waitForSelector("#login_id");
+    await page.evaluate((ridiID, idElement) => (idElement.value = ridiID), ridiID, idElement);
+    const pwElement = await page.waitForSelector("#login_pw");
+    await page.evaluate((ridiPW, pwElement) => (pwElement.value = ridiPW), ridiPW, pwElement);
+    await page.click("#login > form > div > div > label > input[type=checkbox]"); // check 로그인상태유지
+    await page.click("#login > form > button"); // submit
+    resolve();
+  });
+
+export const loginJoara = (page: puppeteer.Page) =>
+  new Promise<void>(async (resolve) => {
+    // set id, pw
+    let joaraID: string;
+    let joaraPW: string;
+    // handle undefined env variable
+    if (process.env.JOARA_ID) {
+      joaraID = process.env.JOARA_ID;
+    } else {
+      throw new Error("JOARA_ID env is not set");
+    }
+    if (process.env.JOARA_PW) {
+      joaraPW = process.env.JOARA_PW;
+    } else {
+      throw new Error("JOARA_PW env is not set");
+    }
+
+    await page.type(
+      "#root > div > div > div > div.input-group > input[type=text]:nth-child(1)",
+      joaraID,
+    );
+    await page.type(
+      "#root > div > div > div > div.input-group > input[type=password]:nth-child(2)",
+      joaraPW,
+    );
+
+    await page.click("#root > div > div > div > button"); // submit
+    resolve();
+  });
+
+// 공유하기 카카페용-------------------------------------------------------------------------------------//
+async function shareKakape(inputUrl: string) {
+  const browser = await puppeteer.launch({ headless: true });
+  const page = await browser.newPage(); // 창 열기
+  page.setDefaultTimeout(10000); // 대기 시간 줄이기
+
+  await page.goto("https://page.kakao.com/main");
+
+  await loginKakao(page);
 
   // url 확인 : 직행 url 또는 간접 url (via공유하기 : 그 중 url 복사 눌러도 url만 나오지는 않음)
   const directUrl = "page.kakao.com/home?seriesId=";
@@ -199,52 +306,6 @@ async function shareSeries(inputUrl: string) {
   const page = await browser.newPage(); // 창 열기
   page.setDefaultTimeout(10000); // 대기 시간 줄이기
 
-  // 로그인
-  const login = () =>
-    new Promise<void>(async (resolve) => {
-      // set id, pw
-      let seriesID: string;
-      let seriesPW: string;
-      // handle undefined env variable
-      if (process.env.SERIES_ID) {
-        seriesID = process.env.SERIES_ID;
-      } else {
-        throw new Error("SERIES_ID env is not set");
-      }
-      if (process.env.SERIES_PW) {
-        seriesPW = process.env.SERIES_PW;
-      } else {
-        throw new Error("SERIES_PW env is not set");
-      }
-
-      // 타임아웃 에러 시 주소 오류
-      try {
-        await page.waitForSelector("#id");
-      } catch (error) {
-        const err = error as SystemError;
-        if (err.name === "TimeoutError") {
-          throw new Error("주소가 올바르지 않아요"); // 오류 표시 후 실행 종료
-        }
-      }
-      const idElement = await page.waitForSelector("#id");
-      await page.evaluate(
-        (seriesID, idElement) => (idElement.value = seriesID),
-        seriesID,
-        idElement,
-      ); // id
-      const pwElement = await page.waitForSelector("#pw");
-      await page.evaluate(
-        (seriesPW, pwElement) => (pwElement.value = seriesPW),
-        seriesPW,
-        pwElement,
-      ); // password
-      await page.click("#login_keep_wrap > div.keep_check > label"); // check 로그인상태유지
-      await page.click("#frmNIDLogin > ul > li > div > div.btn_login_wrap"); // submit
-      await page.waitForSelector("#frmNIDLogin > fieldset > span.btn_upload");
-      await page.click("#frmNIDLogin > fieldset > span.btn_upload");
-      resolve();
-    });
-
   // ----------------------------------------------------------------//
 
   // 작품 완결 여부 확인 : 작품 검색 페이지에서 작품 제목 옆 완결 표시 확인
@@ -308,8 +369,9 @@ async function shareSeries(inputUrl: string) {
   } catch (err) {
     // 성인작품일 경우 로그인
     novelInfo.novelAge = "청소년 이용불가";
-    await login();
-    await new Promise((resolve) => setTimeout(resolve, 500)); // 로그인 후 페이지 리다이렉트 됨. 잠시 대기 후 상세페이지로 이동해야 에러 안 남.
+    await loginSeries(page);
+    // 로그인 후 페이지 리다이렉트 됨. 잠시 대기 후 상세페이지로 이동해야 에러 안 남.
+    await new Promise((resolve) => setTimeout(resolve, 500));
   }
   page.setDefaultTimeout(10000); // 대기 시간 원래대로
 
@@ -407,44 +469,6 @@ async function shareRidi(inputUrl: string) {
   const page = await browser.newPage(); // 창 열기
   page.setDefaultTimeout(10000); // 대기 시간 줄이기
 
-  // 로그인 : 성인작품일 때 실행
-  const login = () =>
-    new Promise<void>(async (resolve) => {
-      // set id, pw
-      let ridiID: string;
-      let ridiPW: string;
-      // handle undefined env variable
-      if (process.env.RIDI_ID) {
-        ridiID = process.env.RIDI_ID;
-      } else {
-        throw new Error("RIDI_ID env is not set");
-      }
-      if (process.env.RIDI_PW) {
-        ridiPW = process.env.RIDI_PW;
-      } else {
-        throw new Error("RIDI_PW env is not set");
-      }
-
-      // 타임아웃 에러 시 주소 오류
-      try {
-        await page.waitForSelector("#login_id");
-      } catch (error) {
-        const err = error as SystemError;
-        if (err.name === "TimeoutError") {
-          throw new Error("시간초과. 주소가 올바르지 않아요"); // 오류 표시 후 실행 종료
-        }
-      }
-
-      const idElement = await page.waitForSelector("#login_id");
-      await page.evaluate((ridiID, idElement) => (idElement.value = ridiID), ridiID, idElement);
-      const pwElement = await page.waitForSelector("#login_pw");
-      await page.evaluate((ridiPW, pwElement) => (pwElement.value = ridiPW), ridiPW, pwElement);
-      await page.click("#login > form > div > div > label > input[type=checkbox]"); // check 로그인상태유지
-      await page.click("#login > form > button"); // submit
-      resolve();
-    });
-  // ----------------------------------------------------------------//
-
   // url 확인
   let novelUrl;
   if (!inputUrl.includes("ridibooks.com/books/")) {
@@ -470,7 +494,7 @@ async function shareRidi(inputUrl: string) {
   } catch (err) {
     // 성인작품일 경우 로그인
     novelInfo.novelAge = "청소년 이용불가";
-    await login();
+    await loginRidi(page);
     await new Promise((resolve) => setTimeout(resolve, 500)); // 로그인 후 페이지 리다이렉트 됨. 잠시 대기 후 상세페이지로 이동해야 에러 안 남.
   }
   page.setDefaultTimeout(10000); // 대기 시간 원래대로
@@ -642,37 +666,6 @@ async function shareJoara(inputUrl: string) {
   const page = await browser.newPage(); // 창 열기
   page.setDefaultTimeout(10000); // 대기 시간 줄이기
 
-  // 로그인
-  const login = () =>
-    new Promise<void>(async (resolve) => {
-      // set id, pw
-      let joaraID: string;
-      let joaraPW: string;
-      // handle undefined env variable
-      if (process.env.JOARA_ID) {
-        joaraID = process.env.JOARA_ID;
-      } else {
-        throw new Error("JOARA_ID env is not set");
-      }
-      if (process.env.JOARA_PW) {
-        joaraPW = process.env.JOARA_PW;
-      } else {
-        throw new Error("JOARA_PW env is not set");
-      }
-
-      await page.type(
-        "#root > div > div > div > div.input-group > input[type=text]:nth-child(1)",
-        joaraID,
-      );
-      await page.type(
-        "#root > div > div > div > div.input-group > input[type=password]:nth-child(2)",
-        joaraPW,
-      );
-
-      await page.click("#root > div > div > div > button"); // submit
-      resolve();
-    });
-
   // url 확인 : 직접 또는 간접 url (via공유하기) : "https://www.joara.com/book/1607139" or "http://s.joara.com/1BASN"
   if (!inputUrl.includes("joara.com/")) {
     throw new Error("주소가 올바르지 않아요.");
@@ -698,7 +691,7 @@ async function shareJoara(inputUrl: string) {
   }
 
   await page.click("#root > div > div.modal-background > div > div.contents > button"); // 로그인 안내 확인
-  await login();
+  await loginJoara(page);
   page.setDefaultTimeout(100000); // 대기 시간 원래대로
 
   // 상세페이지 정보 읽기

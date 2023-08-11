@@ -1,5 +1,10 @@
 // import { scrapeKakape, scrapeSeries, scrapeRidi } from "./series";
-import { shareKakape, shareSeries, shareRidi, shareJoara } from "../sharer/sharer";
+import {
+  shareKakape,
+  shareSeries,
+  shareRidi,
+  shareJoara,
+} from "../novelAddedWithURL/novelAddedManually";
 
 // 플랫폼 및 장르별 카테고리 넘버
 const genreFilter = {
