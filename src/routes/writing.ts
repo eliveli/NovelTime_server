@@ -1,5 +1,9 @@
 import express from "express";
-import { writingDetailController, writingListController } from "../controllers/writing";
+import {
+  createWritingController,
+  writingDetailController,
+  writingListController,
+} from "../controllers/writing";
 import { authenticateAccessTokenMiddleware, getUserIdByTokenMiddleware } from "../controllers/user";
 import { toggleLikeController } from "../controllers/userContent";
 
@@ -11,6 +15,8 @@ router.get(
 );
 
 router.get("/:writingType/:writingId", getUserIdByTokenMiddleware, writingDetailController);
+
+router.post("/", getUserIdByTokenMiddleware, createWritingController);
 
 router.put(
   "/toggleLike/:contentType/:contentId",

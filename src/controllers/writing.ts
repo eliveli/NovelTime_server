@@ -3,6 +3,7 @@ import dotenv from "dotenv";
 import getWritings from "../services/writing/getWritings";
 import { composeWritings } from "../services/home/getWritings";
 import { getWriting } from "../services/writing/getWriting";
+import createWriting from "../services/writing/createWriting";
 
 dotenv.config();
 
@@ -75,5 +76,36 @@ export const writingDetailController: RequestHandler = (async (req, res) => {
   } catch (error: any) {
     console.log("failed to get content in writingDetailController :", error);
     res.status(500).end();
+  }
+}) as RequestHandler;
+
+export const createWritingController: RequestHandler = (async (req, res) => {
+  try {
+    const { novelId, writingType, writingTitle, writingDesc, writingImg } = req.body;
+
+    const loginUserId = req.userId;
+
+    if (!loginUserId) throw Error("user id is empty");
+
+    if (!novelId || !writingTitle || !writingDesc) {
+      throw Error("some property is empty");
+    }
+
+    if (!["T", "R"].includes(String(writingType))) throw Error("writing type is not correct");
+
+    const writingImgSet = writingImg === undefined ? "" : writingImg;
+
+    await createWriting(
+      loginUserId,
+      writingType as "T" | "R",
+      novelId as string,
+      writingTitle as string,
+      writingDesc as string,
+      writingImgSet as string,
+    );
+
+    res.json("new writing post was added");
+  } catch (error: any) {
+    res.status(500).json("failed to add a writing post");
   }
 }) as RequestHandler;
