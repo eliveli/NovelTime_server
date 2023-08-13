@@ -58,7 +58,7 @@ type ChangedUserInfo = {
   userBGPosition: string;
 };
 
-// access token의 유효성 검사
+// it only accepts the case when the user logged in and the token was validated
 export const authenticateAccessTokenMiddleware: RequestHandler = (req, res, next) => {
   const authHeader = req.headers.authorization;
   const token = authHeader && authHeader.split(" ")[1];
@@ -78,8 +78,8 @@ export const authenticateAccessTokenMiddleware: RequestHandler = (req, res, next
     return res.status(403);
   }
 };
-// for user novel list page - my list page or other's list page
-// I can't get the login user id by request parameter because of security issue
+
+// it's okay for the user not to log in. then the userId below would be undefined
 export const getUserIdByTokenMiddleware: RequestHandler = (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
@@ -88,7 +88,8 @@ export const getUserIdByTokenMiddleware: RequestHandler = (req, res, next) => {
       const payload = jwt.verify(token, privateKey) as ChangedUserInfo;
       req.userId = payload.userId;
     }
-    // if the user didn't log in, req.userId would be undefined
+    // for user novel list page - my list page or other's list page
+    // I can't get the login user id by request parameter because of security issue
     next();
   } catch (error) {
     console.log(error);

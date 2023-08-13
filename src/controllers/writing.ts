@@ -4,6 +4,7 @@ import getWritings from "../services/writing/getWritings";
 import { composeWritings } from "../services/home/getWritings";
 import { getWriting } from "../services/writing/getWriting";
 import createWriting from "../services/writing/createWriting";
+import editWriting from "../services/writing/editWriting";
 
 dotenv.config();
 
@@ -107,5 +108,28 @@ export const createWritingController: RequestHandler = (async (req, res) => {
     res.json("new writing post was added");
   } catch (error: any) {
     res.status(500).json("failed to add a writing post");
+  }
+}) as RequestHandler;
+
+export const editWritingController: RequestHandler = (async (req, res) => {
+  try {
+    const { writingId, writingTitle, writingDesc, writingImg } = req.body;
+
+    if (!writingId || !writingTitle || !writingDesc) {
+      throw Error("some property is empty");
+    }
+
+    const writingImgSet = writingImg === undefined ? "" : writingImg;
+
+    await editWriting(
+      writingId as string,
+      writingTitle as string,
+      writingDesc as string,
+      writingImgSet as string,
+    );
+
+    res.json("a writing post was edited");
+  } catch (error: any) {
+    res.status(500).json("failed to edit a writing post");
   }
 }) as RequestHandler;
