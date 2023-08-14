@@ -7,7 +7,7 @@ import {
   editCommentController,
   deleteCommentController,
 } from "../controllers/comment";
-import { getUserIdByTokenMiddleware } from "../controllers/user";
+import { authenticateAccessTokenMiddleware } from "../controllers/user";
 
 const router = express.Router();
 
@@ -15,12 +15,12 @@ router.get("/:talkId/:commentSortType/:commentPageNo", rootCommentsController);
 
 router.get("/:rootCommentId/:commentSortType", reCommentsController);
 
-router.post("/rootComment", getUserIdByTokenMiddleware, createRootCommentController);
+router.post("/rootComment", authenticateAccessTokenMiddleware, createRootCommentController);
 
-router.post("/reComment", getUserIdByTokenMiddleware, createReCommentController);
+router.post("/reComment", authenticateAccessTokenMiddleware, createReCommentController);
 
-router.put("/comment", getUserIdByTokenMiddleware, editCommentController);
+router.put("/comment", authenticateAccessTokenMiddleware, editCommentController);
 
-router.delete("/comment", getUserIdByTokenMiddleware, deleteCommentController);
+router.delete("/comment", authenticateAccessTokenMiddleware, deleteCommentController);
 
 export default router;

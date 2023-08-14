@@ -5,6 +5,7 @@ import { composeWritings } from "../services/home/getWritings";
 import { getWriting } from "../services/writing/getWriting";
 import createWriting from "../services/writing/createWriting";
 import editWriting from "../services/writing/editWriting";
+import deleteWriting from "../services/writing/deleteWriting";
 
 dotenv.config();
 
@@ -131,5 +132,21 @@ export const editWritingController: RequestHandler = (async (req, res) => {
     res.json("a writing post was edited");
   } catch (error: any) {
     res.status(500).json("failed to edit a writing post");
+  }
+}) as RequestHandler;
+
+export const deleteWritingController: RequestHandler = (async (req, res) => {
+  try {
+    const { writingId } = req.body;
+
+    if (!writingId) {
+      throw Error("writingId is empty");
+    }
+
+    await deleteWriting(writingId as string);
+
+    res.json("a writing post was deleted");
+  } catch (error: any) {
+    res.status(500).json("failed to delete a writing post");
   }
 }) as RequestHandler;

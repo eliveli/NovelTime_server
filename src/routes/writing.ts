@@ -1,6 +1,7 @@
 import express from "express";
 import {
   createWritingController,
+  deleteWritingController,
   editWritingController,
   writingDetailController,
   writingListController,
@@ -20,6 +21,8 @@ router.get("/:writingType/:writingId", getUserIdByTokenMiddleware, writingDetail
 router.post("/", authenticateAccessTokenMiddleware, createWritingController);
 
 router.put("/", authenticateAccessTokenMiddleware, editWritingController);
+
+router.delete("/", authenticateAccessTokenMiddleware, deleteWritingController);
 
 router.put(
   "/toggleLike/:contentType/:contentId",
