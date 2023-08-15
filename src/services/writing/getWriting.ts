@@ -38,6 +38,23 @@ function composeTalkDetail(writing: Writing, user: User, isLike: boolean) {
     talkImg: writing.writingImg,
   };
 }
+function composeRecommendDetail(writing: Writing, user: User, isLike: boolean) {
+  return {
+    recommendId: writing.writingId,
+
+    userName: user.userName,
+    userImg: user.userImg,
+
+    createDate: writing.createDate,
+
+    likeNO: writing.likeNO,
+    isLike, // login-user's LIKE
+
+    recommendTitle: writing.writingTitle,
+    recommendDesc: writing.writingDesc,
+    recommendImg: writing.writingImg,
+  };
+}
 
 async function getNovelByNovelId(novelId: string) {
   const novel = (await db(
@@ -52,26 +69,30 @@ async function getNovelByNovelId(novelId: string) {
 }
 
 export async function getWriting(writingType: "T" | "R", writingId: string, loginUserId?: string) {
+  const writing = (await db(
+    "SELECT * FROM writing WHERE writingId = (?)",
+    [writingId],
+    "first",
+  )) as Writing;
+
+  const user = await getUserNameAndImg(writing.userId);
+  if (!user) return;
+
+  let isLike = false;
+  if (loginUserId) {
+    isLike = await getContentLike("writing", loginUserId, writingId);
+  }
+
+  const novel = await getNovelByNovelId(writing.novelId);
+  if (!novel) return;
+
   if (writingType === "T") {
-    const writing = (await db(
-      "SELECT * FROM writing WHERE writingId = (?)",
-      [writingId],
-      "first",
-    )) as Writing;
-
-    const user = await getUserNameAndImg(writing.userId);
-    if (!user) return;
-
-    let isLike = false;
-    if (loginUserId) {
-      isLike = await getContentLike("writing", loginUserId, writingId);
-    }
-
-    const novel = await getNovelByNovelId(writing.novelId);
-    if (!novel) return;
-
     const talk = composeTalkDetail(writing, user, isLike);
 
     return { talk, novel };
   }
+
+  const recommend = composeRecommendDetail(writing, user, isLike);
+
+  return { recommend, novel };
 }

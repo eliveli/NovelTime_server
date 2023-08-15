@@ -70,7 +70,7 @@ export const writingDetailController: RequestHandler = (async (req, res) => {
     const data = await getWriting(writingType as "T" | "R", writingId, loginUserId);
 
     if (data === undefined) {
-      res.json(undefined);
+      res.status(500).json("failed to get a writing post");
       return;
     }
 
