@@ -101,6 +101,18 @@ export type Writing = {
   // ㄴ actually this wasn't considered in src\services\userContent\writings
   // ㄴㄴ but the functions worked well in the file
 };
+export type WritingWithoutGenre = {
+  writingId: string;
+  userId: string;
+  createDate: string;
+  writingTitle: string;
+  writingImg?: string;
+  writingDesc: string;
+  novelId: string;
+  likeNO: number;
+  commentNO: number;
+  talkOrRecommend: "T" | "R";
+};
 export type Recommend = {
   recommendId: string;
   recommendTitle: string;

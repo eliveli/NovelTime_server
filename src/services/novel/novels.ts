@@ -34,14 +34,6 @@ export async function setNovel(novelInfo: NovelInfo) {
   ]);
 }
 
-export async function getNovels(novelTitle: string) {
-  return (await db(
-    "SELECT * FROM novelInfo WHERE novelTitle like (?)",
-    `%${novelTitle}%`,
-    "raw",
-  )) as any;
-}
-
 export async function getNovelIDsByNovelTitle(novelTitle: string) {
   const novelIdArray = (await db(
     `SELECT novelId FROM novelInfo WHERE novelTitle LIKE '%${novelTitle}%'`,
@@ -56,8 +48,4 @@ export async function getNovelIDsByNovelTitle(novelTitle: string) {
     novelIDs.push(novelId);
   }
   return novelIDs;
-}
-
-export async function getNovel(novelId: string) {
-  return (await db("SELECT * FROM novelInfo WHERE novelId = (?)", novelId, "first")) as any;
 }

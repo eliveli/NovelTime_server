@@ -1,27 +1,9 @@
 import { Request, Response, NextFunction, RequestHandler } from "express";
 import getPopularNovelsInNovelTime from "../services/shared/getPopularNovelsInNovelTime";
 import getWeeklyNovelsForHomeOrListPage from "../services/shared/getWeeklyNovelsForHomeOrListPage";
-import { getNovels, getNovel } from "../services/novel/novels";
 import searchForNovels from "../services/novel/searchForNovels";
 import addNovelWithURL from "../services/scraper/novelAddedWithURL/novelAddedAutomatically";
-
-export const searchByTitle: RequestHandler = (req, res) => {
-  getNovels(req.params.title)
-    .then((data) => {
-      console.log(data);
-      return res.json(data);
-    })
-    .catch((err) => console.log(err));
-};
-
-export const getNovelById: RequestHandler = (req, res) => {
-  getNovel(req.params.novelId)
-    .then((data) => {
-      console.log(data);
-      return res.json(data);
-    })
-    .catch((err) => console.log(err));
-};
+import getNovelAndItsWritings from "../services/novel/getNovelInDetail";
 
 export const getNovelListByCategory: RequestHandler = (async (req, res) => {
   try {
@@ -40,6 +22,23 @@ export const getNovelListByCategory: RequestHandler = (async (req, res) => {
     res.json(novelsInDetail);
   } catch (error: any) {
     console.log("failed to get content in getNovelListByCategory controller :", error);
+    res.status(500).end();
+  }
+}) as RequestHandler;
+
+export const getNovelDetailController: RequestHandler = (async (req, res) => {
+  try {
+    const { novelId } = req.params;
+
+    if (!novelId) {
+      throw Error("novelId is empty");
+    }
+
+    const data = await getNovelAndItsWritings(novelId);
+
+    res.json(data);
+  } catch (error: any) {
+    console.log("failed to get a novel and its related data in getNovelDetailController :", error);
     res.status(500).end();
   }
 }) as RequestHandler;
