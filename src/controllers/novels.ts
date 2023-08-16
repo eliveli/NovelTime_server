@@ -3,7 +3,8 @@ import getPopularNovelsInNovelTime from "../services/shared/getPopularNovelsInNo
 import getWeeklyNovelsForHomeOrListPage from "../services/shared/getWeeklyNovelsForHomeOrListPage";
 import searchForNovels from "../services/novel/searchForNovels";
 import addNovelWithURL from "../services/scraper/novelAddedWithURL/novelAddedAutomatically";
-import getNovelAndItsWritings from "../services/novel/getNovelInDetail";
+import getWritingsOfTheNovel from "../services/novel/getWritingsOfTheNovel";
+import getNovelInDetail from "../services/novel/getNovelInDetail";
 
 export const getNovelListByCategory: RequestHandler = (async (req, res) => {
   try {
@@ -34,11 +35,37 @@ export const getNovelDetailController: RequestHandler = (async (req, res) => {
       throw Error("novelId is empty");
     }
 
-    const data = await getNovelAndItsWritings(novelId);
+    const data = await getNovelInDetail(novelId);
 
     res.json(data);
   } catch (error: any) {
-    console.log("failed to get a novel and its related data in getNovelDetailController :", error);
+    console.log(
+      "failed to get a novel and ones published by the author in getNovelDetailController :",
+      error,
+    );
+    res.status(500).end();
+  }
+}) as RequestHandler;
+
+export const getWritingsOfTheNovelController: RequestHandler = (async (req, res) => {
+  try {
+    const { novelId, writingType, pageNo } = req.params;
+
+    if (!novelId || !pageNo) {
+      throw Error("some parameter is empty");
+    }
+    if (!["T", "R"].includes(writingType)) {
+      throw Error("writing type is wrong");
+    }
+
+    const data = await getWritingsOfTheNovel(novelId, writingType as "T" | "R", Number(pageNo));
+
+    res.json(data);
+  } catch (error: any) {
+    console.log(
+      "failed to get writing posts for the novel in getWritingsOfTheNovelController :",
+      error,
+    );
     res.status(500).end();
   }
 }) as RequestHandler;

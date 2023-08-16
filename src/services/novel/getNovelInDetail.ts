@@ -1,6 +1,4 @@
-import getUserNameAndImg from "../home/shared/getUserNameAndImg";
 import db from "../utils/db";
-import { WritingWithoutGenre } from "../utils/types";
 
 type NovelInDetail = {
   novelId: string;
@@ -28,28 +26,21 @@ type Novel = {
   novelGenre: string;
 };
 
-async function setWritingsWithUsers(writings: WritingWithoutGenre[], writingType: "T" | "R") {
-  const writingsWithUsers = [];
+async function getTotalWritingNoFromDB(novelId: string) {
+  const query = "SELECT count(*) AS totalWritingNoAsBigInt FROM writing WHERE novelId = (?)";
+  const { totalWritingNoAsBigInt } = (await db(query, [novelId], "first")) as {
+    totalWritingNoAsBigInt: BigInt;
+  };
 
-  for (const writing of writings) {
-    const user = await getUserNameAndImg(writing.userId);
-    if (!user) continue;
-
-    // 리코멘드일 때 코멘트 넘버 undefined
-    const commentNO = writingType === "T" ? writing.commentNO : undefined;
-
-    const writingWithUser = { ...writing, ...user, commentNO };
-    writingsWithUsers.push(writingWithUser);
-  }
-  return writingsWithUsers;
+  return totalWritingNoAsBigInt;
 }
 
-async function getWritings(novelId: string, writingType: "T" | "R") {
-  const query = "SELECT * FROM writing WHERE novelId = (?) AND talkOrRecommend = (?) LIMIT 5";
-  const writings = (await db(query, [novelId, writingType], "all")) as WritingWithoutGenre[];
+async function getTotalWritingNo(novelId: string) {
+  const totalWritingNoAsBigInt = await getTotalWritingNoFromDB(novelId);
 
-  const writingsWithUsers = await setWritingsWithUsers(writings, writingType);
-  return writingsWithUsers;
+  const totalWritingNo = Number(totalWritingNoAsBigInt);
+
+  return totalWritingNo;
 }
 
 async function getNovelsByTheAuthor(novelAuthor: string) {
@@ -65,22 +56,16 @@ async function getNovel(novelId: string) {
   return novel;
 }
 
-export default async function getNovelAndItsWritings(novelId: string) {
+export default async function getNovelInDetail(novelId: string) {
   const novel = await getNovel(novelId);
 
   const novelsPublishedByTheAuthor = await getNovelsByTheAuthor(novel.novelAuthor);
 
-  // writings : 다른 api로 가져올 수 있어야 함 (전체보기 또는 하단 더보기 버튼)
-  const talks = await getWritings(novelId, "T");
-
-  const recommends = await getWritings(novelId, "R");
-
-  const writingNo = talks.length + recommends.length;
+  const writingNo = await getTotalWritingNo(novelId);
 
   return {
-    novel: { ...novel, writingNo },
+    novel,
     novelsPublishedByTheAuthor,
-    talks,
-    recommends,
+    writingNo,
   };
 }
