@@ -36,6 +36,23 @@ async function hasNextWritingPage(novelId: string, writingType: "T" | "R", pageN
   return checkIfItHasNextPage(totalWritingNo, pageNo);
 }
 
+async function getWritingNoWithAllTypeFromDB(novelId: string) {
+  const query = "SELECT count(*) AS totalWritingNoAsBigInt FROM writing WHERE novelId = (?)";
+  const { totalWritingNoAsBigInt } = (await db(query, [novelId], "first")) as {
+    totalWritingNoAsBigInt: BigInt;
+  };
+
+  return totalWritingNoAsBigInt;
+}
+
+async function getWritingNoWithAllType(novelId: string) {
+  const totalWritingNoAsBigInt = await getWritingNoWithAllTypeFromDB(novelId);
+
+  const totalWritingNo = Number(totalWritingNoAsBigInt);
+
+  return totalWritingNo;
+}
+
 async function setWritingsWithUsers(writings: WritingWithoutGenre[], writingType: "T" | "R") {
   const writingsWithUsers = [];
 
@@ -70,10 +87,13 @@ export default async function getWritingsOfTheNovel(
 ) {
   const writings = await getWritings(novelId, writingType, pageNo);
 
+  const writingNoWithAllType = await getWritingNoWithAllType(novelId);
+
   const hasNext = await hasNextWritingPage(novelId, writingType, pageNo);
 
   return {
     writings,
+    writingNoWithAllType,
     hasNext,
   };
 }

@@ -26,23 +26,6 @@ type Novel = {
   novelGenre: string;
 };
 
-async function getTotalWritingNoFromDB(novelId: string) {
-  const query = "SELECT count(*) AS totalWritingNoAsBigInt FROM writing WHERE novelId = (?)";
-  const { totalWritingNoAsBigInt } = (await db(query, [novelId], "first")) as {
-    totalWritingNoAsBigInt: BigInt;
-  };
-
-  return totalWritingNoAsBigInt;
-}
-
-async function getTotalWritingNo(novelId: string) {
-  const totalWritingNoAsBigInt = await getTotalWritingNoFromDB(novelId);
-
-  const totalWritingNo = Number(totalWritingNoAsBigInt);
-
-  return totalWritingNo;
-}
-
 async function getNovelsByTheAuthor(novelAuthor: string) {
   const query =
     "SELECT novelId, novelImg, novelTitle, novelAuthor, novelAge, novelGenre FROM novelInfo WHERE novelAuthor = (?)";
@@ -61,11 +44,8 @@ export default async function getNovelInDetail(novelId: string) {
 
   const novelsPublishedByTheAuthor = await getNovelsByTheAuthor(novel.novelAuthor);
 
-  const writingNo = await getTotalWritingNo(novelId);
-
   return {
     novel,
     novelsPublishedByTheAuthor,
-    writingNo,
   };
 }
