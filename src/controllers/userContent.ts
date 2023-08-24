@@ -156,7 +156,7 @@ export const userNovelListTitlesController: RequestHandler = (async (req, res) =
   }
 }) as RequestHandler;
 
-export const myNovelListTitlesController: RequestHandler = (async (req, res) => {
+export const getMyNovelListController: RequestHandler = (async (req, res) => {
   try {
     const loginUserId = req.userId;
 
@@ -165,11 +165,30 @@ export const myNovelListTitlesController: RequestHandler = (async (req, res) => 
       return;
     }
 
-    const myNovelListTitles = await userNovelListService.getMyNovelListTitles(loginUserId);
+    const myNovelList = await userNovelListService.getMyNovelList(loginUserId);
 
-    res.json(myNovelListTitles);
+    res.json(myNovelList);
   } catch (error: any) {
-    console.log("failed to get user's content in myNovelListTitlesController :", error);
+    console.log("failed to get user's content in getMyNovelListController :", error);
+    res.status(500).end();
+  }
+}) as RequestHandler;
+
+export const createMyNovelListController: RequestHandler = (async (req, res) => {
+  try {
+    const { listTitle } = req.body;
+
+    const loginUserId = req.userId;
+
+    if (!listTitle || !loginUserId) {
+      throw Error("some value doesn't exist");
+    }
+
+    await userNovelListService.createMyNovelList(listTitle, loginUserId);
+
+    res.json("your novel list was created successfully");
+  } catch (error: any) {
+    console.log("failed to get user's content in createMyNovelListController :", error);
     res.status(500).end();
   }
 }) as RequestHandler;

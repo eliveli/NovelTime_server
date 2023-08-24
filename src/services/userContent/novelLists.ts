@@ -246,14 +246,15 @@ async function getNovelListsSetUserLikes(novelLists: NovelList[]) {
   return novelListsSet;
 }
 
-async function setDefaultList(loginUserId: string) {
+async function createNovelListInDB(loginUserId: string, newNovelListTitle?: string) {
   const novelListId = `${loginUserId}${Date.now().toString()}`;
+  const novelListTitle = newNovelListTitle || "기본 소설 리스트";
 
   const dbQuery = "INSERT INTO novelList SET novelListId = (?), novelListTitle = (?), userId = (?)";
-  await db(dbQuery, [novelListId, "기본 소설 리스트", loginUserId]);
+  await db(dbQuery, [novelListId, novelListTitle, loginUserId]);
 }
 
-async function getNovelListTitlesByUserId(loginUserId: string) {
+async function getNovelListByUserId(loginUserId: string) {
   const dbQuery = "SELECT novelListId, novelListTitle FROM novelList where userId = (?)";
 
   const novelListTitles = (await db(dbQuery, loginUserId, "all")) as {
@@ -420,15 +421,19 @@ async function getNovelListsUserLikesForUserPageHome(userId: string) {
   }
 }
 
-async function getMyNovelListTitles(loginUserId: string) {
-  let listTitles = await getNovelListTitlesByUserId(loginUserId);
+async function getMyNovelList(loginUserId: string) {
+  let listTitles = await getNovelListByUserId(loginUserId);
 
   if (!listTitles.length) {
-    await setDefaultList(loginUserId);
-    listTitles = await getNovelListTitlesByUserId(loginUserId);
+    await createNovelListInDB(loginUserId);
+    listTitles = await getNovelListByUserId(loginUserId);
   }
 
   return listTitles;
+}
+
+async function createMyNovelList(listTitle: string, loginUserId: string) {
+  await createNovelListInDB(loginUserId, listTitle);
 }
 
 const userNovelListService = {
@@ -437,6 +442,7 @@ const userNovelListService = {
   getOthersList: getNovelListUserLikesForOthersList,
   getOthersListOfUserHome: getNovelListsUserLikesForUserPageHome,
   getAllListTitles: getAllNovelListTitlesAtTheMoment,
-  getMyNovelListTitles,
+  getMyNovelList,
+  createMyNovelList,
 };
 export default userNovelListService;
