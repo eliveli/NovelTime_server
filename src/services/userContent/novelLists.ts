@@ -246,6 +246,17 @@ async function getNovelListsSetUserLikes(novelLists: NovelList[]) {
   return novelListsSet;
 }
 
+async function updateNovelsInList(listId: string, nextNovelIDs: string) {
+  const dbQuery = "UPDATE novelList SET novelIDs = (?) WHERE novelListId = (?)";
+  await db(dbQuery, [nextNovelIDs, listId]);
+}
+
+async function getExistingNovelsFromList(listId: string) {
+  const dbQuery = "SELECT novelIDs FROM novelList WHERE novelListId = (?)";
+  const { novelIDs } = (await db(dbQuery, listId, "first")) as { novelIDs: string };
+  return novelIDs;
+}
+
 async function createNovelListInDB(loginUserId: string, newNovelListTitle?: string) {
   const novelListId = `${loginUserId}${Date.now().toString()}`;
   const novelListTitle = newNovelListTitle || "기본 소설 리스트";
@@ -436,6 +447,18 @@ async function createMyNovelList(listTitle: string, loginUserId: string) {
   await createNovelListInDB(loginUserId, listTitle);
 }
 
+async function addNovelToMyNovelList(novelId: string, listIDs: string[]) {
+  if (!listIDs.length) throw Error("list id doesn't exist");
+
+  for (const listId of listIDs) {
+    const prevNovelIDs = await getExistingNovelsFromList(listId);
+
+    const nextNovelIDs = `${prevNovelIDs} ${novelId}`;
+
+    await updateNovelsInList(listId, nextNovelIDs);
+  }
+}
+
 const userNovelListService = {
   getMyList: getNovelListUserCreatedForMyList,
   getMyListOfUserHome: getNovelListsUserCreatedForUserPageHome,
@@ -444,5 +467,6 @@ const userNovelListService = {
   getAllListTitles: getAllNovelListTitlesAtTheMoment,
   getMyNovelList,
   createMyNovelList,
+  addNovelToMyNovelList,
 };
 export default userNovelListService;

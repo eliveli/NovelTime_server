@@ -10,6 +10,7 @@ import {
   toggleLikeController,
   getMyNovelListController,
   createMyNovelListController,
+  addNovelToMyNovelListController,
 } from "../controllers/userContent";
 import { authenticateAccessTokenMiddleware, getUserIdByTokenMiddleware } from "../controllers/user";
 
@@ -38,6 +39,8 @@ router.get("/novelListTitles/:userNameInUserPage/:isMyList", userNovelListTitles
 router.get("/myNovelList", authenticateAccessTokenMiddleware, getMyNovelListController);
 
 router.post("/myNovelList", authenticateAccessTokenMiddleware, createMyNovelListController);
+
+router.put("/myNovelList", authenticateAccessTokenMiddleware, addNovelToMyNovelListController);
 
 router.put(
   "/toggleLike/:contentType/:contentId",

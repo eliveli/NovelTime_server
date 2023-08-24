@@ -184,11 +184,31 @@ export const createMyNovelListController: RequestHandler = (async (req, res) => 
       throw Error("some value doesn't exist");
     }
 
-    await userNovelListService.createMyNovelList(listTitle, loginUserId);
+    await userNovelListService.createMyNovelList(listTitle as string, loginUserId);
 
     res.json("your novel list was created successfully");
   } catch (error: any) {
     console.log("failed to get user's content in createMyNovelListController :", error);
+    res.status(500).end();
+  }
+}) as RequestHandler;
+
+export const addNovelToMyNovelListController: RequestHandler = (async (req, res) => {
+  try {
+    const { novelId, listIDs } = req.body;
+
+    if (!novelId || !listIDs) {
+      throw Error("some value doesn't exist");
+    }
+    if (typeof listIDs !== "object") {
+      throw Error("list IDs is not string array");
+    }
+
+    await userNovelListService.addNovelToMyNovelList(novelId as string, listIDs as string[]);
+
+    res.json("novel was added to your lists successfully");
+  } catch (error: any) {
+    console.log("failed to get user's content in addNovelToMyNovelListController :", error);
     res.status(500).end();
   }
 }) as RequestHandler;
