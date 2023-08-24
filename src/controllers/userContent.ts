@@ -155,6 +155,25 @@ export const userNovelListTitlesController: RequestHandler = (async (req, res) =
     res.status(500).end();
   }
 }) as RequestHandler;
+
+export const myNovelListTitlesController: RequestHandler = (async (req, res) => {
+  try {
+    const loginUserId = req.userId;
+
+    if (!loginUserId) {
+      res.status(400).json("유효하지 않은 사용자입니다");
+      return;
+    }
+
+    const myNovelListTitles = await userNovelListService.getMyNovelListTitles(loginUserId);
+
+    res.json(myNovelListTitles);
+  } catch (error: any) {
+    console.log("failed to get user's content in myNovelListTitlesController :", error);
+    res.status(500).end();
+  }
+}) as RequestHandler;
+
 export const toggleLikeController: RequestHandler = (async (req, res) => {
   try {
     const { contentType, contentId } = req.params;
