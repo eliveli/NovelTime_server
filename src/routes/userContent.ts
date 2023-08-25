@@ -13,6 +13,7 @@ import {
   addNovelToMyNovelListController,
   getAllMyNovelListsController,
   getAllOthersNovelListsController,
+  changeListTitleController,
 } from "../controllers/userContent";
 import { authenticateAccessTokenMiddleware, getUserIdByTokenMiddleware } from "../controllers/user";
 
@@ -47,7 +48,14 @@ router.get("/myNovelList", authenticateAccessTokenMiddleware, getMyNovelListCont
 
 router.post("/myNovelList", authenticateAccessTokenMiddleware, createMyNovelListController);
 
-router.put("/myNovelList", authenticateAccessTokenMiddleware, addNovelToMyNovelListController);
+router.put("/myNovelList", authenticateAccessTokenMiddleware, changeListTitleController);
+
+router.put(
+  "/myNovelList/novel",
+  authenticateAccessTokenMiddleware,
+  addNovelToMyNovelListController,
+);
+
 //
 router.put(
   "/toggleLike/:contentType/:contentId",

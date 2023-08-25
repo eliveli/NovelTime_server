@@ -57,9 +57,15 @@ async function addNovelToMyNovelList(novelId: string, listIDs: string[]) {
   }
 }
 
+async function changeListTitle(listId: string, listTitle: string) {
+  const dbQuery = "UPDATE novelList SET novelListTitle = (?) WHERE novelListId = (?)";
+  await db(dbQuery, [listTitle, listId]);
+}
+
 const myNovelListsService = {
   getMyNovelList,
   createMyNovelList,
   addNovelToMyNovelList,
+  changeListTitle,
 };
 export default myNovelListsService;

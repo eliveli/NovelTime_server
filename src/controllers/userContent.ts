@@ -225,6 +225,23 @@ export const createMyNovelListController: RequestHandler = (async (req, res) => 
   }
 }) as RequestHandler;
 
+export const changeListTitleController: RequestHandler = (async (req, res) => {
+  try {
+    const { listId, listTitle } = req.body;
+
+    if (!listId || !listTitle) {
+      throw Error("some value doesn't exist");
+    }
+
+    await myNovelListsService.changeListTitle(listId as string, listTitle as string);
+
+    res.json("your novel list title was changed successfully");
+  } catch (error: any) {
+    console.log("failed to get user's content in changeListTitleController :", error);
+    res.status(500).end();
+  }
+}) as RequestHandler;
+
 export const addNovelToMyNovelListController: RequestHandler = (async (req, res) => {
   try {
     const { novelId, listIDs } = req.body;
