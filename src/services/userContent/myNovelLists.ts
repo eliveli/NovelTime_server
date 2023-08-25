@@ -62,10 +62,16 @@ async function changeListTitle(listId: string, listTitle: string) {
   await db(dbQuery, [listTitle, listId]);
 }
 
+async function removeMyNovelList(listId: string) {
+  const dbQuery = "DELETE FROM novelList WHERE novelListId = (?)";
+  await db(dbQuery, listId);
+}
+
 const myNovelListsService = {
   getMyNovelList,
   createMyNovelList,
   addNovelToMyNovelList,
   changeListTitle,
+  removeMyNovelList,
 };
 export default myNovelListsService;

@@ -220,7 +220,7 @@ export const createMyNovelListController: RequestHandler = (async (req, res) => 
 
     res.json("your novel list was created successfully");
   } catch (error: any) {
-    console.log("failed to get user's content in createMyNovelListController :", error);
+    console.log("failed to create user's content in createMyNovelListController :", error);
     res.status(500).end();
   }
 }) as RequestHandler;
@@ -237,7 +237,24 @@ export const changeListTitleController: RequestHandler = (async (req, res) => {
 
     res.json("your novel list title was changed successfully");
   } catch (error: any) {
-    console.log("failed to get user's content in changeListTitleController :", error);
+    console.log("failed to change user's content in changeListTitleController :", error);
+    res.status(500).end();
+  }
+}) as RequestHandler;
+
+export const removeMyNovelListController: RequestHandler = (async (req, res) => {
+  try {
+    const { listId } = req.body;
+
+    if (!listId) {
+      throw Error("list id wasn't given");
+    }
+
+    await myNovelListsService.removeMyNovelList(listId as string);
+
+    res.json("your novel list was removed successfully");
+  } catch (error: any) {
+    console.log("failed to remove user's content in removeMyNovelListController :", error);
     res.status(500).end();
   }
 }) as RequestHandler;
