@@ -59,6 +59,9 @@ async function getNovelInfoByNovelId(novelId: string) {
     novelId,
     "first",
   )) as Novel;
+
+  if (!novel) return;
+
   return { ...novel, novelIsEnd: !!novel?.novelIsEnd };
 }
 type UserInfo = {
@@ -78,8 +81,12 @@ async function getNovelsByNovelListInfo(
   isUserPageHome: boolean,
   listOrder = 1,
 ) {
-  // set novel IDs array
   const dataForNovelIDs = novelListInfo.novelIDs;
+
+  if (!dataForNovelIDs && !isUserPageHome) return { novels: [], isNextOrder: false };
+  if (!dataForNovelIDs) return [];
+
+  // set novel IDs array
   const novelIDs = dataForNovelIDs.split(" ");
 
   // extract novel ids as requested
@@ -93,6 +100,9 @@ async function getNovelsByNovelListInfo(
   // get novels by novel IDs
   for (const novelId of novelIDsRequired) {
     const novel = await getNovelInfoByNovelId(novelId);
+
+    if (!novel) continue;
+
     novels.push(novel);
   }
 

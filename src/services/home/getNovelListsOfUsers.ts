@@ -13,6 +13,8 @@ export async function getNovelListsOfUsersFromDB() {
 }
 
 export async function getNovelsByNovelId(novelIDs: string) {
+  if (!novelIDs) return [];
+
   // change string to string array holding novel IDs
   const novelIdInArray = novelIDs.split(" ");
 

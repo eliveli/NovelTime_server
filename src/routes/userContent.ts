@@ -21,14 +21,14 @@ import { authenticateAccessTokenMiddleware, getUserIdByTokenMiddleware } from ".
 
 const router = express.Router();
 
-router.get("/:userName", userHomeController);
+router.get("/home/:userName", userHomeController);
 
 router.get("/myWriting/:userName/:contentType/:order", userMyWritingController);
 
 router.get("/othersWriting/:userName/:contentType/:order", userOthersWritingController);
 
-router.get("/listSummary/created/all/:userName", getAllListSummaryUserCreatedController);
-router.get("/listSummary/liked/all/:userName", getAllListSummaryUserLikedController);
+router.get("/listSummary/created/:userName", getAllListSummaryUserCreatedController);
+router.get("/listSummary/liked/:userName", getAllListSummaryUserLikedController);
 
 router.get(
   "/listDetailed/created/:userName/:listId/:order",

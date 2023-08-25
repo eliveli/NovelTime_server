@@ -75,7 +75,7 @@ async function getNovelImg(novelId: string) {
     novelImg: string;
   };
 
-  if (!novelImg) return "";
+  if (!novelImg) return;
 
   return novelImg.novelImg;
 }
@@ -107,6 +107,8 @@ async function getNovelImgs(novelIDs: string, novelNo: number) {
     }
 
     const novelImg = await getNovelImg(novelId);
+    if (!novelImg) continue;
+
     novelImgs.push(novelImg);
 
     if (spaceIdx === -1) break;
