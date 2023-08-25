@@ -30,7 +30,18 @@ async function getNovelListByUserId(loginUserId: string) {
   return novelListTitles;
 }
 
-async function getMyNovelList(loginUserId: string) {
+function setNextNovelIDs(allNovelIDs: string, novelIDsToRemove: string[]) {
+  const allNovelIDsArray = allNovelIDs.split(" ");
+
+  const nextNovelIDsArray = allNovelIDsArray.filter(
+    (novelId) => !novelIDsToRemove.includes(novelId),
+  );
+
+  const nextNovelIDs = nextNovelIDsArray.join(" ");
+  return nextNovelIDs;
+}
+
+async function getMyList(loginUserId: string) {
   let listTitles = await getNovelListByUserId(loginUserId);
 
   if (!listTitles.length) {
@@ -41,11 +52,21 @@ async function getMyNovelList(loginUserId: string) {
   return listTitles;
 }
 
-async function createMyNovelList(listTitle: string, loginUserId: string) {
+async function createMyList(listTitle: string, loginUserId: string) {
   await createNovelListInDB(loginUserId, listTitle);
 }
 
-async function addNovelToMyNovelList(novelId: string, listIDs: string[]) {
+async function changeListTitle(listId: string, listTitle: string) {
+  const dbQuery = "UPDATE novelList SET novelListTitle = (?) WHERE novelListId = (?)";
+  await db(dbQuery, [listTitle, listId]);
+}
+
+async function removeMyList(listId: string) {
+  const dbQuery = "DELETE FROM novelList WHERE novelListId = (?)";
+  await db(dbQuery, listId);
+}
+
+async function addNovelToMyList(novelId: string, listIDs: string[]) {
   if (!listIDs.length) throw Error("list id doesn't exist");
 
   for (const listId of listIDs) {
@@ -57,21 +78,22 @@ async function addNovelToMyNovelList(novelId: string, listIDs: string[]) {
   }
 }
 
-async function changeListTitle(listId: string, listTitle: string) {
-  const dbQuery = "UPDATE novelList SET novelListTitle = (?) WHERE novelListId = (?)";
-  await db(dbQuery, [listTitle, listId]);
-}
+async function removeNovelFromMyList(listId: string, novelIDsToRemove: string[]) {
+  if (!novelIDsToRemove.length) throw Error("any novel id wasn't given");
 
-async function removeMyNovelList(listId: string) {
-  const dbQuery = "DELETE FROM novelList WHERE novelListId = (?)";
-  await db(dbQuery, listId);
+  const allNovelIDs = await getExistingNovelsFromList(listId);
+
+  const nextNovelIDs = setNextNovelIDs(allNovelIDs, novelIDsToRemove);
+
+  await updateNovelsInList(listId, nextNovelIDs);
 }
 
 const myNovelListsService = {
-  getMyNovelList,
-  createMyNovelList,
-  addNovelToMyNovelList,
+  getMyList,
+  createMyList,
   changeListTitle,
-  removeMyNovelList,
+  removeMyList,
+  addNovelToMyList,
+  removeNovelFromMyList,
 };
 export default myNovelListsService;

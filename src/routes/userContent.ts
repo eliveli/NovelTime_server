@@ -15,6 +15,7 @@ import {
   getAllOthersNovelListsController,
   changeListTitleController,
   removeMyNovelListController,
+  removeNovelFromMyNovelListController,
 } from "../controllers/userContent";
 import { authenticateAccessTokenMiddleware, getUserIdByTokenMiddleware } from "../controllers/user";
 
@@ -46,17 +47,19 @@ router.get("/novelListTitles/:userNameInUserPage/:isMyList", userNovelListTitles
 
 // a login user's list
 router.get("/myNovelList", authenticateAccessTokenMiddleware, getMyNovelListController);
-
 router.post("/myNovelList", authenticateAccessTokenMiddleware, createMyNovelListController);
-
 router.put("/myNovelList", authenticateAccessTokenMiddleware, changeListTitleController);
-
 router.delete("/myNovelList", authenticateAccessTokenMiddleware, removeMyNovelListController);
 
-router.put(
+router.post(
   "/myNovelList/novel",
   authenticateAccessTokenMiddleware,
   addNovelToMyNovelListController,
+);
+router.delete(
+  "/myNovelList/novel",
+  authenticateAccessTokenMiddleware,
+  removeNovelFromMyNovelListController,
 );
 
 //

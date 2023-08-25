@@ -197,7 +197,7 @@ export const getMyNovelListController: RequestHandler = (async (req, res) => {
       return;
     }
 
-    const myNovelLists = await myNovelListsService.getMyNovelList(loginUserId);
+    const myNovelLists = await myNovelListsService.getMyList(loginUserId);
 
     res.json(myNovelLists);
   } catch (error: any) {
@@ -216,7 +216,7 @@ export const createMyNovelListController: RequestHandler = (async (req, res) => 
       throw Error("some value doesn't exist");
     }
 
-    await myNovelListsService.createMyNovelList(listTitle as string, loginUserId);
+    await myNovelListsService.createMyList(listTitle as string, loginUserId);
 
     res.json("your novel list was created successfully");
   } catch (error: any) {
@@ -250,7 +250,7 @@ export const removeMyNovelListController: RequestHandler = (async (req, res) => 
       throw Error("list id wasn't given");
     }
 
-    await myNovelListsService.removeMyNovelList(listId as string);
+    await myNovelListsService.removeMyList(listId as string);
 
     res.json("your novel list was removed successfully");
   } catch (error: any) {
@@ -267,14 +267,37 @@ export const addNovelToMyNovelListController: RequestHandler = (async (req, res)
       throw Error("some value doesn't exist");
     }
     if (typeof listIDs !== "object") {
-      throw Error("list IDs is not string array");
+      throw Error("listIDs is not string array");
     }
 
-    await myNovelListsService.addNovelToMyNovelList(novelId as string, listIDs as string[]);
+    await myNovelListsService.addNovelToMyList(novelId as string, listIDs as string[]);
 
     res.json("novel was added to your lists successfully");
   } catch (error: any) {
-    console.log("failed to get user's content in addNovelToMyNovelListController :", error);
+    console.log("failed to add user's content in addNovelToMyNovelListController :", error);
+    res.status(500).end();
+  }
+}) as RequestHandler;
+
+export const removeNovelFromMyNovelListController: RequestHandler = (async (req, res) => {
+  try {
+    const { listId, novelIDs } = req.body;
+
+    if (!listId || !novelIDs) {
+      throw Error("some value doesn't exist");
+    }
+    if (typeof novelIDs !== "object") {
+      throw Error("novelIDs is not string array");
+    }
+
+    await myNovelListsService.removeNovelFromMyList(listId as string, novelIDs as string[]);
+
+    res.json("novels were removed from your list successfully");
+  } catch (error: any) {
+    console.log(
+      "failed to remove novels from list in removeNovelFromMyNovelListController :",
+      error,
+    );
     res.status(500).end();
   }
 }) as RequestHandler;
