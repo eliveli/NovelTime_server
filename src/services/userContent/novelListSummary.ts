@@ -2,20 +2,16 @@ import db from "../utils/db";
 import { NovelListInfo } from "../utils/types";
 
 async function getNovelListInfoListByUserId(userId: string, isHome = true) {
-  // for userPage get the two novel list
-  // for userPageNovelList page get all novel list
   const queryForLimitedOrNot = isHome
-    ? "SELECT * FROM novelList WHERE userId = (?) limit 2"
-    : "SELECT * FROM novelList WHERE userId = (?)";
+    ? "SELECT * FROM novelList WHERE userId = (?) limit 4" // used in user home
+    : "SELECT * FROM novelList WHERE userId = (?)"; // used in user's my list that the user created
   return (await db(queryForLimitedOrNot, userId, "all")) as NovelListInfo[];
 }
 
 async function getNovelListIDsByUserId(userId: string, isHome = true) {
-  // for userPage get the two novel list IDs
-  // for userPageNovelList page get all novel list IDs
   const queryForLimitedNumber = isHome
-    ? "SELECT novelListId FROM novelListLike WHERE userId = (?) limit 2"
-    : "SELECT novelListId FROM novelListLike WHERE userId = (?)";
+    ? "SELECT novelListId FROM novelListLike WHERE userId = (?) limit 4" // used in user home
+    : "SELECT novelListId FROM novelListLike WHERE userId = (?)"; // used in user's other list that the user liked
 
   const dataForNovelListIDs = (await db(queryForLimitedNumber, userId, "all")) as Array<{
     novelListId: string;
@@ -182,24 +178,24 @@ async function setAllOthersNovelListsOneByOne(novelListIDs: string[]) {
   return allNovelLists;
 }
 
-async function getAllMyNovelListsInUserPage(userId: string) {
-  const novelLists = await getNovelListInfoListByUserId(userId, false);
+async function getListsUserCreated(userId: string, isHome = false) {
+  const novelLists = await getNovelListInfoListByUserId(userId, isHome);
 
   const novelListsComposed = await setAllMyNovelListsOneByOne(novelLists);
 
   return novelListsComposed;
 }
 
-async function getAllOthersNovelListsInUserPage(userId: string) {
-  const novelListIDs = await getNovelListIDsByUserId(userId, false);
+async function getListsUserLiked(userId: string, isHome = false) {
+  const novelListIDs = await getNovelListIDsByUserId(userId, isHome);
 
   const novelListsComposed = await setAllOthersNovelListsOneByOne(novelListIDs);
 
   return novelListsComposed;
 }
 
-const allNovelListsService = {
-  getAllMyNovelListsInUserPage,
-  getAllOthersNovelListsInUserPage,
+const novelListSummaryService = {
+  getListsUserCreated,
+  getListsUserLiked,
 };
-export default allNovelListsService;
+export default novelListSummaryService;

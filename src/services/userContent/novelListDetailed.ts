@@ -3,7 +3,7 @@ import {
   Novel,
   NovelList,
   NovelListInfo,
-  NovelListSetForMyOrOthersList,
+  NovelListThatUserCreatedOrLiked,
   NovelListsSimpleInfos,
 } from "../utils/types";
 
@@ -126,7 +126,7 @@ async function getNovelsAndInfoByListId(novelListId: string, order: number) {
   };
   return { novelListInfo, novels, isNextOrder };
 }
-async function getIsTheListLoginUserLikes(loginUserId: string, novelListId: string) {
+async function checkIfItIsTheListLoginUserLiked(loginUserId: string, novelListId: string) {
   const data = (await db(
     "SELECT novelListId FROM novelListLike WHERE userId = (?) and novelListId = (?)",
     [loginUserId, novelListId],
@@ -137,7 +137,7 @@ async function getIsTheListLoginUserLikes(loginUserId: string, novelListId: stri
   return isTheListLoginUserLikes;
 }
 
-function getNovelListSetForMyOrOthersList(
+function setNovelListThatUserCreatedOrLiked(
   novelListsSimpleInfos: NovelListsSimpleInfos[],
   novelListInfo: NovelListInfo,
   novels: Novel[],
@@ -146,7 +146,7 @@ function getNovelListSetForMyOrOthersList(
   userImgSrc?: string,
   userImgPosition?: string,
 ) {
-  const novelListSet: NovelListSetForMyOrOthersList = {
+  const novelListSet: NovelListThatUserCreatedOrLiked = {
     listId: novelListInfo.novelListId,
     listTitle: novelListInfo.novelListTitle,
     isLike: isTheListLoginUserLikes,
@@ -260,7 +260,7 @@ async function getNovelListsUserCreatedForUserPageHome(userId: string) {
   }
 }
 
-async function getNovelListUserCreatedForMyList(
+async function getListUserCreated(
   userIdInUserPage: string,
   listId: string,
   order: number,
@@ -293,10 +293,10 @@ async function getNovelListUserCreatedForMyList(
     // (actually in second case (2), the value won't be used in user page)
     let isTheListLoginUserLikes = false;
     if (loginUserId && loginUserId !== userIdInUserPage) {
-      isTheListLoginUserLikes = await getIsTheListLoginUserLikes(loginUserId, listId);
+      isTheListLoginUserLikes = await checkIfItIsTheListLoginUserLiked(loginUserId, listId);
     }
 
-    const novelListSet = getNovelListSetForMyOrOthersList(
+    const novelListSet = setNovelListThatUserCreatedOrLiked(
       novelListsSimpleInfos,
       novelListInfo,
       novels,
@@ -310,7 +310,7 @@ async function getNovelListUserCreatedForMyList(
   }
 }
 
-async function getNovelListUserLikesForOthersList(
+async function getListUserLiked(
   userIdInUserPage: string,
   listId: string,
   order: number,
@@ -347,10 +347,10 @@ async function getNovelListUserLikesForOthersList(
     // following value is always false
     let isTheListLoginUserLikes = false;
     if (loginUserId) {
-      isTheListLoginUserLikes = await getIsTheListLoginUserLikes(loginUserId, listId);
+      isTheListLoginUserLikes = await checkIfItIsTheListLoginUserLiked(loginUserId, listId);
     }
 
-    const novelListSet = getNovelListSetForMyOrOthersList(
+    const novelListSet = setNovelListThatUserCreatedOrLiked(
       novelListsSimpleInfos,
       novelListInfo,
       novels,
@@ -367,11 +367,11 @@ async function getNovelListUserLikesForOthersList(
   }
 }
 
-async function getAllNovelListTitlesAtTheMoment(userIdInUserPage: string, isMyList: string) {
+async function getAllNovelListTitlesAtTheMoment(userIdInUserPage: string, isCreated: string) {
   try {
     let novelListInfoList: NovelListInfo[];
-    const isMyListAsBoolean = isMyList.toLowerCase() === "true";
-    if (isMyListAsBoolean) {
+    const isCreatedInBoolean = isCreated.toLowerCase() === "true"; // created or liked by user
+    if (isCreatedInBoolean) {
       novelListInfoList = await getNovelListInfoListByUserId(userIdInUserPage, false);
     } else {
       const novelListIDs = await getNovelListIDsByUserId(userIdInUserPage, false);
@@ -381,7 +381,7 @@ async function getAllNovelListTitlesAtTheMoment(userIdInUserPage: string, isMyLi
 
     const allNovelListsInfoOfUser = await getSimpleInfosOfAllNovelListsOfUser(
       novelListInfoList,
-      isMyListAsBoolean,
+      isCreatedInBoolean,
     );
 
     return allNovelListsInfoOfUser;
@@ -402,11 +402,12 @@ async function getNovelListsUserLikesForUserPageHome(userId: string) {
   }
 }
 
-const specificNovelListService = {
-  getMyList: getNovelListUserCreatedForMyList,
-  getMyListOfUserHome: getNovelListsUserCreatedForUserPageHome,
-  getOthersList: getNovelListUserLikesForOthersList,
-  getOthersListOfUserHome: getNovelListsUserLikesForUserPageHome,
+const novelListDetailedService = {
+  getListUserCreated,
+  getListUserLiked,
   getAllListTitles: getAllNovelListTitlesAtTheMoment,
+  // below are not used now
+  getMyListOfUserHome: getNovelListsUserCreatedForUserPageHome,
+  getOthersListOfUserHome: getNovelListsUserLikesForUserPageHome,
 };
-export default specificNovelListService;
+export default novelListDetailedService;

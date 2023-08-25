@@ -88,7 +88,7 @@ async function removeNovelFromMyList(listId: string, novelIDsToRemove: string[])
   await updateNovelsInList(listId, nextNovelIDs);
 }
 
-const myNovelListsService = {
+const myNovelListService = {
   getMyList,
   createMyList,
   changeListTitle,
@@ -96,4 +96,4 @@ const myNovelListsService = {
   addNovelToMyList,
   removeNovelFromMyList,
 };
-export default myNovelListsService;
+export default myNovelListService;

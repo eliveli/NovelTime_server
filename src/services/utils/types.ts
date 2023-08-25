@@ -77,7 +77,7 @@ export interface NovelListsSimpleInfos {
     position: string;
   };
 }
-export interface NovelListSetForMyOrOthersList {
+export interface NovelListThatUserCreatedOrLiked {
   listId: string;
   listTitle: string;
   isLike: boolean;

@@ -4,9 +4,9 @@ import dotenv from "dotenv";
 import getUserId from "../services/shared/getUserId";
 import userWritingService from "../services/userContent/writings";
 import userCommentService from "../services/userContent/comments";
-import allNovelListsService from "../services/userContent/allNovelLists";
-import specificNovelListService from "../services/userContent/specificNovelList";
-import myNovelListsService from "../services/userContent/myNovelLists";
+import novelListSummaryService from "../services/userContent/novelListSummary";
+import novelListDetailedService from "../services/userContent/novelListDetailed";
+import myNovelListService from "../services/userContent/myNovelList";
 import toggleLike from "../services/shared/toggleLike";
 
 dotenv.config();
@@ -22,8 +22,8 @@ export const userHomeController: RequestHandler = (async (req, res) => {
     const { talksUserLikes, recommendsUserLikes } =
       await userWritingService.getOthersWritingsForUserHome(userId);
     const commentsUserCreated = await userCommentService.getCommentsForUserHome(userId);
-    const listsUserCreated = await specificNovelListService.getMyListOfUserHome(userId);
-    const listsUserLikes = await specificNovelListService.getOthersListOfUserHome(userId);
+    const listsUserCreated = await novelListSummaryService.getListsUserCreated(userId, true);
+    const listsUserLikes = await novelListSummaryService.getListsUserLiked(userId, true);
 
     res.json({
       talksUserCreated,
@@ -77,6 +77,7 @@ export const userMyWritingController: RequestHandler = (async (req, res) => {
     res.status(500).end();
   }
 }) as RequestHandler;
+
 export const userOthersWritingController: RequestHandler = (async (req, res) => {
   try {
     const { userName, contentType, order } = req.params;
@@ -96,94 +97,97 @@ export const userOthersWritingController: RequestHandler = (async (req, res) => 
     res.status(500).end();
   }
 }) as RequestHandler;
-export const userMyListController: RequestHandler = (async (req, res) => {
-  try {
-    const { userNameInUserPage, listId, order } = req.params;
-    const loginUserId = req.userId;
-    const userIdInUserPage = await getUserId(userNameInUserPage);
-    if (!userIdInUserPage) throw new Error("유저 없음");
-    const { novelList, isNextOrder } = await specificNovelListService.getMyList(
-      userIdInUserPage,
-      listId,
-      Number(order),
-      loginUserId,
-    );
-    res.json({ novelList, isNextOrder });
-  } catch (error: any) {
-    if (error.message === "유저 없음") {
-      res.status(400).json("존재하지 않는 사용자입니다.");
-    }
-    console.log("failed to get user's content in userMyListController :", error);
-    res.status(500).end();
-  }
-}) as RequestHandler;
-export const userOthersListController: RequestHandler = (async (req, res) => {
-  try {
-    const { userNameInUserPage, listId, order } = req.params;
-    const loginUserId = req.userId;
-    const userIdInUserPage = await getUserId(userNameInUserPage);
-    if (!userIdInUserPage) throw new Error("유저 없음");
-    const { novelList, isNextOrder } = await specificNovelListService.getOthersList(
-      userIdInUserPage,
-      listId,
-      Number(order),
-      loginUserId,
-    );
-    res.json({ novelList, isNextOrder });
-  } catch (error: any) {
-    if (error.message === "유저 없음") {
-      res.status(400).json("존재하지 않는 사용자입니다.");
-    }
-    console.log("failed to get user's content in userOthersListController :", error);
-    res.status(500).end();
-  }
-}) as RequestHandler;
-export const userNovelListTitlesController: RequestHandler = (async (req, res) => {
-  try {
-    const { userNameInUserPage, isMyList } = req.params;
-    const userIdInUserPage = await getUserId(userNameInUserPage);
-    if (!userIdInUserPage) throw new Error("유저 없음");
 
-    const allTitlesAndOtherInfo = await specificNovelListService.getAllListTitles(
-      userIdInUserPage,
-      isMyList,
+export const getListUserCreatedController: RequestHandler = (async (req, res) => {
+  try {
+    const { userName, listId, order } = req.params;
+    const loginUserId = req.userId;
+    const userId = await getUserId(userName);
+    if (!userId) throw new Error("유저 없음");
+    const { novelList, isNextOrder } = await novelListDetailedService.getListUserCreated(
+      userId,
+      listId,
+      Number(order),
+      loginUserId,
+    );
+    res.json({ novelList, isNextOrder });
+  } catch (error: any) {
+    if (error.message === "유저 없음") {
+      res.status(400).json("존재하지 않는 사용자입니다.");
+    }
+    console.log("failed to get user's content in getListUserCreatedController :", error);
+    res.status(500).end();
+  }
+}) as RequestHandler;
+
+export const getListUserLikedController: RequestHandler = (async (req, res) => {
+  try {
+    const { userName, listId, order } = req.params;
+    const loginUserId = req.userId;
+    const userId = await getUserId(userName);
+    if (!userId) throw new Error("유저 없음");
+    const { novelList, isNextOrder } = await novelListDetailedService.getListUserLiked(
+      userId,
+      listId,
+      Number(order),
+      loginUserId,
+    );
+    res.json({ novelList, isNextOrder });
+  } catch (error: any) {
+    if (error.message === "유저 없음") {
+      res.status(400).json("존재하지 않는 사용자입니다.");
+    }
+    console.log("failed to get user's content in getListUserLikedController :", error);
+    res.status(500).end();
+  }
+}) as RequestHandler;
+
+export const getNovelListTitlesController: RequestHandler = (async (req, res) => {
+  try {
+    const { userName, isCreated } = req.params;
+    const userId = await getUserId(userName);
+    if (!userId) throw new Error("유저 없음");
+
+    const allTitlesAndOtherInfo = await novelListDetailedService.getAllListTitles(
+      userId,
+      isCreated,
     );
     res.json(allTitlesAndOtherInfo);
   } catch (error: any) {
     if (error.message === "유저 없음") {
       res.status(400).json("존재하지 않는 사용자입니다.");
     }
-    console.log("failed to get user's content in userNovelListTitlesController :", error);
+    console.log("failed to get user's content in getNovelListTitlesController :", error);
     res.status(500).end();
   }
 }) as RequestHandler;
 
-export const getAllMyNovelListsController: RequestHandler = (async (req, res) => {
+export const getAllListSummaryUserCreatedController: RequestHandler = (async (req, res) => {
   try {
     const { userName } = req.params;
     const userId = await getUserId(userName);
     if (!userId) throw new Error("user doesn't exist");
 
-    const lists = await allNovelListsService.getAllMyNovelListsInUserPage(userId);
+    const lists = await novelListSummaryService.getListsUserCreated(userId);
 
     res.json(lists);
   } catch (error: any) {
-    console.log("failed to get user's content in getAllMyNovelListsController :", error);
+    console.log("failed to get user's content in getAllListSummaryUserCreatedController :", error);
     res.status(500).end();
   }
 }) as RequestHandler;
 
-export const getAllOthersNovelListsController: RequestHandler = (async (req, res) => {
+export const getAllListSummaryUserLikedController: RequestHandler = (async (req, res) => {
   try {
     const { userName } = req.params;
     const userId = await getUserId(userName);
     if (!userId) throw new Error("user doesn't exist");
 
-    const lists = await allNovelListsService.getAllOthersNovelListsInUserPage(userId);
+    const lists = await novelListSummaryService.getListsUserLiked(userId);
 
     res.json(lists);
   } catch (error: any) {
-    console.log("failed to get user's content in getAllOthersNovelListsController :", error);
+    console.log("failed to get user's content in getAllListSummaryUserLikedController :", error);
     res.status(500).end();
   }
 }) as RequestHandler;
@@ -197,7 +201,7 @@ export const getMyNovelListController: RequestHandler = (async (req, res) => {
       return;
     }
 
-    const myNovelLists = await myNovelListsService.getMyList(loginUserId);
+    const myNovelLists = await myNovelListService.getMyList(loginUserId);
 
     res.json(myNovelLists);
   } catch (error: any) {
@@ -216,7 +220,7 @@ export const createMyNovelListController: RequestHandler = (async (req, res) => 
       throw Error("some value doesn't exist");
     }
 
-    await myNovelListsService.createMyList(listTitle as string, loginUserId);
+    await myNovelListService.createMyList(listTitle as string, loginUserId);
 
     res.json("your novel list was created successfully");
   } catch (error: any) {
@@ -233,7 +237,7 @@ export const changeListTitleController: RequestHandler = (async (req, res) => {
       throw Error("some value doesn't exist");
     }
 
-    await myNovelListsService.changeListTitle(listId as string, listTitle as string);
+    await myNovelListService.changeListTitle(listId as string, listTitle as string);
 
     res.json("your novel list title was changed successfully");
   } catch (error: any) {
@@ -250,7 +254,7 @@ export const removeMyNovelListController: RequestHandler = (async (req, res) => 
       throw Error("list id wasn't given");
     }
 
-    await myNovelListsService.removeMyList(listId as string);
+    await myNovelListService.removeMyList(listId as string);
 
     res.json("your novel list was removed successfully");
   } catch (error: any) {
@@ -270,7 +274,7 @@ export const addNovelToMyNovelListController: RequestHandler = (async (req, res)
       throw Error("listIDs is not string array");
     }
 
-    await myNovelListsService.addNovelToMyList(novelId as string, listIDs as string[]);
+    await myNovelListService.addNovelToMyList(novelId as string, listIDs as string[]);
 
     res.json("novel was added to your lists successfully");
   } catch (error: any) {
@@ -290,7 +294,7 @@ export const removeNovelFromMyNovelListController: RequestHandler = (async (req,
       throw Error("novelIDs is not string array");
     }
 
-    await myNovelListsService.removeNovelFromMyList(listId as string, novelIDs as string[]);
+    await myNovelListService.removeNovelFromMyList(listId as string, novelIDs as string[]);
 
     res.json("novels were removed from your list successfully");
   } catch (error: any) {
