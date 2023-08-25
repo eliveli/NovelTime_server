@@ -193,6 +193,7 @@ async function getNovelListsSimpleInfos(
   }
   return { isListIdSelected, novelListsSimpleInfos };
 }
+
 async function getSimpleInfosOfAllNovelListsOfUser(
   novelListInfoList: NovelListInfo[],
   isMyList: boolean,
@@ -322,11 +323,13 @@ async function getLikeNo(novelListId: string) {
 
 async function getNovelImg(novelId: string) {
   const dbQuery = "SELECT novelImg FROM novelInfo WHERE novelId = (?)";
-  const { novelImg } = (await db(dbQuery, novelId, "first")) as {
+  const novelImg = (await db(dbQuery, [novelId], "first")) as {
     novelImg: string;
   };
 
-  return novelImg;
+  if (!novelImg) return "";
+
+  return novelImg.novelImg;
 }
 
 async function getNovelImgs(novelIDs: string, novelNo: number) {
@@ -365,7 +368,7 @@ async function getNovelImgs(novelIDs: string, novelNo: number) {
   return novelImgs;
 }
 
-async function setAllNovelListsOneByOne(novelLists: NovelListInfo[]) {
+async function setAllMyNovelListsOneByOne(novelLists: NovelListInfo[]) {
   const allNovelLists = [];
 
   for (const novelList of novelLists) {
@@ -387,12 +390,60 @@ async function setAllNovelListsOneByOne(novelLists: NovelListInfo[]) {
   return allNovelLists;
 }
 
+async function getListInfoByListId(novelListId: string) {
+  const dbQuery = "SELECT userId, novelListTitle, novelIDs FROM novelList WHERE novelListId = (?)";
+  const listInfo = (await db(dbQuery, novelListId, "first")) as {
+    userId: string;
+    novelListTitle: string;
+    novelIDs: string;
+  };
+  return listInfo;
+}
+
+async function setAllOthersNovelListsOneByOne(novelListIDs: string[]) {
+  const allNovelLists = [];
+
+  for (const novelListId of novelListIDs) {
+    const { userId, novelListTitle, novelIDs } = await getListInfoByListId(novelListId);
+
+    const novelNo = setNovelNo(novelIDs);
+    const likeNo = await getLikeNo(novelListId);
+    const novelImgs = await getNovelImgs(novelIDs, novelNo);
+
+    const userInfo = await getUserNameAndImgByUserId(userId);
+    const { userName } = userInfo;
+    const userImg = { src: userInfo.userImgSrc, position: userInfo.userImgPosition };
+
+    const novelListSet = {
+      listId: novelListId,
+      listTitle: novelListTitle,
+      novelNo,
+      likeNo,
+      novelImgs,
+      userName,
+      userImg,
+    };
+
+    allNovelLists.push(novelListSet);
+  }
+
+  return allNovelLists;
+}
+
 async function getAllMyNovelListsInUserPage(userId: string) {
   const novelLists = await getNovelListInfoListByUserId(userId, false);
 
-  const allNovelLists = await setAllNovelListsOneByOne(novelLists);
+  const novelListsComposed = await setAllMyNovelListsOneByOne(novelLists);
 
-  return allNovelLists;
+  return novelListsComposed;
+}
+
+async function getAllOthersNovelListsInUserPage(userId: string) {
+  const novelListIDs = await getNovelListIDsByUserId(userId, false);
+
+  const novelListsComposed = await setAllOthersNovelListsOneByOne(novelListIDs);
+
+  return novelListsComposed;
 }
 
 async function getNovelListUserCreatedForMyList(
@@ -571,6 +622,7 @@ const userNovelListService = {
   getOthersListOfUserHome: getNovelListsUserLikesForUserPageHome,
   getAllListTitles: getAllNovelListTitlesAtTheMoment,
   getAllMyNovelListsInUserPage,
+  getAllOthersNovelListsInUserPage,
   getMyNovelList,
   createMyNovelList,
   addNovelToMyNovelList,

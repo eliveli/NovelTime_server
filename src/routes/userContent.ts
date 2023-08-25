@@ -12,6 +12,7 @@ import {
   createMyNovelListController,
   addNovelToMyNovelListController,
   getAllMyNovelListsController,
+  getAllOthersNovelListsController,
 } from "../controllers/userContent";
 import { authenticateAccessTokenMiddleware, getUserIdByTokenMiddleware } from "../controllers/user";
 
@@ -25,6 +26,7 @@ router.get("/othersWriting/:userName/:contentType/:order", userOthersWritingCont
 
 // get all novel lists in a user's page
 router.get("/myList/all/:userName", getAllMyNovelListsController); // my list that the user created
+router.get("/othersList/all/:userName", getAllOthersNovelListsController); // other's list that the user liked
 
 // get a certain novel list in a user's page
 router.get(

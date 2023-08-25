@@ -171,6 +171,21 @@ export const getAllMyNovelListsController: RequestHandler = (async (req, res) =>
   }
 }) as RequestHandler;
 
+export const getAllOthersNovelListsController: RequestHandler = (async (req, res) => {
+  try {
+    const { userName } = req.params;
+    const userId = await getUserId(userName);
+    if (!userId) throw new Error("user doesn't exist");
+
+    const lists = await userNovelListService.getAllOthersNovelListsInUserPage(userId);
+
+    res.json(lists);
+  } catch (error: any) {
+    console.log("failed to get user's content in getAllOthersNovelListsController :", error);
+    res.status(500).end();
+  }
+}) as RequestHandler;
+
 export const getMyNovelListController: RequestHandler = (async (req, res) => {
   try {
     const loginUserId = req.userId;
