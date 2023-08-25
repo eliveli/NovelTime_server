@@ -246,37 +246,6 @@ async function getNovelListsSetUserLikes(novelLists: NovelList[]) {
   }
   return novelListsSet;
 }
-
-async function updateNovelsInList(listId: string, nextNovelIDs: string) {
-  const dbQuery = "UPDATE novelList SET novelIDs = (?) WHERE novelListId = (?)";
-  await db(dbQuery, [nextNovelIDs, listId]);
-}
-
-async function getExistingNovelsFromList(listId: string) {
-  const dbQuery = "SELECT novelIDs FROM novelList WHERE novelListId = (?)";
-  const { novelIDs } = (await db(dbQuery, listId, "first")) as { novelIDs: string };
-  return novelIDs;
-}
-
-async function createNovelListInDB(loginUserId: string, newNovelListTitle?: string) {
-  const novelListId = `${loginUserId}${Date.now().toString()}`;
-  const novelListTitle = newNovelListTitle || "기본 소설 리스트";
-
-  const dbQuery = "INSERT INTO novelList SET novelListId = (?), novelListTitle = (?), userId = (?)";
-  await db(dbQuery, [novelListId, novelListTitle, loginUserId]);
-}
-
-async function getNovelListByUserId(loginUserId: string) {
-  const dbQuery = "SELECT novelListId, novelListTitle FROM novelList where userId = (?)";
-
-  const novelListTitles = (await db(dbQuery, loginUserId, "all")) as {
-    novelListId: string;
-    novelListTitle: string;
-  }[];
-
-  return novelListTitles;
-}
-
 async function getNovelListsUserCreatedForUserPageHome(userId: string) {
   try {
     const novelListInfoList = await getNovelListInfoListByUserId(userId);
@@ -289,161 +258,6 @@ async function getNovelListsUserCreatedForUserPageHome(userId: string) {
   } catch (error) {
     console.log("error occurred in getNovelListsUserCreatedForUserPageHome:", error);
   }
-}
-
-function getSpaceNo(novelIDs: string) {
-  const space = " ";
-  let spaceIdx = novelIDs.indexOf(space);
-  let countingNo = 0;
-  while (spaceIdx !== -1) {
-    countingNo += 1;
-    spaceIdx = novelIDs.indexOf(space, spaceIdx + 1);
-  }
-  return countingNo;
-}
-
-function setNovelNo(novelIDs: string) {
-  if (!novelIDs) return 0;
-
-  const spaceNo = getSpaceNo(novelIDs);
-
-  if (spaceNo === 0) return 1;
-
-  return spaceNo + 1;
-}
-
-async function getLikeNo(novelListId: string) {
-  const dbQuery = "SELECT count(*) AS likeNoInBigInt FROM novelListLike WHERE novelListId = (?)";
-  const { likeNoInBigInt } = (await db(dbQuery, [novelListId], "first")) as {
-    likeNoInBigInt: BigInt;
-  };
-
-  return Number(likeNoInBigInt);
-}
-
-async function getNovelImg(novelId: string) {
-  const dbQuery = "SELECT novelImg FROM novelInfo WHERE novelId = (?)";
-  const novelImg = (await db(dbQuery, [novelId], "first")) as {
-    novelImg: string;
-  };
-
-  if (!novelImg) return "";
-
-  return novelImg.novelImg;
-}
-
-async function getNovelImgs(novelIDs: string, novelNo: number) {
-  if (!novelNo) return [];
-
-  let spaceIdx = 0;
-  const novelImgs: string[] = [];
-
-  for (let i = 0; i < novelIDs.length; i = spaceIdx) {
-    // get novel id //
-    spaceIdx = novelIDs.indexOf(" ", spaceIdx + 1);
-
-    let novelId = "";
-
-    if (i === 0 && spaceIdx === -1) {
-      // there is a single novel
-      novelId = novelIDs;
-    } else if (i === 0) {
-      // get the first novel when there are more than one
-      novelId = novelIDs.slice(0, spaceIdx);
-    } else if (spaceIdx === -1) {
-      // get the last novel when there are more than one
-      novelId = novelIDs.slice(i + 1);
-    } else {
-      // get a novel between the first and the last
-      novelId = novelIDs.slice(i + 1, spaceIdx);
-    }
-
-    const novelImg = await getNovelImg(novelId);
-    novelImgs.push(novelImg);
-
-    if (spaceIdx === -1) break;
-    if (novelImgs.length === 3) break;
-  }
-
-  return novelImgs;
-}
-
-async function setAllMyNovelListsOneByOne(novelLists: NovelListInfo[]) {
-  const allNovelLists = [];
-
-  for (const novelList of novelLists) {
-    const novelNo = setNovelNo(novelList.novelIDs);
-    const likeNo = await getLikeNo(novelList.novelListId);
-    const novelImgs = await getNovelImgs(novelList.novelIDs, novelNo);
-
-    const novelListSet = {
-      listId: novelList.novelListId,
-      listTitle: novelList.novelListTitle,
-      novelNo,
-      likeNo,
-      novelImgs,
-    };
-
-    allNovelLists.push(novelListSet);
-  }
-
-  return allNovelLists;
-}
-
-async function getListInfoByListId(novelListId: string) {
-  const dbQuery = "SELECT userId, novelListTitle, novelIDs FROM novelList WHERE novelListId = (?)";
-  const listInfo = (await db(dbQuery, novelListId, "first")) as {
-    userId: string;
-    novelListTitle: string;
-    novelIDs: string;
-  };
-  return listInfo;
-}
-
-async function setAllOthersNovelListsOneByOne(novelListIDs: string[]) {
-  const allNovelLists = [];
-
-  for (const novelListId of novelListIDs) {
-    const { userId, novelListTitle, novelIDs } = await getListInfoByListId(novelListId);
-
-    const novelNo = setNovelNo(novelIDs);
-    const likeNo = await getLikeNo(novelListId);
-    const novelImgs = await getNovelImgs(novelIDs, novelNo);
-
-    const userInfo = await getUserNameAndImgByUserId(userId);
-    const { userName } = userInfo;
-    const userImg = { src: userInfo.userImgSrc, position: userInfo.userImgPosition };
-
-    const novelListSet = {
-      listId: novelListId,
-      listTitle: novelListTitle,
-      novelNo,
-      likeNo,
-      novelImgs,
-      userName,
-      userImg,
-    };
-
-    allNovelLists.push(novelListSet);
-  }
-
-  return allNovelLists;
-}
-
-async function getAllMyNovelListsInUserPage(userId: string) {
-  const novelLists = await getNovelListInfoListByUserId(userId, false);
-
-  const novelListsComposed = await setAllMyNovelListsOneByOne(novelLists);
-
-  return novelListsComposed;
-}
-
-async function getAllOthersNovelListsInUserPage(userId: string) {
-  const novelListIDs = await getNovelListIDsByUserId(userId, false);
-
-  const novelListsComposed = await setAllOthersNovelListsOneByOne(novelListIDs);
-
-  return novelListsComposed;
 }
 
 async function getNovelListUserCreatedForMyList(
@@ -588,43 +402,11 @@ async function getNovelListsUserLikesForUserPageHome(userId: string) {
   }
 }
 
-async function getMyNovelList(loginUserId: string) {
-  let listTitles = await getNovelListByUserId(loginUserId);
-
-  if (!listTitles.length) {
-    await createNovelListInDB(loginUserId);
-    listTitles = await getNovelListByUserId(loginUserId);
-  }
-
-  return listTitles;
-}
-
-async function createMyNovelList(listTitle: string, loginUserId: string) {
-  await createNovelListInDB(loginUserId, listTitle);
-}
-
-async function addNovelToMyNovelList(novelId: string, listIDs: string[]) {
-  if (!listIDs.length) throw Error("list id doesn't exist");
-
-  for (const listId of listIDs) {
-    const prevNovelIDs = await getExistingNovelsFromList(listId);
-
-    const nextNovelIDs = `${prevNovelIDs} ${novelId}`;
-
-    await updateNovelsInList(listId, nextNovelIDs);
-  }
-}
-
-const userNovelListService = {
+const specificNovelListService = {
   getMyList: getNovelListUserCreatedForMyList,
   getMyListOfUserHome: getNovelListsUserCreatedForUserPageHome,
   getOthersList: getNovelListUserLikesForOthersList,
   getOthersListOfUserHome: getNovelListsUserLikesForUserPageHome,
   getAllListTitles: getAllNovelListTitlesAtTheMoment,
-  getAllMyNovelListsInUserPage,
-  getAllOthersNovelListsInUserPage,
-  getMyNovelList,
-  createMyNovelList,
-  addNovelToMyNovelList,
 };
-export default userNovelListService;
+export default specificNovelListService;
