@@ -42,7 +42,7 @@ router.get(
 );
 router.get("/listDetailed/listTitles/:userName/:isCreated", getNovelListTitlesController);
 
-router.get("/myNovelList", authenticateAccessTokenMiddleware, getMyNovelListController);
+router.get("/myNovelList/:novelId", authenticateAccessTokenMiddleware, getMyNovelListController);
 router.post("/myNovelList", authenticateAccessTokenMiddleware, createMyNovelListController);
 router.put("/myNovelList", authenticateAccessTokenMiddleware, changeListTitleController);
 router.delete("/myNovelList", authenticateAccessTokenMiddleware, removeMyNovelListController);

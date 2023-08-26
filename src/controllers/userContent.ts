@@ -195,13 +195,17 @@ export const getAllListSummaryUserLikedController: RequestHandler = (async (req,
 export const getMyNovelListController: RequestHandler = (async (req, res) => {
   try {
     const loginUserId = req.userId;
+    const { novelId } = req.params;
 
     if (!loginUserId) {
       res.status(400).json("유효하지 않은 사용자입니다");
       return;
     }
+    if (!novelId) {
+      throw Error("novel id was not given");
+    }
 
-    const myNovelLists = await myNovelListService.getMyList(loginUserId);
+    const myNovelLists = await myNovelListService.getMyList(loginUserId, novelId);
 
     res.json(myNovelLists);
   } catch (error: any) {
@@ -220,9 +224,9 @@ export const createMyNovelListController: RequestHandler = (async (req, res) => 
       throw Error("some value doesn't exist");
     }
 
-    await myNovelListService.createMyList(listTitle as string, loginUserId);
+    const listId = await myNovelListService.createMyList(listTitle as string, loginUserId);
 
-    res.json("your novel list was created successfully");
+    res.json({ listId });
   } catch (error: any) {
     console.log("failed to create user's content in createMyNovelListController :", error);
     res.status(500).end();

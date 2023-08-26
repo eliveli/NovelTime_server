@@ -17,17 +17,21 @@ async function createNovelListInDB(loginUserId: string, newNovelListTitle?: stri
 
   const dbQuery = "INSERT INTO novelList SET novelListId = (?), novelListTitle = (?), userId = (?)";
   await db(dbQuery, [novelListId, novelListTitle, loginUserId]);
+
+  return novelListId;
 }
 
+type listInfo = {
+  novelListId: string;
+  novelListTitle: string;
+  novelIDs: string;
+};
 async function getNovelListByUserId(loginUserId: string) {
-  const dbQuery = "SELECT novelListId, novelListTitle FROM novelList where userId = (?)";
+  const dbQuery = "SELECT novelListId, novelListTitle, novelIDs FROM novelList where userId = (?)";
 
-  const novelListTitles = (await db(dbQuery, loginUserId, "all")) as {
-    novelListId: string;
-    novelListTitle: string;
-  }[];
+  const novelLists = (await db(dbQuery, loginUserId, "all")) as listInfo[];
 
-  return novelListTitles;
+  return novelLists;
 }
 
 function setNextNovelIDs(allNovelIDs: string, novelIDsToRemove: string[]) {
@@ -41,19 +45,48 @@ function setNextNovelIDs(allNovelIDs: string, novelIDsToRemove: string[]) {
   return nextNovelIDs;
 }
 
-async function getMyList(loginUserId: string) {
-  let listTitles = await getNovelListByUserId(loginUserId);
+function checkListsContainingTheNovel(novelId: string, lists: listInfo[]) {
+  const newLists = [];
 
-  if (!listTitles.length) {
-    await createNovelListInDB(loginUserId);
-    listTitles = await getNovelListByUserId(loginUserId);
+  for (const list of lists) {
+    const { novelIDs, novelListId, novelListTitle } = list;
+
+    let isContaining;
+    if (!novelIDs) {
+      isContaining = false;
+    } else {
+      const novelIDsArray = novelIDs.split(" ");
+      isContaining = novelIDsArray.includes(novelId);
+    }
+
+    const listSet = {
+      novelListId,
+      novelListTitle,
+      isContaining,
+    };
+
+    newLists.push(listSet);
   }
 
-  return listTitles;
+  return newLists;
+}
+
+async function getMyList(loginUserId: string, novelId: string) {
+  let lists = await getNovelListByUserId(loginUserId);
+
+  if (!lists.length) {
+    await createNovelListInDB(loginUserId);
+    lists = await getNovelListByUserId(loginUserId);
+  }
+
+  const newLists = checkListsContainingTheNovel(novelId, lists);
+
+  return newLists;
 }
 
 async function createMyList(listTitle: string, loginUserId: string) {
-  await createNovelListInDB(loginUserId, listTitle);
+  const listId = await createNovelListInDB(loginUserId, listTitle);
+  return listId;
 }
 
 async function changeListTitle(listId: string, listTitle: string) {
