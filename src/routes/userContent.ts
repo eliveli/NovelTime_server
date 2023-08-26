@@ -10,7 +10,7 @@ import {
   toggleLikeController,
   getMyNovelListController,
   createMyNovelListController,
-  addNovelToMyNovelListController,
+  addOrRemoveNovelInListController,
   getAllListSummaryUserCreatedController,
   getAllListSummaryUserLikedController,
   changeListTitleController,
@@ -44,13 +44,14 @@ router.get("/listDetailed/listTitles/:userName/:isCreated", getNovelListTitlesCo
 
 router.get("/myNovelList/:novelId", authenticateAccessTokenMiddleware, getMyNovelListController);
 router.post("/myNovelList", authenticateAccessTokenMiddleware, createMyNovelListController);
-router.put("/myNovelList", authenticateAccessTokenMiddleware, changeListTitleController);
 router.delete("/myNovelList", authenticateAccessTokenMiddleware, removeMyNovelListController);
 
-router.post(
+router.put("/myNovelList/title", authenticateAccessTokenMiddleware, changeListTitleController);
+
+router.put(
   "/myNovelList/novel",
   authenticateAccessTokenMiddleware,
-  addNovelToMyNovelListController,
+  addOrRemoveNovelInListController,
 );
 router.delete(
   "/myNovelList/novel",

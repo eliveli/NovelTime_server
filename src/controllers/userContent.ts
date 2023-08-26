@@ -267,20 +267,30 @@ export const removeMyNovelListController: RequestHandler = (async (req, res) => 
   }
 }) as RequestHandler;
 
-export const addNovelToMyNovelListController: RequestHandler = (async (req, res) => {
+export const addOrRemoveNovelInListController: RequestHandler = (async (req, res) => {
   try {
-    const { novelId, listIDs } = req.body;
+    const loginUserId = req.userId;
+    if (!loginUserId) {
+      res.status(400).json("유효하지 않은 사용자입니다");
+      return;
+    }
 
-    if (!novelId || !listIDs) {
+    const { novelId, listIDsToAddNovel, listIDsToRemoveNovel } = req.body;
+
+    if (!novelId || !listIDsToAddNovel || !listIDsToRemoveNovel) {
       throw Error("some value doesn't exist");
     }
-    if (typeof listIDs !== "object") {
+    if (typeof listIDsToAddNovel !== "object" || typeof listIDsToRemoveNovel !== "object") {
       throw Error("listIDs is not string array");
     }
 
-    await myNovelListService.addNovelToMyList(novelId as string, listIDs as string[]);
+    await myNovelListService.addOrRemoveNovelInList(
+      novelId as string,
+      listIDsToAddNovel as string[],
+      listIDsToRemoveNovel as string[],
+    );
 
-    res.json("novel was added to your lists successfully");
+    res.json("novel was added or removed in your lists successfully");
   } catch (error: any) {
     console.log("failed to add user's content in addNovelToMyNovelListController :", error);
     res.status(500).end();

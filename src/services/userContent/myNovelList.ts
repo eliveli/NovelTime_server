@@ -99,13 +99,26 @@ async function removeMyList(listId: string) {
   await db(dbQuery, listId);
 }
 
-async function addNovelToMyList(novelId: string, listIDs: string[]) {
-  if (!listIDs.length) throw Error("list id doesn't exist");
-
-  for (const listId of listIDs) {
+async function addOrRemoveNovelInList(
+  novelId: string,
+  listIDsToAddNovel: string[],
+  listIDsToRemoveNovel: string[],
+) {
+  for (const listId of listIDsToAddNovel) {
     const prevNovelIDs = await getExistingNovelsFromList(listId);
 
     const nextNovelIDs = `${prevNovelIDs} ${novelId}`;
+
+    await updateNovelsInList(listId, nextNovelIDs);
+  }
+
+  for (const listId of listIDsToRemoveNovel) {
+    const prevNovelIDs = await getExistingNovelsFromList(listId);
+
+    const prevNovelIDsArray = prevNovelIDs.split(" ");
+    const nextNovelIDsArray = prevNovelIDsArray.filter((_) => _ !== novelId);
+
+    const nextNovelIDs = nextNovelIDsArray.join(" ");
 
     await updateNovelsInList(listId, nextNovelIDs);
   }
@@ -126,7 +139,7 @@ const myNovelListService = {
   createMyList,
   changeListTitle,
   removeMyList,
-  addNovelToMyList,
+  addOrRemoveNovelInList,
   removeNovelFromMyList,
 };
 export default myNovelListService;
