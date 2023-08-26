@@ -111,6 +111,7 @@ export const getListUserCreatedController: RequestHandler = (async (req, res) =>
       Number(order),
       loginUserId,
     );
+
     res.json(data);
   } catch (error: any) {
     if (error.message === "유저 없음") {
@@ -134,6 +135,7 @@ export const getListUserLikedController: RequestHandler = (async (req, res) => {
       Number(order),
       loginUserId,
     );
+
     res.json(data);
   } catch (error: any) {
     if (error.message === "유저 없음") {
@@ -150,11 +152,9 @@ export const getNovelListTitlesController: RequestHandler = (async (req, res) =>
     const userId = await getUserId(userName);
     if (!userId) throw new Error("유저 없음");
 
-    const allTitlesAndOtherInfo = await novelListDetailedService.getAllListTitles(
-      userId,
-      isCreated,
-    );
-    res.json(allTitlesAndOtherInfo);
+    const data = await novelListDetailedService.getAllListTitles(userId, isCreated);
+
+    res.json(data);
   } catch (error: any) {
     if (error.message === "유저 없음") {
       res.status(400).json("존재하지 않는 사용자입니다.");

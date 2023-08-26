@@ -14,7 +14,7 @@ async function getNovelListInfoByListId(novelListId: string) {
   )) as NovelListInfo;
 }
 
-async function getListInfosByListIDs(novelListIDs: string[]) {
+async function getListsByListIDs(novelListIDs: string[]) {
   const novelListInfoList: NovelListInfo[] = [];
   for (const novelListID of novelListIDs) {
     const novelListInfo = await getNovelListInfoByListId(novelListID);
@@ -23,7 +23,7 @@ async function getListInfosByListIDs(novelListIDs: string[]) {
 
   return novelListInfoList;
 }
-async function getListUserLikedByUserId(userId: string) {
+async function getListIDsUserLikedByUserId(userId: string) {
   const query = "SELECT novelListId FROM novelListLike WHERE userId = (?)";
 
   const dataForNovelListIDs = (await db(query, userId, "all")) as Array<{
@@ -203,29 +203,27 @@ async function setListsUserLiked(lists: NovelListInfo[], novelListId: string) {
   return { isTheListThatExists, listInfos };
 }
 
-async function getSimpleInfosOfAllNovelListsOfUser(
-  novelListInfoList: NovelListInfo[],
-  isMyList: boolean,
-) {
-  const novelListsSimpleInfos = [];
-  for (const novelListInfo of novelListInfoList) {
+async function composeListsWithUsers(lists: NovelListInfo[], isMyList: boolean) {
+  const listsComposed = [];
+
+  for (const list of lists) {
     let userName;
     let userImg;
     if (!isMyList) {
-      const userInfo = await getUserNameAndImgByUserId(novelListInfo.userId);
+      const userInfo = await getUserNameAndImgByUserId(list.userId);
       userName = userInfo.userName;
       userImg = { src: userInfo.userImgSrc, position: userInfo.userImgPosition };
     }
 
-    const simpleInfo = {
-      listId: novelListInfo.novelListId,
-      listTitle: novelListInfo.novelListTitle,
+    const listComposed = {
+      listId: list.novelListId,
+      listTitle: list.novelListTitle,
       userName,
       userImg,
     };
-    novelListsSimpleInfos.push(simpleInfo);
+    listsComposed.push(listComposed);
   }
-  return novelListsSimpleInfos;
+  return listsComposed;
 }
 
 async function getListUserCreated(
@@ -234,37 +232,32 @@ async function getListUserCreated(
   order: number,
   loginUserId?: string,
 ) {
-  try {
-    const lists = await getListsUserCreatedByUserId(userIdInUserPage);
+  const lists = await getListsUserCreatedByUserId(userIdInUserPage);
+  if (!lists.length) return;
 
-    const { isTheListThatExists, otherListUserCreated } = setListsUserCreated(lists, listId);
+  const { isTheListThatExists, otherListUserCreated } = setListsUserCreated(lists, listId);
 
-    if (!isTheListThatExists) {
-      return undefined;
-    }
+  if (!isTheListThatExists) return;
 
-    const { novelListInfo, novels, isNextOrder } = await getListInfoByListId(listId, order);
+  const { novelListInfo, novels, isNextOrder } = await getListInfoByListId(listId, order);
 
-    // if it is the request by non login user (1)
-    // or it is the login user's novel list that he/she created (2),
-    // following value is always false
-    // (actually in second case (2), the value won't be used in user page)
-    let isTheListLoginUserLiked = false;
-    if (loginUserId && loginUserId !== userIdInUserPage) {
-      isTheListLoginUserLiked = await checkIfItIsTheListLoginUserLiked(loginUserId, listId);
-    }
-
-    const listComposed = composeFinalListInfoUserCreated(
-      otherListUserCreated,
-      novelListInfo,
-      novels,
-      isTheListLoginUserLiked,
-    );
-
-    return { novelList: listComposed, isNextOrder };
-  } catch (error) {
-    return undefined;
+  // if it is the request by non login user (1)
+  // or it is the login user's novel list that he/she created (2),
+  // following value is always false
+  // (actually in second case (2), the value won't be used in user page)
+  let isTheListLoginUserLiked = false;
+  if (loginUserId && loginUserId !== userIdInUserPage) {
+    isTheListLoginUserLiked = await checkIfItIsTheListLoginUserLiked(loginUserId, listId);
   }
+
+  const listComposed = composeFinalListInfoUserCreated(
+    otherListUserCreated,
+    novelListInfo,
+    novels,
+    isTheListLoginUserLiked,
+  );
+
+  return { novelList: listComposed, isNextOrder };
 }
 
 async function getListUserLiked(
@@ -273,72 +266,69 @@ async function getListUserLiked(
   order: number,
   loginUserId?: string,
 ) {
-  try {
-    const novelListIDs = await getListUserLikedByUserId(userIdInUserPage);
+  const novelListIDs = await getListIDsUserLikedByUserId(userIdInUserPage);
+  if (!novelListIDs.length) return;
 
-    const lists = await getListInfosByListIDs(novelListIDs);
+  const lists = await getListsByListIDs(novelListIDs);
+  if (!lists.length) return;
 
-    const { isTheListThatExists, listInfos } = await setListsUserLiked(lists, listId);
+  const { isTheListThatExists, listInfos } = await setListsUserLiked(lists, listId);
 
-    if (!isTheListThatExists) {
-      return undefined;
-    }
+  if (!isTheListThatExists) return;
 
-    const { novelListInfo, novels, isNextOrder } = await getListInfoByListId(listId, order);
+  const { novelListInfo, novels, isNextOrder } = await getListInfoByListId(listId, order);
 
-    const { userName, userImgSrc, userImgPosition } = await getUserNameAndImgByUserId(
-      novelListInfo.userId,
-    );
+  const { userName, userImgSrc, userImgPosition } = await getUserNameAndImgByUserId(
+    novelListInfo.userId,
+  );
 
-    // if it is the request by non login user
-    // following value is always false
-    let isTheListLoginUserLiked = false;
-    if (loginUserId) {
-      isTheListLoginUserLiked = await checkIfItIsTheListLoginUserLiked(loginUserId, listId);
-    }
-
-    const listComposed = composeFinalListInfoUserLiked(
-      listInfos,
-      novelListInfo,
-      novels,
-      isTheListLoginUserLiked,
-      userName,
-      userImgSrc,
-      userImgPosition,
-    );
-
-    return { novelList: listComposed, isNextOrder };
-  } catch (error) {
-    return undefined;
+  // if it is the request by non login user
+  // following value is always false
+  let isTheListLoginUserLiked = false;
+  if (loginUserId) {
+    isTheListLoginUserLiked = await checkIfItIsTheListLoginUserLiked(loginUserId, listId);
   }
+
+  const listComposed = composeFinalListInfoUserLiked(
+    listInfos,
+    novelListInfo,
+    novels,
+    isTheListLoginUserLiked,
+    userName,
+    userImgSrc,
+    userImgPosition,
+  );
+
+  return { novelList: listComposed, isNextOrder };
 }
 
-async function getAllNovelListTitlesAtTheMoment(userIdInUserPage: string, isCreated: string) {
-  try {
-    let novelListInfoList: NovelListInfo[];
-    const isCreatedInBoolean = isCreated.toLowerCase() === "true"; // created or liked by user
-    if (isCreatedInBoolean) {
-      novelListInfoList = await getListsUserCreatedByUserId(userIdInUserPage);
-    } else {
-      const novelListIDs = await getListUserLikedByUserId(userIdInUserPage);
+async function getAllListTitles(userIdInUserPage: string, isCreatedInString: string) {
+  let lists: NovelListInfo[];
 
-      novelListInfoList = await getListInfosByListIDs(novelListIDs);
-    }
+  // lists created or liked by the user
+  const isCreated = isCreatedInString.toLowerCase() === "true";
 
-    const allNovelListsInfoOfUser = await getSimpleInfosOfAllNovelListsOfUser(
-      novelListInfoList,
-      isCreatedInBoolean,
-    );
+  if (isCreated) {
+    lists = await getListsUserCreatedByUserId(userIdInUserPage);
+    if (!lists.length) return;
+  } else {
+    const novelListIDs = await getListIDsUserLikedByUserId(userIdInUserPage);
+    if (!novelListIDs.length) return;
 
-    return allNovelListsInfoOfUser;
-  } catch (error) {
-    console.log("error occurred in getAllNovelListTitlesAtTheMoment:", error);
+    lists = await getListsByListIDs(novelListIDs);
+    if (!lists.length) return;
   }
+
+  // user property in created lists is undefined
+  // only liked lists have specific users who created them in the below
+  const allListTitles = await composeListsWithUsers(lists, isCreated);
+
+  return allListTitles;
 }
 
 const novelListDetailedService = {
   getListUserCreated,
   getListUserLiked,
-  getAllListTitles: getAllNovelListTitlesAtTheMoment,
+  getAllListTitles,
 };
 export default novelListDetailedService;
