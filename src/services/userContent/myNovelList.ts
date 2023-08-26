@@ -94,9 +94,17 @@ async function changeListTitle(listId: string, listTitle: string) {
   await db(dbQuery, [listTitle, listId]);
 }
 
-async function removeMyList(listId: string) {
+async function removeListInListTable(listId: string) {
   const dbQuery = "DELETE FROM novelList WHERE novelListId = (?)";
   await db(dbQuery, listId);
+}
+async function removeListInListLikeTable(listId: string) {
+  const dbQuery = "DELETE FROM novelListLike WHERE novelListId = (?)";
+  await db(dbQuery, listId);
+}
+async function removeMyList(listId: string) {
+  await removeListInListTable(listId);
+  await removeListInListLikeTable(listId);
 }
 
 async function addOrRemoveNovelInList(
@@ -105,14 +113,23 @@ async function addOrRemoveNovelInList(
   listIDsToRemoveNovel: string[],
 ) {
   for (const listId of listIDsToAddNovel) {
+    if (!listIDsToAddNovel.length) break;
+
     const prevNovelIDs = await getExistingNovelsFromList(listId);
 
-    const nextNovelIDs = `${prevNovelIDs} ${novelId}`;
+    let nextNovelIDs = "";
+    if (!prevNovelIDs) {
+      nextNovelIDs = novelId;
+    } else {
+      nextNovelIDs = `${prevNovelIDs} ${novelId}`;
+    }
 
     await updateNovelsInList(listId, nextNovelIDs);
   }
 
   for (const listId of listIDsToRemoveNovel) {
+    if (!listIDsToRemoveNovel.length) break;
+
     const prevNovelIDs = await getExistingNovelsFromList(listId);
 
     const prevNovelIDsArray = prevNovelIDs.split(" ");
