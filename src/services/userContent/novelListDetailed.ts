@@ -1,19 +1,9 @@
 import db from "../utils/db";
-import {
-  Novel,
-  NovelList,
-  NovelListInfo,
-  NovelListThatUserCreatedOrLiked,
-  NovelListsSimpleInfos,
-} from "../utils/types";
+import { Novel, NovelListInfo, NovelListsSimpleInfos } from "../utils/types";
 
-async function getNovelListInfoListByUserId(userId: string, isHome = true) {
-  // for userPage get the two novel list
-  // for userPageNovelList page get all novel list
-  const queryForLimitedOrNot = isHome
-    ? "SELECT * FROM novelList WHERE userId = (?) limit 2"
-    : "SELECT * FROM novelList WHERE userId = (?)";
-  return (await db(queryForLimitedOrNot, userId, "all")) as NovelListInfo[];
+async function getListsUserCreatedByUserId(userId: string) {
+  const query = "SELECT * FROM novelList WHERE userId = (?)";
+  return (await db(query, userId, "all")) as NovelListInfo[];
 }
 
 async function getNovelListInfoByListId(novelListId: string) {
@@ -24,7 +14,7 @@ async function getNovelListInfoByListId(novelListId: string) {
   )) as NovelListInfo;
 }
 
-async function getNovelListInfoListByListIDs(novelListIDs: string[]) {
+async function getListInfosByListIDs(novelListIDs: string[]) {
   const novelListInfoList: NovelListInfo[] = [];
   for (const novelListID of novelListIDs) {
     const novelListInfo = await getNovelListInfoByListId(novelListID);
@@ -33,14 +23,10 @@ async function getNovelListInfoListByListIDs(novelListIDs: string[]) {
 
   return novelListInfoList;
 }
-async function getNovelListIDsByUserId(userId: string, isHome = true) {
-  // for userPage get the two novel list IDs
-  // for userPageNovelList page get all novel list IDs
-  const queryForLimitedNumber = isHome
-    ? "SELECT novelListId FROM novelListLike WHERE userId = (?) limit 2"
-    : "SELECT novelListId FROM novelListLike WHERE userId = (?)";
+async function getListUserLikedByUserId(userId: string) {
+  const query = "SELECT novelListId FROM novelListLike WHERE userId = (?)";
 
-  const dataForNovelListIDs = (await db(queryForLimitedNumber, userId, "all")) as Array<{
+  const dataForNovelListIDs = (await db(query, userId, "all")) as Array<{
     novelListId: string;
   }>;
 
@@ -116,19 +102,7 @@ async function getNovelsByNovelListInfo(
   return novels;
 }
 
-async function getNovelLists(novelListInfoList: NovelListInfo[]) {
-  const novelLists = [];
-  for (const novelListInfo of novelListInfoList) {
-    const novels = (await getNovelsByNovelListInfo(novelListInfo, true)) as Novel[];
-
-    // add novels into list
-    const novelList = { ...novelListInfo, novels };
-    novelLists.push(novelList);
-  }
-  return novelLists;
-}
-
-async function getNovelsAndInfoByListId(novelListId: string, order: number) {
+async function getListInfoByListId(novelListId: string, order: number) {
   const novelListInfo = await getNovelListInfoByListId(novelListId);
   const { novels, isNextOrder } = (await getNovelsByNovelListInfo(novelListInfo, false, order)) as {
     novels: Novel[];
@@ -147,61 +121,86 @@ async function checkIfItIsTheListLoginUserLiked(loginUserId: string, novelListId
   return isTheListLoginUserLikes;
 }
 
-function setNovelListThatUserCreatedOrLiked(
+function composeFinalListInfoUserCreated(
   novelListsSimpleInfos: NovelListsSimpleInfos[],
   novelListInfo: NovelListInfo,
   novels: Novel[],
   isTheListLoginUserLikes: boolean,
-  userName?: string,
-  userImgSrc?: string,
-  userImgPosition?: string,
 ) {
-  const novelListSet: NovelListThatUserCreatedOrLiked = {
+  return {
+    listId: novelListInfo.novelListId,
+    listTitle: novelListInfo.novelListTitle,
+    isLike: isTheListLoginUserLikes,
+    otherList: novelListsSimpleInfos,
+    novel: novels,
+    userName: undefined,
+  };
+}
+
+function composeFinalListInfoUserLiked(
+  novelListsSimpleInfos: NovelListsSimpleInfos[],
+  novelListInfo: NovelListInfo,
+  novels: Novel[],
+  isTheListLoginUserLikes: boolean,
+  userName: string,
+  userImgSrc: string,
+  userImgPosition: string,
+) {
+  return {
     listId: novelListInfo.novelListId,
     listTitle: novelListInfo.novelListTitle,
     isLike: isTheListLoginUserLikes,
     otherList: novelListsSimpleInfos,
     novel: novels,
     userName,
+    userImg: { src: userImgSrc, position: userImgPosition || "" },
   };
-  if (userImgSrc) {
-    novelListSet.userImg = { src: userImgSrc, position: userImgPosition || "" };
-  }
-  return novelListSet;
 }
 
-async function getNovelListsSimpleInfos(
-  novelListInfoList: NovelListInfo[],
-  isMyList: boolean,
-  novelListId: string,
-) {
-  let isListIdSelected = false; // whether there is the listId selected by user or not
-  const novelListsSimpleInfos = [];
-  for (const novelListInfo of novelListInfoList) {
-    // except the list info that was requested by user
-    if (novelListId === novelListInfo.novelListId) {
-      isListIdSelected = true;
+function setListsUserCreated(lists: NovelListInfo[], novelListId: string) {
+  let isTheListThatExists = false;
+
+  const otherListUserCreated = [];
+  for (const list of lists) {
+    // except the list given by client
+    if (novelListId === list.novelListId) {
+      isTheListThatExists = true;
       continue;
     }
 
-    // userInfo is required for othersList page not for myList page
-    let userName;
-    let userImg;
-    if (!isMyList) {
-      const userInfo = await getUserNameAndImgByUserId(novelListInfo.userId);
-      userName = userInfo.userName;
-      userImg = { src: userInfo.userImgSrc, position: userInfo.userImgPosition };
+    const listInfo = {
+      listId: list.novelListId,
+      listTitle: list.novelListTitle,
+      userName: undefined,
+      userImg: undefined,
+    };
+    otherListUserCreated.push(listInfo);
+  }
+  return { isTheListThatExists, otherListUserCreated };
+}
+
+async function setListsUserLiked(lists: NovelListInfo[], novelListId: string) {
+  let isTheListThatExists = false;
+
+  const listInfos = [];
+  for (const list of lists) {
+    // except the list given by client
+    if (novelListId === list.novelListId) {
+      isTheListThatExists = true;
+      continue;
     }
 
-    const simpleInfo = {
-      listId: novelListInfo.novelListId,
-      listTitle: novelListInfo.novelListTitle,
-      userName,
-      userImg,
+    const userInfo = await getUserNameAndImgByUserId(list.userId);
+
+    const listInfo = {
+      listId: list.novelListId,
+      listTitle: list.novelListTitle,
+      userName: userInfo.userName,
+      userImg: { src: userInfo.userImgSrc, position: userInfo.userImgPosition },
     };
-    novelListsSimpleInfos.push(simpleInfo);
+    listInfos.push(listInfo);
   }
-  return { isListIdSelected, novelListsSimpleInfos };
+  return { isTheListThatExists, listInfos };
 }
 
 async function getSimpleInfosOfAllNovelListsOfUser(
@@ -229,47 +228,6 @@ async function getSimpleInfosOfAllNovelListsOfUser(
   return novelListsSimpleInfos;
 }
 
-function getNovelListsSetUserCreated(novelLists: NovelList[]) {
-  const novelListsSet = [];
-  for (const novelList of novelLists) {
-    const novelListSet = {
-      listId: novelList.novelListId,
-      listTitle: novelList.novelListTitle,
-      novel: novelList.novels,
-    };
-    novelListsSet.push(novelListSet);
-  }
-  return novelListsSet;
-}
-async function getNovelListsSetUserLikes(novelLists: NovelList[]) {
-  const novelListsSet = [];
-  for (const novelList of novelLists) {
-    const userInfo = await getUserNameAndImgByUserId(novelList.userId);
-    const novelListSet = {
-      listId: novelList.novelListId,
-      listTitle: novelList.novelListTitle,
-      novel: novelList.novels,
-      userName: userInfo.userName,
-      userImg: { src: userInfo.userImgSrc, position: userInfo.userImgPosition },
-    };
-    novelListsSet.push(novelListSet);
-  }
-  return novelListsSet;
-}
-async function getNovelListsUserCreatedForUserPageHome(userId: string) {
-  try {
-    const novelListInfoList = await getNovelListInfoListByUserId(userId);
-
-    const novelLists = await getNovelLists(novelListInfoList);
-
-    const novelListsSet = getNovelListsSetUserCreated(novelLists);
-
-    return novelListsSet;
-  } catch (error) {
-    console.log("error occurred in getNovelListsUserCreatedForUserPageHome:", error);
-  }
-}
-
 async function getListUserCreated(
   userIdInUserPage: string,
   listId: string,
@@ -277,46 +235,35 @@ async function getListUserCreated(
   loginUserId?: string,
 ) {
   try {
-    const novelListInfoList = await getNovelListInfoListByUserId(userIdInUserPage, false);
+    const lists = await getListsUserCreatedByUserId(userIdInUserPage);
 
-    // its property name is "otherList" in returned data.
-    // it means the lists except the one got by listId
-    const { isListIdSelected, novelListsSimpleInfos } = await getNovelListsSimpleInfos(
-      novelListInfoList,
-      true,
-      listId,
-    );
+    const { isTheListThatExists, otherListUserCreated } = setListsUserCreated(lists, listId);
 
-    // there is no list that an user created in his/her user page that was selected by login user
-    if (!isListIdSelected) {
-      return {
-        novelList: {},
-        isNextOrder: false,
-      };
+    if (!isTheListThatExists) {
+      return undefined;
     }
 
-    const { novelListInfo, novels, isNextOrder } = await getNovelsAndInfoByListId(listId, order);
+    const { novelListInfo, novels, isNextOrder } = await getListInfoByListId(listId, order);
 
     // if it is the request by non login user (1)
     // or it is the login user's novel list that he/she created (2),
     // following value is always false
     // (actually in second case (2), the value won't be used in user page)
-    let isTheListLoginUserLikes = false;
+    let isTheListLoginUserLiked = false;
     if (loginUserId && loginUserId !== userIdInUserPage) {
-      isTheListLoginUserLikes = await checkIfItIsTheListLoginUserLiked(loginUserId, listId);
+      isTheListLoginUserLiked = await checkIfItIsTheListLoginUserLiked(loginUserId, listId);
     }
 
-    const novelListSet = setNovelListThatUserCreatedOrLiked(
-      novelListsSimpleInfos,
+    const listComposed = composeFinalListInfoUserCreated(
+      otherListUserCreated,
       novelListInfo,
       novels,
-      isTheListLoginUserLikes,
+      isTheListLoginUserLiked,
     );
 
-    return { novelList: novelListSet, isNextOrder };
+    return { novelList: listComposed, isNextOrder };
   } catch (error) {
-    console.log("error occurred in getNovelListsUserCreatedForMyList:", error);
-    return { novelList: undefined, isNextOrder: undefined };
+    return undefined;
   }
 }
 
@@ -327,27 +274,17 @@ async function getListUserLiked(
   loginUserId?: string,
 ) {
   try {
-    const novelListIDs = await getNovelListIDsByUserId(userIdInUserPage, false);
+    const novelListIDs = await getListUserLikedByUserId(userIdInUserPage);
 
-    const novelListInfoList = await getNovelListInfoListByListIDs(novelListIDs);
+    const lists = await getListInfosByListIDs(novelListIDs);
 
-    // its property name is "otherList" in returned data.
-    // it means the lists except the one got by listId
-    const { isListIdSelected, novelListsSimpleInfos } = await getNovelListsSimpleInfos(
-      novelListInfoList,
-      false,
-      listId,
-    );
+    const { isTheListThatExists, listInfos } = await setListsUserLiked(lists, listId);
 
-    // there is no list that an user likes in his/her user page that was selected by login user
-    if (!isListIdSelected) {
-      return {
-        novelList: {},
-        isNextOrder: false,
-      };
+    if (!isTheListThatExists) {
+      return undefined;
     }
 
-    const { novelListInfo, novels, isNextOrder } = await getNovelsAndInfoByListId(listId, order);
+    const { novelListInfo, novels, isNextOrder } = await getListInfoByListId(listId, order);
 
     const { userName, userImgSrc, userImgPosition } = await getUserNameAndImgByUserId(
       novelListInfo.userId,
@@ -355,25 +292,24 @@ async function getListUserLiked(
 
     // if it is the request by non login user
     // following value is always false
-    let isTheListLoginUserLikes = false;
+    let isTheListLoginUserLiked = false;
     if (loginUserId) {
-      isTheListLoginUserLikes = await checkIfItIsTheListLoginUserLiked(loginUserId, listId);
+      isTheListLoginUserLiked = await checkIfItIsTheListLoginUserLiked(loginUserId, listId);
     }
 
-    const novelListSet = setNovelListThatUserCreatedOrLiked(
-      novelListsSimpleInfos,
+    const listComposed = composeFinalListInfoUserLiked(
+      listInfos,
       novelListInfo,
       novels,
-      isTheListLoginUserLikes,
+      isTheListLoginUserLiked,
       userName,
       userImgSrc,
       userImgPosition,
     );
 
-    return { novelList: novelListSet, isNextOrder };
+    return { novelList: listComposed, isNextOrder };
   } catch (error) {
-    console.log("error occurred in getNovelListsUserLikesForOthersList:", error);
-    return { novelList: undefined, isNextOrder: undefined };
+    return undefined;
   }
 }
 
@@ -382,11 +318,11 @@ async function getAllNovelListTitlesAtTheMoment(userIdInUserPage: string, isCrea
     let novelListInfoList: NovelListInfo[];
     const isCreatedInBoolean = isCreated.toLowerCase() === "true"; // created or liked by user
     if (isCreatedInBoolean) {
-      novelListInfoList = await getNovelListInfoListByUserId(userIdInUserPage, false);
+      novelListInfoList = await getListsUserCreatedByUserId(userIdInUserPage);
     } else {
-      const novelListIDs = await getNovelListIDsByUserId(userIdInUserPage, false);
+      const novelListIDs = await getListUserLikedByUserId(userIdInUserPage);
 
-      novelListInfoList = await getNovelListInfoListByListIDs(novelListIDs);
+      novelListInfoList = await getListInfosByListIDs(novelListIDs);
     }
 
     const allNovelListsInfoOfUser = await getSimpleInfosOfAllNovelListsOfUser(
@@ -400,24 +336,9 @@ async function getAllNovelListTitlesAtTheMoment(userIdInUserPage: string, isCrea
   }
 }
 
-async function getNovelListsUserLikesForUserPageHome(userId: string) {
-  try {
-    const novelListIDs = await getNovelListIDsByUserId(userId);
-    const novelListInfoList = await getNovelListInfoListByListIDs(novelListIDs);
-    const novelLists = await getNovelLists(novelListInfoList);
-    const novelListsSet = await getNovelListsSetUserLikes(novelLists);
-    return novelListsSet;
-  } catch (error) {
-    console.log("error occurred in getNovelListsUserLikesForUserPageHome:", error);
-  }
-}
-
 const novelListDetailedService = {
   getListUserCreated,
   getListUserLiked,
   getAllListTitles: getAllNovelListTitlesAtTheMoment,
-  // below are not used now
-  getMyListOfUserHome: getNovelListsUserCreatedForUserPageHome,
-  getOthersListOfUserHome: getNovelListsUserLikesForUserPageHome,
 };
 export default novelListDetailedService;
