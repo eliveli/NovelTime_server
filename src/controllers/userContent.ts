@@ -18,9 +18,9 @@ export const userHomeController: RequestHandler = (async (req, res) => {
 
     if (!userId) throw new Error("유저 없음");
     const { talksUserCreated, recommendsUserCreated } =
-      await userWritingService.getMyWritingsForUserHome(userId);
+      await userWritingService.getWritingsUserCreatedForUserHome(userId);
     const { talksUserLikes, recommendsUserLikes } =
-      await userWritingService.getOthersWritingsForUserHome(userId);
+      await userWritingService.getWritingsUserLikedForUserHome(userId);
     const commentsUserCreated = await userCommentService.getCommentsForUserHome(userId);
     const listsUserCreated = await novelListSummaryService.getListsUserCreated(userId, true);
     const listsUserLikes = await novelListSummaryService.getListsUserLiked(userId, true);
@@ -45,13 +45,13 @@ export const userHomeController: RequestHandler = (async (req, res) => {
   }
 }) as RequestHandler;
 
-export const userMyWritingController: RequestHandler = (async (req, res) => {
+export const getWritingUserCreatedController: RequestHandler = (async (req, res) => {
   try {
     const { userName, contentType, order } = req.params;
     const userId = await getUserId(userName);
     if (!userId) throw new Error("유저 없음");
     if (contentType === "T" || contentType === "R") {
-      const { talksOrRecommendsSet, isNextOrder } = await userWritingService.getMyWritings(
+      const { talksOrRecommendsSet, isNextOrder } = await userWritingService.getWritingsUserCreated(
         userId,
         contentType,
         Number(order),
@@ -78,12 +78,12 @@ export const userMyWritingController: RequestHandler = (async (req, res) => {
   }
 }) as RequestHandler;
 
-export const userOthersWritingController: RequestHandler = (async (req, res) => {
+export const getWritingUserLikedController: RequestHandler = (async (req, res) => {
   try {
     const { userName, contentType, order } = req.params;
     const userId = await getUserId(userName);
     if (!userId) throw new Error("유저 없음");
-    const { talksOrRecommendsSet, isNextOrder } = await userWritingService.getOthersWritings(
+    const { talksOrRecommendsSet, isNextOrder } = await userWritingService.getWritingsUserLiked(
       userId,
       contentType as "T" | "R",
       Number(order),

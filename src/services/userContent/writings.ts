@@ -191,20 +191,20 @@ async function getTalksOrRecommendsByUserId(userId: string, talksOrRecommends: "
   )) as Writing[];
 }
 
-async function getWritingsUserCreatedForUserPageHome(userId: string) {
+async function getWritingsUserCreatedForUserHome(userId: string) {
   try {
     const writings = await getWritingsByUserId(userId);
     const { talksUserCreated, recommendsUserCreated } = await getWritingsSet(writings, true);
 
     return { talksUserCreated, recommendsUserCreated };
   } catch (error) {
-    console.log("error occurred in getWritingsUserCreatedForUserPageHome:", error);
+    console.log("error occurred in getWritingsUserCreatedForUserHome:", error);
     // to avoid type error destructuring undefined in controller
     return { talksUserCreated: undefined, recommendsUserCreated: undefined };
   }
 }
 
-async function getWritingsUserLikesForUserPageHome(userId: string) {
+async function getWritingsUserLikedForUserHome(userId: string) {
   try {
     const writingIDs = await getWritingIDsByUserId(userId);
     const writings = await getWritingsByWritingIDs(writingIDs);
@@ -212,16 +212,12 @@ async function getWritingsUserLikesForUserPageHome(userId: string) {
 
     return { talksUserLikes, recommendsUserLikes };
   } catch (error) {
-    console.log("error occurred in getWritingsUserLikesForUserPageHome:", error);
+    console.log("error occurred in getWritingsUserLikedForUserHome:", error);
     return { talksUserLikes: undefined, recommendsUserLikes: undefined };
   }
 }
 
-async function getWritingsUserCreatedForMyWriting(
-  userId: string,
-  contentType: "T" | "R",
-  order: number,
-) {
+async function getWritingsUserCreated(userId: string, contentType: "T" | "R", order: number) {
   try {
     const talksOrRecommends = await getTalksOrRecommendsByUserId(userId, contentType);
     const { talksOrRecommendsAsOrder, isNextOrder } = getTalksOrRecommendsAsOrder(
@@ -237,11 +233,7 @@ async function getWritingsUserCreatedForMyWriting(
   }
 }
 
-async function getWritingsUserLikesForOthersWriting(
-  userId: string,
-  contentType: "T" | "R",
-  order: number,
-) {
+async function getWritingsUserLiked(userId: string, contentType: "T" | "R", order: number) {
   try {
     const writingIDs = await getWritingIDsByUserId(userId);
     const talksOrRecommends = await getWritingsByWritingIDs(writingIDs, contentType);
@@ -253,15 +245,15 @@ async function getWritingsUserLikesForOthersWriting(
 
     return { talksOrRecommendsSet, isNextOrder };
   } catch (error) {
-    console.log("error occurred in getWritingsUserLikesForOthersWriting:", error);
+    console.log("error occurred in getWritingsUserLiked:", error);
     return { talksOrRecommendsSet: undefined, isNextOrder: undefined };
   }
 }
 
 const userWritingService = {
-  getMyWritings: getWritingsUserCreatedForMyWriting,
-  getMyWritingsForUserHome: getWritingsUserCreatedForUserPageHome,
-  getOthersWritings: getWritingsUserLikesForOthersWriting,
-  getOthersWritingsForUserHome: getWritingsUserLikesForUserPageHome,
+  getWritingsUserCreated,
+  getWritingsUserCreatedForUserHome,
+  getWritingsUserLiked,
+  getWritingsUserLikedForUserHome,
 };
 export default userWritingService;

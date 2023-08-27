@@ -2,8 +2,8 @@ import express from "express";
 
 import {
   userHomeController,
-  userMyWritingController,
-  userOthersWritingController,
+  getWritingUserCreatedController,
+  getWritingUserLikedController,
   getListUserCreatedController,
   getListUserLikedController,
   getNovelListTitlesController,
@@ -23,9 +23,9 @@ const router = express.Router();
 
 router.get("/home/:userName", userHomeController);
 
-router.get("/myWriting/:userName/:contentType/:order", userMyWritingController);
+router.get("/writing/created/:userName/:contentType/:order", getWritingUserCreatedController);
 
-router.get("/othersWriting/:userName/:contentType/:order", userOthersWritingController);
+router.get("/writing/liked/:userName/:contentType/:order", getWritingUserLikedController);
 
 router.get("/listSummary/created/:userName", getAllListSummaryUserCreatedController);
 router.get("/listSummary/liked/:userName", getAllListSummaryUserLikedController);
