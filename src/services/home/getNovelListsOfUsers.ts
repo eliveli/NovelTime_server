@@ -5,7 +5,7 @@ import getUserNameAndImg from "./shared/getUserNameAndImg";
 
 export async function getNovelListsOfUsersFromDB() {
   return (await db(
-    `SELECT novelListId, novelListTitle, novelIDs, userId FROM novelList
+    `SELECT novelListId, novelListTitle, novelIDs, userId FROM novelList WHERE novelIDs != "" OR novelIDs IS NOT NULL
     ORDER BY RAND() LIMIT 2`,
     undefined,
     "all",
