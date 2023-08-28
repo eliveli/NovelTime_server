@@ -5,6 +5,7 @@ import searchForNovels from "../services/novel/searchForNovels";
 import addNovelWithURL from "../services/scraper/novelAddedWithURL/novelAddedAutomatically";
 import getWritingsOfTheNovel from "../services/novel/getWritingsOfTheNovel";
 import getNovelInDetail from "../services/novel/getNovelInDetail";
+import getNovelsForLoginUser from "../services/novel/getNovelsForLoginUser";
 
 export const getNovelListByCategory: RequestHandler = (async (req, res) => {
   try {
@@ -23,6 +24,23 @@ export const getNovelListByCategory: RequestHandler = (async (req, res) => {
     res.json(novelsInDetail);
   } catch (error: any) {
     console.log("failed to get content in getNovelListByCategory controller :", error);
+    res.status(500).end();
+  }
+}) as RequestHandler;
+
+export const getNovelsForLoginUserController: RequestHandler = (async (req, res) => {
+  try {
+    const loginUserId = req.userId;
+
+    if (!loginUserId) {
+      throw Error("login user id is empty");
+    }
+
+    const novels = await getNovelsForLoginUser(loginUserId);
+
+    res.json(novels);
+  } catch (error: any) {
+    console.log("failed to get content in getNovelsForLoginUserController :", error);
     res.status(500).end();
   }
 }) as RequestHandler;
