@@ -21,7 +21,7 @@ async function getNovelTitle(novelId: string) {
 
 export async function getWritingsFromDB(contentType: "T" | "R") {
   return (await db(
-    "SELECT * FROM writing WHERE talkOrRecommend = (?) limit 3",
+    "SELECT * FROM writing WHERE talkOrRecommend = (?) ORDER BY createDate DESC limit 3",
     contentType,
     "all",
   )) as Writing[];

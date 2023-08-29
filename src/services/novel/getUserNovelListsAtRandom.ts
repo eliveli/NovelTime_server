@@ -1,13 +1,13 @@
 import db from "../utils/db";
 import { NovelListInfo } from "../utils/types";
 import getNovelByNovelIdFromDB from "../shared/getNovelByNovelId";
-import getUserNameAndImg from "./shared/getUserNameAndImg";
+import getUserNameAndImg from "../home/shared/getUserNameAndImg";
 
-export async function getNovelListsOfUsersFromDB() {
+export async function getNovelListsOfUsersFromDB(limitedNo: number) {
   return (await db(
     `SELECT novelListId, novelListTitle, novelIDs, userId FROM novelList WHERE novelIDs != "" OR novelIDs IS NOT NULL
-    ORDER BY RAND() LIMIT 2`,
-    undefined,
+    ORDER BY RAND() LIMIT (?)`,
+    limitedNo,
     "all",
   )) as NovelListInfo[];
 }
@@ -20,7 +20,7 @@ export async function getNovelsByNovelId(novelIDs: string) {
 
   const novels = [];
   for (const novelId of novelIdInArray) {
-    const novel = await getNovelByNovelIdFromDB(novelId, true);
+    const novel = await getNovelByNovelIdFromDB(novelId, false);
 
     if (!novel) continue;
 
@@ -52,8 +52,8 @@ export async function composeNovelLists(novelLists: NovelListInfo[]) {
   return novelListComposed;
 }
 
-export default async function getNovelListsOfUsers() {
-  const novelLists = await getNovelListsOfUsersFromDB();
+export default async function getUserNovelListsAtRandom(limitedNo: number) {
+  const novelLists = await getNovelListsOfUsersFromDB(limitedNo);
 
   return await composeNovelLists(novelLists);
 }

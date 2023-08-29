@@ -1,7 +1,7 @@
 import getNovelListsOfUsers, {
   composeNovelLists,
   getNovelListsOfUsersFromDB,
-} from "../getNovelListsOfUsers";
+} from "../../novel/getUserNovelListsAtRandom";
 
 jest.mock("../getNovelListsOfUsers", () => {
   const originalModule = jest.requireActual("../getNovelListsOfUsers");
@@ -13,7 +13,7 @@ jest.mock("../getNovelListsOfUsers", () => {
 });
 
 it("case to return undefined : passing [] to composeNovelLists", async () => {
-  const novelLists = await getNovelListsOfUsersFromDB(); // resolving [] as mock data
+  const novelLists = await getNovelListsOfUsersFromDB(10); // resolving [] as mock data
 
   await expect(composeNovelLists(novelLists)).resolves.toEqual(undefined);
 });
@@ -32,5 +32,5 @@ it("case to return empty array : user doesn't match one in DB", async () => {
 });
 
 it("case to return expected data : getNovelListsOfUsers used actually", async () => {
-  await expect(getNovelListsOfUsers()).resolves.toEqual([]); // fail : got specific data in array
+  await expect(getNovelListsOfUsers(10)).resolves.toEqual([]); // fail : got specific data in array
 });

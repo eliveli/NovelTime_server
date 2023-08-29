@@ -116,6 +116,8 @@ function findNovelsManyUserWroteFor(novelIDs: string[]) {
 }
 
 async function getNovelInfo(novelIDs: string[], limitedNo: number) {
+  novelIDs.sort(() => 0.5 - Math.random()); // shuffle array
+
   const novels: NovelInDetail[] = [];
   for (const novelId of novelIDs) {
     const dbQuery =

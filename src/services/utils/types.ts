@@ -44,6 +44,14 @@ export type Novel = {
   novelIsEnd: boolean;
 };
 
+export type NovelWithoutEnd = {
+  novelId: string;
+  novelImg: string;
+  novelTitle: string;
+  novelAuthor: string;
+  novelGenre: string;
+};
+
 export type NovelInDetail = {
   novelId: string;
   novelImg: string;

@@ -1,7 +1,6 @@
 import { RequestHandler } from "express";
 import dotenv from "dotenv";
 import writingHomeService from "../services/home";
-import getWeeklyNovelsForHomeOrListPage from "../services/shared/getWeeklyNovelsForHomeOrListPage";
 import getPopularNovelsInNovelTime from "../services/shared/getPopularNovelsInNovelTime";
 
 dotenv.config();
@@ -25,7 +24,7 @@ export const homeController: RequestHandler = (async (req, res) => {
     const likeReceivedOfList = await writingHomeService.getUserRanks("L", "ReceiveLike");
     const novelListUserRank = { novelList, likeReceived: likeReceivedOfList };
 
-    const popularNovelsInNovelTime = await getPopularNovelsInNovelTime(true);
+    const popularNovelsInNovelTime = await getPopularNovelsInNovelTime(10);
 
     res.json({
       talkList,
@@ -40,29 +39,3 @@ export const homeController: RequestHandler = (async (req, res) => {
     res.status(500).end();
   }
 }) as RequestHandler;
-
-export const userNovelListController: RequestHandler = (async (req, res) => {
-  try {
-    const userNovelLists = await writingHomeService.getNovelListsOfUsers();
-
-    res.json(userNovelLists);
-  } catch (error: any) {
-    console.log("failed to get content in userNovelListController :", error);
-    res.status(500).end();
-  }
-}) as RequestHandler;
-
-export const weeklyNovelsController: RequestHandler = (async (req, res) => {
-  try {
-    const { platform } = req.params;
-
-    const weeklyNovels = await getWeeklyNovelsForHomeOrListPage(platform, true);
-
-    res.json({ [platform]: weeklyNovels });
-  } catch (error: any) {
-    console.log("failed to get content in weeklyNovelsController :", error);
-    res.status(500).end();
-  }
-}) as RequestHandler;
-
-export default homeController;

@@ -1,29 +1,80 @@
 import { Request, Response, NextFunction, RequestHandler } from "express";
 import getPopularNovelsInNovelTime from "../services/shared/getPopularNovelsInNovelTime";
-import getWeeklyNovelsForHomeOrListPage from "../services/shared/getWeeklyNovelsForHomeOrListPage";
+import getWeeklyNovels from "../services/shared/getWeeklyNovels";
 import searchForNovels from "../services/novel/searchForNovels";
 import addNovelWithURL from "../services/scraper/novelAddedWithURL/novelAddedAutomatically";
 import getWritingsOfTheNovel from "../services/novel/getWritingsOfTheNovel";
 import getNovelInDetail from "../services/novel/getNovelInDetail";
 import getNovelsForLoginUser from "../services/novel/getNovelsForLoginUser";
+import getUserNovelListsAtRandom from "../services/novel/getUserNovelListsAtRandom";
+import getUserNovelListsPeopleLike from "../services/novel/getUserNovelListsPeopleLike";
 
-export const getNovelListByCategory: RequestHandler = (async (req, res) => {
+export const getPopularNovelsInNovelTimeController: RequestHandler = (async (req, res) => {
   try {
-    const { category, platform, novelId } = req.params;
+    const { limitedNo } = req.params;
 
-    let novelsInDetail;
-
-    if (category === "weeklyNovelsFromPlatform") {
-      novelsInDetail = await getWeeklyNovelsForHomeOrListPage(platform, false);
+    if (!Number(limitedNo)) {
+      throw Error("limited number was not correct");
     }
 
-    if (category === "popularNovelsInNovelTime") {
-      novelsInDetail = await getPopularNovelsInNovelTime(false);
-    }
+    const popularNovelsInNovelTime = await getPopularNovelsInNovelTime(Number(limitedNo));
 
-    res.json(novelsInDetail);
+    res.json(popularNovelsInNovelTime);
   } catch (error: any) {
-    console.log("failed to get content in getNovelListByCategory controller :", error);
+    console.log("failed to get content in getPopularNovelsInNovelTimeController :", error);
+    res.status(500).end();
+  }
+}) as RequestHandler;
+
+export const userNovelListPeopleLikeController: RequestHandler = (async (req, res) => {
+  try {
+    const { limitedNo } = req.params; // * set this to 4 in novel list page, front work
+
+    if (!Number(limitedNo)) {
+      throw Error("limited number was not correct");
+    }
+
+    const userNovelLists = await getUserNovelListsPeopleLike(Number(limitedNo));
+
+    res.json(userNovelLists);
+  } catch (error: any) {
+    console.log("failed to get content in userNovelListAtRandomController :", error);
+    res.status(500).end();
+  }
+}) as RequestHandler;
+
+// * change path with limitedNo in front work from home to novels
+export const userNovelListAtRandomController: RequestHandler = (async (req, res) => {
+  try {
+    const { limitedNo } = req.params; // * set this to 4 in novel list page, front work
+
+    if (!Number(limitedNo)) {
+      throw Error("limited number was not correct");
+    }
+
+    const userNovelLists = await getUserNovelListsAtRandom(Number(limitedNo));
+
+    res.json(userNovelLists);
+  } catch (error: any) {
+    console.log("failed to get content in userNovelListAtRandomController :", error);
+    res.status(500).end();
+  }
+}) as RequestHandler;
+
+// * change path with limitedNo in front work from home to novels
+export const getWeeklyNovelsController: RequestHandler = (async (req, res) => {
+  try {
+    const { platform, limitedNo } = req.params;
+
+    if (!platform || !Number(limitedNo)) {
+      throw Error("some arg was not correct");
+    }
+
+    const weeklyNovels = await getWeeklyNovels(platform, Number(limitedNo));
+
+    res.json({ [platform]: weeklyNovels });
+  } catch (error: any) {
+    console.log("failed to get content in getWeeklyNovelsController :", error);
     res.status(500).end();
   }
 }) as RequestHandler;

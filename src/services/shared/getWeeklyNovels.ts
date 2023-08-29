@@ -9,11 +9,8 @@ function matchPlatformName(platformGiven: string) {
   throw Error("플랫폼 선택 오류");
 }
 
-export default async function getWeeklyNovelsForHomeOrListPage(
-  platform: string,
-  isForHome: boolean,
-) {
+export default async function getWeeklyNovels(platform: string, limitedNo: number) {
   const platformGiven = matchPlatformName(platform);
 
-  return await getWeeklyNovelsFromPlatform(platformGiven, isForHome);
+  return await getWeeklyNovelsFromPlatform(platformGiven, limitedNo);
 }
