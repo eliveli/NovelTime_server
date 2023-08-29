@@ -8,8 +8,10 @@ export async function getWeeklyNovelsFromDB(novelPlatform: NovelPlatform, limite
   // because the novel order in the table is the same as the rank and I get novels straightly
 
   return (await db(
-    `SELECT novelId FROM weeklyNovel WHERE novelPlatform = (?) AND isLatest = 1 LIMIT ${limitedNo}`,
-    [novelPlatform],
+    `SELECT novelId FROM weeklyNovel WHERE novelPlatform = (?) AND isLatest = 1 LIMIT ${String(
+      limitedNo,
+    )}`,
+    novelPlatform,
     "all",
   )) as NovelIDs;
 }
@@ -18,7 +20,7 @@ export async function getNovelsByNovelIDs(novelIDs: NovelIDs) {
   const novels = [];
 
   for (const { novelId } of novelIDs) {
-    const novel = await getNovelByNovelIdFromDB(novelId, true);
+    const novel = await getNovelByNovelIdFromDB(novelId);
 
     if (!novel) {
       console.log("there is no novel for this novel id:", novelId);
@@ -38,7 +40,7 @@ export default async function getWeeklyNovelsFromPlatform(
 ) {
   const novelIDs = await getWeeklyNovelsFromDB(novelPlatform, limitedNo);
 
-  if (novelIDs.length === 0) return; // when getting no data from DB
+  if (!novelIDs || !novelIDs.length) return; // when getting no data from DB
 
   return await getNovelsByNovelIDs(novelIDs);
 }

@@ -38,7 +38,7 @@ export const userNovelListPeopleLikeController: RequestHandler = (async (req, re
 
     res.json(userNovelLists);
   } catch (error: any) {
-    console.log("failed to get content in userNovelListAtRandomController :", error);
+    console.log("failed to get content in userNovelListPeopleLikeController :", error);
     res.status(500).end();
   }
 }) as RequestHandler;
@@ -82,12 +82,13 @@ export const getWeeklyNovelsController: RequestHandler = (async (req, res) => {
 export const getNovelsForLoginUserController: RequestHandler = (async (req, res) => {
   try {
     const loginUserId = req.userId;
+    const { limitedNo } = req.params;
 
-    if (!loginUserId) {
-      throw Error("login user id is empty");
+    if (!loginUserId || !Number(limitedNo)) {
+      throw Error("limited number or login user id is not correct");
     }
 
-    const novels = await getNovelsForLoginUser(loginUserId);
+    const novels = await getNovelsForLoginUser(loginUserId, Number(limitedNo));
 
     res.json(novels);
   } catch (error: any) {

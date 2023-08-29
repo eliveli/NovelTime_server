@@ -6,8 +6,8 @@ import getUserNameAndImg from "../home/shared/getUserNameAndImg";
 export async function getNovelListsOfUsersFromDB(limitedNo: number) {
   return (await db(
     `SELECT novelListId, novelListTitle, novelIDs, userId FROM novelList WHERE novelIDs != "" OR novelIDs IS NOT NULL
-    ORDER BY RAND() LIMIT (?)`,
-    limitedNo,
+    ORDER BY RAND() LIMIT ${String(limitedNo)}`,
+    undefined,
     "all",
   )) as NovelListInfo[];
 }
@@ -20,7 +20,7 @@ export async function getNovelsByNovelId(novelIDs: string) {
 
   const novels = [];
   for (const novelId of novelIdInArray) {
-    const novel = await getNovelByNovelIdFromDB(novelId, false);
+    const novel = await getNovelByNovelIdFromDB(novelId);
 
     if (!novel) continue;
 

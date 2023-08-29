@@ -13,7 +13,7 @@ export async function getPopularNovelsFromDB(limitedNo: number) {
       ORDER BY count(*) DESC,
        GREATEST(sum(likeNO),sum(commentNO)) DESC,
        LEAST(sum(likeNO),sum(commentNO)) DESC
-      LIMIT ${limitedNo}`,
+      LIMIT ${String(limitedNo)}`,
     undefined,
     "all",
   )) as NovelIDs;
@@ -23,7 +23,7 @@ export async function getNovelsByNovelIDs(novelIDs: NovelIDs) {
   const novels = [];
 
   for (const { novelId } of novelIDs) {
-    const novel = await getNovelByNovelIdFromDB(novelId, true);
+    const novel = await getNovelByNovelIdFromDB(novelId);
 
     if (!novel) {
       console.log("there is no novel for this novel id:", novelId);

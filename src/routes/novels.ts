@@ -15,7 +15,7 @@ import { authenticateAccessTokenMiddleware } from "../controllers/user";
 
 const router = express.Router();
 
-router.get("/:searchType/:searchWord/:pageNo", searchForNovelController);
+router.get("/search/:searchType/:searchWord/:pageNo", searchForNovelController);
 
 router.post("/addNovelWithURL", addNovelWithURLController);
 
@@ -27,10 +27,14 @@ router.get("/popularNovelsInNovelTime/:limitedNo", getPopularNovelsInNovelTimeCo
 
 router.get("/userNovelList/liked/:limitedNo", userNovelListPeopleLikeController);
 
-router.get("/userNovelList/random/:limitedNo", userNovelListAtRandomController); // * use for home and novel list
+router.get("/userNovelList/random/:limitedNo", userNovelListAtRandomController);
 
-router.get("/weeklyNovels/:platform/:limitedNo", getWeeklyNovelsController); // * use for home and novel list
+router.get("/weeklyNovels/:platform/:limitedNo", getWeeklyNovelsController);
 
-router.get("/forLoginUser", authenticateAccessTokenMiddleware, getNovelsForLoginUserController);
+router.get(
+  "/forLoginUser/:limitedNo",
+  authenticateAccessTokenMiddleware,
+  getNovelsForLoginUserController,
+);
 
 export default router;

@@ -120,10 +120,11 @@ async function getNovelInfo(novelIDs: string[], limitedNo: number) {
 
   const novels: NovelInDetail[] = [];
   for (const novelId of novelIDs) {
-    const dbQuery =
-      "SELECT novelId, novelImg, novelTitle, novelAuthor, novelGenre, novelDesc FROM novelInfo WHERE novelId = (?) LIMIT (?)";
+    const dbQuery = `SELECT novelId, novelImg, novelTitle, novelAuthor, novelGenre, novelDesc FROM novelInfo WHERE novelId = (?) LIMIT ${String(
+      limitedNo,
+    )}`;
 
-    const novel = (await db(dbQuery, [novelId, limitedNo], "first")) as NovelInDetail;
+    const novel = (await db(dbQuery, novelId, "first")) as NovelInDetail;
 
     novels.push(novel);
   }
@@ -131,7 +132,7 @@ async function getNovelInfo(novelIDs: string[], limitedNo: number) {
   return novels;
 }
 
-export default async function getNovelsForLoginUser(loginUserId: string) {
+export default async function getNovelsForLoginUser(loginUserId: string, limitedNo: number) {
   const novelIDsUserWroteFor = await getNovelsUserWroteFor(loginUserId);
   if (!novelIDsUserWroteFor) return;
 
@@ -139,8 +140,7 @@ export default async function getNovelsForLoginUser(loginUserId: string) {
 
   const novelIDsManyUserWroteFor = findNovelsManyUserWroteFor(novelIDsOtherWroteFor);
 
-  const novels = await getNovelInfo(novelIDsManyUserWroteFor, 10);
-  // limited number arg can change later
+  const novels = await getNovelInfo(novelIDsManyUserWroteFor, limitedNo);
 
   return novels;
 }
