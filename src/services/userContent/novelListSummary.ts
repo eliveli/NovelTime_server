@@ -140,21 +140,33 @@ async function setAllMyNovelListsOneByOne(novelLists: NovelListInfo[]) {
   return allNovelLists;
 }
 
-async function getListInfoByListId(novelListId: string) {
-  const dbQuery = "SELECT userId, novelListTitle, novelIDs FROM novelList WHERE novelListId = (?)";
+async function getListInfoByListId(novelListId: string, isNoEmptyNovels: boolean) {
+  let dbQuery = "";
+
+  if (isNoEmptyNovels) {
+    dbQuery =
+      'SELECT userId, novelListTitle, novelIDs FROM novelList WHERE (novelIDs != "" OR novelIDs IS NOT NULL) AND novelListId = (?)';
+  } else {
+    dbQuery = "SELECT userId, novelListTitle, novelIDs FROM novelList WHERE novelListId = (?)";
+  }
+
   const listInfo = (await db(dbQuery, novelListId, "first")) as {
     userId: string;
     novelListTitle: string;
     novelIDs: string;
   };
+
   return listInfo;
 }
 
-async function setAllOthersNovelListsOneByOne(novelListIDs: string[]) {
+export async function setOthersNovelListsOneByOne(novelListIDs: string[], limitedNo?: number) {
   const allNovelLists = [];
 
   for (const novelListId of novelListIDs) {
-    const { userId, novelListTitle, novelIDs } = await getListInfoByListId(novelListId);
+    const listInfo = await getListInfoByListId(novelListId, !!limitedNo);
+    if (!listInfo) continue;
+
+    const { userId, novelListTitle, novelIDs } = listInfo;
 
     const novelNo = setNovelNo(novelIDs);
     const likeNo = await getLikeNo(novelListId);
@@ -175,6 +187,8 @@ async function setAllOthersNovelListsOneByOne(novelListIDs: string[]) {
     };
 
     allNovelLists.push(novelListSet);
+
+    if (limitedNo && allNovelLists.length === limitedNo) break;
   }
 
   return allNovelLists;
@@ -191,7 +205,7 @@ async function getListsUserCreated(userId: string, isHome = false) {
 async function getListsUserLiked(userId: string, isHome = false) {
   const novelListIDs = await getNovelListIDsByUserId(userId, isHome);
 
-  const novelListsComposed = await setAllOthersNovelListsOneByOne(novelListIDs);
+  const novelListsComposed = await setOthersNovelListsOneByOne(novelListIDs);
 
   return novelListsComposed;
 }

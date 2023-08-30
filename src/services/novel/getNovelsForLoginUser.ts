@@ -120,13 +120,15 @@ async function getNovelInfo(novelIDs: string[], limitedNo: number) {
 
   const novels: NovelInDetail[] = [];
   for (const novelId of novelIDs) {
-    const dbQuery = `SELECT novelId, novelImg, novelTitle, novelAuthor, novelGenre, novelDesc FROM novelInfo WHERE novelId = (?) LIMIT ${String(
-      limitedNo,
-    )}`;
+    const dbQuery =
+      "SELECT novelId, novelImg, novelTitle, novelAuthor, novelGenre, novelDesc FROM novelInfo WHERE novelId = (?)";
 
     const novel = (await db(dbQuery, novelId, "first")) as NovelInDetail;
+    if (!novel) continue;
 
     novels.push(novel);
+
+    if (novels.length === limitedNo) break;
   }
 
   return novels;

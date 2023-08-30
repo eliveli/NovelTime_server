@@ -28,13 +28,16 @@ export const getPopularNovelsInNovelTimeController: RequestHandler = (async (req
 
 export const userNovelListPeopleLikeController: RequestHandler = (async (req, res) => {
   try {
-    const { limitedNo } = req.params; // * set this to 4 in novel list page, front work
+    const { limitedNo, isWithListSummaryCard } = req.params;
 
-    if (!Number(limitedNo)) {
-      throw Error("limited number was not correct");
+    if (!Number(limitedNo) || !["true", "false"].includes(isWithListSummaryCard)) {
+      throw Error("some arg was not correct");
     }
 
-    const userNovelLists = await getUserNovelListsPeopleLike(Number(limitedNo));
+    const userNovelLists = await getUserNovelListsPeopleLike(
+      Number(limitedNo),
+      isWithListSummaryCard,
+    );
 
     res.json(userNovelLists);
   } catch (error: any) {
@@ -43,16 +46,18 @@ export const userNovelListPeopleLikeController: RequestHandler = (async (req, re
   }
 }) as RequestHandler;
 
-// * change path with limitedNo in front work from home to novels
 export const userNovelListAtRandomController: RequestHandler = (async (req, res) => {
   try {
-    const { limitedNo } = req.params; // * set this to 4 in novel list page, front work
+    const { limitedNo, isWithListSummaryCard } = req.params;
 
-    if (!Number(limitedNo)) {
-      throw Error("limited number was not correct");
+    if (!Number(limitedNo) || !["true", "false"].includes(isWithListSummaryCard)) {
+      throw Error("some arg was not correct");
     }
 
-    const userNovelLists = await getUserNovelListsAtRandom(Number(limitedNo));
+    const userNovelLists = await getUserNovelListsAtRandom(
+      Number(limitedNo),
+      isWithListSummaryCard,
+    );
 
     res.json(userNovelLists);
   } catch (error: any) {

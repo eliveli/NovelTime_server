@@ -1,3 +1,4 @@
+import { setOthersNovelListsOneByOne } from "../userContent/novelListSummary";
 import db from "../utils/db";
 import { NovelListInfo } from "../utils/types";
 import { composeNovelLists } from "./getUserNovelListsAtRandom";
@@ -32,14 +33,22 @@ export async function getNovelLists(novelListIDs: string[], limitedNo: number) {
   return novelLists;
 }
 
-export default async function getUserNovelListsPeopleLike(limitedNo: number) {
-  const novelListIDs = await getNovelListsPeopleLikeFromDB();
+export default async function getUserNovelListsPeopleLike(
+  limitedNo: number,
+  isWithSummaryCardInString: string,
+) {
+  const isWithSummaryCard = isWithSummaryCardInString === "true";
 
+  const novelListIDs = await getNovelListsPeopleLikeFromDB();
   if (!novelListIDs) return;
+
+  if (isWithSummaryCard) {
+    const listsComposed = await setOthersNovelListsOneByOne(novelListIDs, limitedNo);
+    return listsComposed;
+  }
 
   const novelLists = await getNovelLists(novelListIDs, limitedNo);
 
   const listsComposed = await composeNovelLists(novelLists);
-
   return listsComposed;
 }

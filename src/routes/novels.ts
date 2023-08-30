@@ -25,9 +25,15 @@ router.get("/detail/:novelId/:writingType/:pageNo", getWritingsOfTheNovelControl
 
 router.get("/popularNovelsInNovelTime/:limitedNo", getPopularNovelsInNovelTimeController);
 
-router.get("/userNovelList/liked/:limitedNo", userNovelListPeopleLikeController);
+router.get(
+  "/userNovelList/liked/:limitedNo/:isWithListSummaryCard",
+  userNovelListPeopleLikeController,
+);
 
-router.get("/userNovelList/random/:limitedNo", userNovelListAtRandomController);
+router.get(
+  "/userNovelList/random/:limitedNo/:isWithListSummaryCard",
+  userNovelListAtRandomController,
+);
 
 router.get("/weeklyNovels/:platform/:limitedNo", getWeeklyNovelsController);
 
