@@ -1,3 +1,4 @@
+import createId from "../utils/createId";
 import db from "../utils/db";
 
 async function updateNovelsInList(listId: string, nextNovelIDs: string) {
@@ -12,7 +13,7 @@ async function getExistingNovelsFromList(listId: string) {
 }
 
 async function createNovelListInDB(loginUserId: string, newNovelListTitle?: string) {
-  const novelListId = `${loginUserId}${Date.now().toString()}`;
+  const novelListId = createId();
   const novelListTitle = newNovelListTitle || "기본 소설 리스트";
 
   const dbQuery = "INSERT INTO novelList SET novelListId = (?), novelListTitle = (?), userId = (?)";

@@ -1,4 +1,5 @@
 import { getCurrentTimeExceptMilliSec } from "../scraper/utils/getCurrentTime";
+import createId from "../utils/createId";
 import db from "../utils/db";
 
 async function addNewWriting({
@@ -52,7 +53,7 @@ export default async function createWriting(
   writingDesc: string,
   writingImg: string,
 ) {
-  const writingId = `${loginUserId}${Date.now().toString()}`;
+  const writingId = createId();
 
   const createDate = getCurrentTimeExceptMilliSec();
 

@@ -1,4 +1,5 @@
 import { getCurrentTimeExceptMilliSec } from "../scraper/utils/getCurrentTime";
+import createId from "../utils/createId";
 import db from "../utils/db";
 
 async function getFirstAncestorCommentId(parentCommentId: string) {
@@ -61,7 +62,7 @@ export default async function createReComment(
   loginUserId: string,
   parentCommentId: string,
 ) {
-  const commentId = `${loginUserId}${Date.now().toString()}`;
+  const commentId = createId();
 
   const createDate = getCurrentTimeExceptMilliSec();
 

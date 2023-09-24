@@ -1,4 +1,5 @@
 import { getCurrentTimeExceptMilliSec } from "../scraper/utils/getCurrentTime";
+import createId from "../utils/createId";
 import db from "../utils/db";
 
 async function addNewRootComment(
@@ -27,7 +28,7 @@ export default async function createRootComment(
   commentContent: string,
   loginUserId: string,
 ) {
-  const commentId = `${loginUserId}${Date.now().toString()}`;
+  const commentId = createId();
 
   const createDate = getCurrentTimeExceptMilliSec();
 
