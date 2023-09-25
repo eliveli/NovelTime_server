@@ -1,15 +1,19 @@
+/* eslint-disable prefer-destructuring */
+import getUserNameAndImg from "../home/shared/getUserNameAndImg";
 import db from "../utils/db";
+
+type MessageFromDB = {
+  messageId: string;
+  roomId: string;
+  senderUserId: string;
+  content: string;
+  createdAt: string;
+  isReadByReceiver: string;
+};
 
 async function getMessagesFromDB(roomId: string) {
   const query = "SELECT * FROM message WHERE roomId = (?)";
-  const messages = (await db(query, roomId, "all")) as {
-    messageId: string;
-    roomId: string;
-    senderUserId: string;
-    content: string;
-    createdAt: string;
-    isReadByReceiver: string;
-  }[];
+  const messages = (await db(query, roomId, "all")) as MessageFromDB[];
   return messages;
 }
 
@@ -25,6 +29,55 @@ async function checkTheRoomAndUser(roomId: string, loginUserId: string) {
     else throw Error("room doesn't exist");
   }
 }
+async function getUserIDsInTheRoom(roomId: string) {
+  const query = "SELECT userId1, userId2 FROM chatroom WHERE roomId = (?)";
+
+  const userIDs = (await db(query, [roomId], "first")) as { userId1: string; userId2: string };
+
+  return userIDs;
+}
+
+async function findUserInfo(roomId: string) {
+  const { userId1, userId2 } = await getUserIDsInTheRoom(roomId);
+
+  const users = [];
+
+  for (const userId of [userId1, userId2]) {
+    const userInfo = await getUserNameAndImg(userId);
+
+    if (!userInfo) throw Error("user doesn't exist");
+
+    const user = { userId, ...userInfo };
+    users.push(user);
+  }
+
+  return users;
+}
+
+async function addUserInfo(roomId: string, messages: MessageFromDB[]) {
+  const users = await findUserInfo(roomId);
+
+  const messagesComposed = [];
+
+  for (const message of messages) {
+    let userMatched;
+    if (message.senderUserId === users[0].userId) {
+      userMatched = users[0];
+    } else {
+      userMatched = users[1];
+    }
+
+    const messageComposed = {
+      ...message,
+      senderUserName: userMatched.userName,
+      senderUserImg: userMatched.userImg,
+    };
+
+    messagesComposed.push(messageComposed);
+  }
+
+  return messagesComposed;
+}
 
 async function markMessageRead(roomId: string, loginUserId: string) {
   const query =
@@ -32,10 +85,13 @@ async function markMessageRead(roomId: string, loginUserId: string) {
 
   await db(query, [roomId, loginUserId]);
 }
+
 export default async function getMessages(roomId: string, loginUserId: string) {
   await checkTheRoomAndUser(roomId, loginUserId);
 
-  const messages = await getMessagesFromDB(roomId);
+  const messagesFromDB = await getMessagesFromDB(roomId);
+
+  const messages = await addUserInfo(roomId, messagesFromDB);
 
   await markMessageRead(roomId, loginUserId);
 
