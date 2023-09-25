@@ -8,6 +8,7 @@ import comment from "./routes/comment";
 import novels from "./routes/novels";
 import user from "./routes/user";
 import userContent from "./routes/userContent";
+import chat from "./routes/chat";
 
 const app = express();
 
@@ -25,6 +26,7 @@ app.use("/api/comment", comment);
 app.use("/api/novels", novels);
 app.use("/api/user", user);
 app.use("/api/userContent", userContent);
+app.use("/api/chat", chat);
 
 // socket io server // configure private message
 // -- it is required
