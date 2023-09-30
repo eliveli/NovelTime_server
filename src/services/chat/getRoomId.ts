@@ -25,14 +25,14 @@ async function getRoomIdFromDB(otherUserName: string, loginUserName: string) {
 
 async function getUserName(userId: string) {
   const query = "SELECT userName FROM user WHERE userId = (?)";
-  const userName = (await db(query, userId, "first")) as string;
+  const { userName } = (await db(query, userId, "first")) as { userName: string };
   return userName;
 }
 
 export default async function getRoomId(otherUserName: string, loginUserId: string) {
   const loginUserName = await getUserName(loginUserId);
 
-  if (!loginUserName) return undefined;
+  if (!loginUserName) throw Error("user doesn't exist");
 
   const roomId = await getRoomIdFromDB(otherUserName, loginUserName);
 

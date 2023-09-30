@@ -38,7 +38,7 @@ export const userHomeController: RequestHandler = (async (req, res) => {
     });
   } catch (error: any) {
     if (error.message === "유저 없음") {
-      res.status(400).json("존재하지 않는 사용자입니다.");
+      res.status(400).json({ message: "존재하지 않는 사용자입니다." });
     }
     console.log("failed to get user's content in userHomeController :", error);
     res.status(500).end();
@@ -71,7 +71,7 @@ export const getWritingUserCreatedController: RequestHandler = (async (req, res)
     }
   } catch (error: any) {
     if (error.message === "유저 없음") {
-      res.status(400).json("존재하지 않는 사용자입니다.");
+      res.status(400).json({ message: "존재하지 않는 사용자입니다." });
     }
     console.log("failed to get user's content in userMyWritingController :", error);
     res.status(500).end();
@@ -91,7 +91,7 @@ export const getWritingUserLikedController: RequestHandler = (async (req, res) =
     res.json({ writingsUserLikes: talksOrRecommendsSet, isNextOrder });
   } catch (error: any) {
     if (error.message === "유저 없음") {
-      res.status(400).json("존재하지 않는 사용자입니다.");
+      res.status(400).json({ message: "존재하지 않는 사용자입니다." });
     }
     console.log("failed to get user's content in userOthersWritingController :", error);
     res.status(500).end();
@@ -115,7 +115,7 @@ export const getListUserCreatedController: RequestHandler = (async (req, res) =>
     res.json(data);
   } catch (error: any) {
     if (error.message === "유저 없음") {
-      res.status(400).json("존재하지 않는 사용자입니다.");
+      res.status(400).json({ message: "존재하지 않는 사용자입니다." });
     }
     console.log("failed to get user's content in getListUserCreatedController :", error);
     res.status(500).end();
@@ -139,7 +139,7 @@ export const getListUserLikedController: RequestHandler = (async (req, res) => {
     res.json(data);
   } catch (error: any) {
     if (error.message === "유저 없음") {
-      res.status(400).json("존재하지 않는 사용자입니다.");
+      res.status(400).json({ message: "존재하지 않는 사용자입니다." });
     }
     console.log("failed to get user's content in getListUserLikedController :", error);
     res.status(500).end();
@@ -157,7 +157,7 @@ export const getNovelListTitlesController: RequestHandler = (async (req, res) =>
     res.json(data);
   } catch (error: any) {
     if (error.message === "유저 없음") {
-      res.status(400).json("존재하지 않는 사용자입니다.");
+      res.status(400).json({ message: "존재하지 않는 사용자입니다." });
     }
     console.log("failed to get user's content in getNovelListTitlesController :", error);
     res.status(500).end();

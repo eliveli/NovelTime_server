@@ -15,13 +15,12 @@ export const getRoomIdController: RequestHandler = (async (req, res) => {
 
     const roomId = await getRoomId(otherUserName, loginUserId);
 
-    if (roomId === undefined) {
-      res.json(undefined);
-      return;
+    res.json({ roomId });
+  } catch (error: any) {
+    if (error.message === "user doesn't exist") {
+      res.status(400).json({ message: error.message });
     }
 
-    res.json(roomId);
-  } catch (error: any) {
     res.status(500).end();
   }
 }) as RequestHandler;
@@ -40,7 +39,7 @@ export const getMessagesController: RequestHandler = (async (req, res) => {
     //
   } catch (error: any) {
     if (error.message === "room doesn't exist" || error.message === "user is not in the room") {
-      res.status(400).json(error.message);
+      res.status(400).json({ message: error.message });
     }
 
     res.status(500).end();
