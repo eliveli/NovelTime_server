@@ -1,5 +1,6 @@
 /* eslint-disable prefer-destructuring */
 import getUserNameAndImg from "../home/shared/getUserNameAndImg";
+import changeHourTimeTo12 from "../utils/changeHourTimeTo12";
 import db from "../utils/db";
 
 type MessageFromDB = {
@@ -8,7 +9,7 @@ type MessageFromDB = {
   senderUserId: string;
   content: string;
   createdAt: string;
-  isReadByReceiver: string;
+  isReadByReceiver: 0 | 1;
 };
 
 async function getMessagesFromDB(roomId: string) {
@@ -54,7 +55,28 @@ async function findUserInfo(roomId: string) {
   return users;
 }
 
-async function addUserInfo(roomId: string, messages: MessageFromDB[]) {
+function composeCreateDate(date: string) {
+  const yearInCreateDate = date.substring(2, 4);
+  const monthInCreateDate = date.substring(4, 6);
+  const dayInCreateDate = date.substring(6, 8);
+  const createDate = `${yearInCreateDate}.${monthInCreateDate}.${dayInCreateDate}`;
+  return createDate;
+}
+
+function composeCreateTime(date: string) {
+  const hourInCreateDate = date.substring(8, 10);
+  const minutesInCreateDate = date.substring(10, 12);
+  const createTime = changeHourTimeTo12(hourInCreateDate, minutesInCreateDate);
+  return createTime;
+}
+
+function splitDate(date: string) {
+  const createDate = composeCreateDate(date);
+  const createTime = composeCreateTime(date);
+  return { createDate, createTime };
+}
+
+async function composeMessages(roomId: string, messages: MessageFromDB[]) {
   const users = await findUserInfo(roomId);
 
   const messagesComposed = [];
@@ -67,8 +89,15 @@ async function addUserInfo(roomId: string, messages: MessageFromDB[]) {
       userMatched = users[1];
     }
 
+    const { createDate, createTime } = splitDate(message.createdAt);
+
     const messageComposed = {
-      ...message,
+      messageId: message.messageId,
+      roomId: message.roomId,
+      content: message.content,
+      createDate,
+      createTime,
+      isReadByReceiver: Boolean(message.isReadByReceiver),
       senderUserName: userMatched.userName,
       senderUserImg: userMatched.userImg,
     };
@@ -91,7 +120,7 @@ export default async function getMessages(roomId: string, loginUserId: string) {
 
   const messagesFromDB = await getMessagesFromDB(roomId);
 
-  const messages = await addUserInfo(roomId, messagesFromDB);
+  const messages = await composeMessages(roomId, messagesFromDB);
 
   await markMessageRead(roomId, loginUserId);
 
