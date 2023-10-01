@@ -15,7 +15,7 @@ export const getRoomIdController: RequestHandler = (async (req, res) => {
 
     const roomId = await getRoomId(partnerUserName, loginUserId);
 
-    res.json({ roomId });
+    res.json(roomId);
   } catch (error: any) {
     if (error.message === "user doesn't exist") {
       res.status(400).json({ message: error.message });
