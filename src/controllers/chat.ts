@@ -7,13 +7,13 @@ dotenv.config();
 
 export const getRoomIdController: RequestHandler = (async (req, res) => {
   try {
-    const { otherUserName } = req.params;
+    const { partnerUserName } = req.params;
 
     const loginUserId = req.userId;
 
-    if (!otherUserName || !loginUserId) throw Error("some value was not given");
+    if (!partnerUserName || !loginUserId) throw Error("some value was not given");
 
-    const roomId = await getRoomId(otherUserName, loginUserId);
+    const roomId = await getRoomId(partnerUserName, loginUserId);
 
     res.json({ roomId });
   } catch (error: any) {

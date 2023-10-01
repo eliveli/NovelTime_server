@@ -4,7 +4,7 @@ import { getMessagesController, getRoomIdController } from "../controllers/chat"
 
 const router = express.Router();
 
-router.get("/roomId/:otherUserName", authenticateAccessTokenMiddleware, getRoomIdController);
+router.get("/roomId/:partnerUserName", authenticateAccessTokenMiddleware, getRoomIdController);
 
 router.get("/messages/:roomId", authenticateAccessTokenMiddleware, getMessagesController);
 
