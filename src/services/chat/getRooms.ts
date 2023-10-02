@@ -24,14 +24,14 @@ async function getPartnerUser(loginUserId: string, userId1: string, userId2: str
 
 type PartOfMessage = {
   content: string;
-  createdAt: string;
+  createDateTime: string;
   createDate: string;
   createTime: string;
 };
 
 async function getLatestMessageFromDB(roomId: string) {
   const query =
-    "SELECT content, createdAt, createDate, createTime FROM message WHERE roomId = (?) ORDER BY createdAt DESC LIMIT 1";
+    "SELECT content, createDateTime, createDate, createTime FROM message WHERE roomId = (?) ORDER BY createDateTime DESC LIMIT 1";
   const message = (await db(query, roomId, "first")) as PartOfMessage;
   return message;
 }
@@ -41,7 +41,7 @@ function composeLatestMessage(message: PartOfMessage) {
 
   let latestMessageDate = "";
 
-  const messageCreateDate = extractCreateDate(message.createdAt);
+  const messageCreateDate = extractCreateDate(message.createDateTime);
   const currentDate = extractCreateDate(getCurrentTimeExceptMilliSec());
 
   if (messageCreateDate === currentDate) {
@@ -65,10 +65,10 @@ async function getUnreadMessageNo(roomId: string, partnerUserId: string) {
     "SELECT count(*) AS unreadMessageNo FROM message WHERE roomId = (?) and senderUserId = (?) and isReadByReceiver = 0";
 
   const { unreadMessageNo } = (await db(query, [roomId, partnerUserId], "first")) as {
-    unreadMessageNo: number;
+    unreadMessageNo: BigInt;
   };
 
-  return unreadMessageNo;
+  return Number(unreadMessageNo);
 }
 
 async function composeRooms(roomsFromDB: RoomsFromDB[], loginUserId: string) {
