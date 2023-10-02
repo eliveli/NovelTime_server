@@ -2,6 +2,7 @@ import { RequestHandler } from "express";
 import dotenv from "dotenv";
 import getRoomId from "../services/chat/getRoomId";
 import getMessages from "../services/chat/getMessages";
+import getRooms from "../services/chat/getRooms";
 
 dotenv.config();
 
@@ -21,6 +22,18 @@ export const getRoomIdController: RequestHandler = (async (req, res) => {
       res.status(400).json({ message: error.message });
     }
 
+    res.status(500).end();
+  }
+}) as RequestHandler;
+
+export const getRoomsController: RequestHandler = (async (req, res) => {
+  try {
+    const loginUserId = req.userId;
+
+    const rooms = await getRooms(loginUserId as string);
+
+    res.json(rooms);
+  } catch (error: any) {
     res.status(500).end();
   }
 }) as RequestHandler;

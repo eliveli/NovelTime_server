@@ -1,5 +1,5 @@
 import db from "../../../utils/db";
-import getCurrentTime from "../../utils/getCurrentTime";
+import getCurrentTime from "../../../utils/getCurrentTime";
 import { NovelPlatform } from "../../utils/types";
 
 async function addWeeklyNovel(

@@ -1,4 +1,6 @@
-export default function getCurrentTime(): string {
+import changeHourTimeTo12 from "./changeHourTimeTo12";
+
+export default function getCurrentTime() {
   const date = new Date();
   const year: string = date.getFullYear().toString();
 
@@ -33,7 +35,7 @@ export default function getCurrentTime(): string {
   return year + month + day + hour + minites + seconds + milliseconds;
 }
 
-export function getCurrentTimeExceptMilliSec(): string {
+export function getCurrentTimeExceptMilliSec() {
   const date = new Date();
   const year: string = date.getFullYear().toString();
 
@@ -46,11 +48,33 @@ export function getCurrentTimeExceptMilliSec(): string {
   let hour: string | number = date.getHours();
   hour = hour < 10 ? `0${hour.toString()}` : hour.toString();
 
-  let minites: string | number = date.getMinutes();
-  minites = minites < 10 ? `0${minites.toString()}` : minites.toString();
+  let minutes: string | number = date.getMinutes();
+  minutes = minutes < 10 ? `0${minutes.toString()}` : minutes.toString();
 
   let seconds: string | number = date.getSeconds();
   seconds = seconds < 10 ? `0${seconds.toString()}` : seconds.toString();
 
-  return year + month + day + hour + minites + seconds;
+  return year + month + day + hour + minutes + seconds;
+}
+
+// in below three, parameter "date" was made by getCurrentTimeExceptMilliSec above
+export function extractCreateDate(date: string) {
+  const yearInCreateDate = date.substring(2, 4);
+  const monthInCreateDate = date.substring(4, 6);
+  const dayInCreateDate = date.substring(6, 8);
+  const createDate = `${yearInCreateDate}.${monthInCreateDate}.${dayInCreateDate}`;
+  return createDate;
+}
+
+function extractCreateTime(date: string) {
+  const hourInCreateDate = date.substring(8, 10);
+  const minutesInCreateDate = date.substring(10, 12);
+  const createTime = changeHourTimeTo12(hourInCreateDate, minutesInCreateDate);
+  return createTime;
+}
+
+export function splitDate(date: string) {
+  const createDate = extractCreateDate(date);
+  const createTime = extractCreateTime(date);
+  return { createDate, createTime };
 }

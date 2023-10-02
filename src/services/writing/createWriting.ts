@@ -1,4 +1,4 @@
-import { getCurrentTimeExceptMilliSec } from "../scraper/utils/getCurrentTime";
+import { getCurrentTimeExceptMilliSec } from "../utils/getCurrentTime";
 import createId from "../utils/createId";
 import db from "../utils/db";
 
