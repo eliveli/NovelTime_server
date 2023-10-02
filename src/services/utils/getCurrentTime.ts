@@ -57,24 +57,24 @@ export function getCurrentTimeExceptMilliSec() {
   return year + month + day + hour + minutes + seconds;
 }
 
-// in below three, parameter "date" was made by getCurrentTimeExceptMilliSec above
-export function extractCreateDate(date: string) {
-  const yearInCreateDate = date.substring(2, 4);
-  const monthInCreateDate = date.substring(4, 6);
-  const dayInCreateDate = date.substring(6, 8);
+// in below three, parameter "dateTime" was made by getCurrentTimeExceptMilliSec above
+export function extractCreateDate(dateTime: string) {
+  const yearInCreateDate = dateTime.substring(2, 4);
+  const monthInCreateDate = dateTime.substring(4, 6);
+  const dayInCreateDate = dateTime.substring(6, 8);
   const createDate = `${yearInCreateDate}.${monthInCreateDate}.${dayInCreateDate}`;
   return createDate;
 }
 
-function extractCreateTime(date: string) {
-  const hourInCreateDate = date.substring(8, 10);
-  const minutesInCreateDate = date.substring(10, 12);
+function extractCreateTime(dateTime: string) {
+  const hourInCreateDate = dateTime.substring(8, 10);
+  const minutesInCreateDate = dateTime.substring(10, 12);
   const createTime = changeHourTimeTo12(hourInCreateDate, minutesInCreateDate);
   return createTime;
 }
 
-export function splitDate(date: string) {
-  const createDate = extractCreateDate(date);
-  const createTime = extractCreateTime(date);
+export function splitDateTime(dateTime: string) {
+  const createDate = extractCreateDate(dateTime);
+  const createTime = extractCreateTime(dateTime);
   return { createDate, createTime };
 }

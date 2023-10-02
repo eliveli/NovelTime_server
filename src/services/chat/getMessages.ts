@@ -1,6 +1,5 @@
 /* eslint-disable prefer-destructuring */
 import getUserNameAndImg from "../home/shared/getUserNameAndImg";
-import changeHourTimeTo12 from "../utils/changeHourTimeTo12";
 import db from "../utils/db";
 
 type MessageFromDB = {
@@ -8,12 +7,14 @@ type MessageFromDB = {
   roomId: string;
   senderUserId: string;
   content: string;
-  createdAt: string;
+  createDateTime: string;
+  createDate: string;
+  createTime: string;
   isReadByReceiver: 0 | 1;
 };
 
 async function getMessagesFromDB(roomId: string) {
-  const query = "SELECT * FROM message WHERE roomId = (?)";
+  const query = "SELECT * FROM message WHERE roomId = (?) ORDER BY createDateTime";
   const messages = (await db(query, roomId, "all")) as MessageFromDB[];
   return messages;
 }
@@ -55,27 +56,6 @@ async function findUserInfo(roomId: string) {
   return users;
 }
 
-function composeCreateDate(date: string) {
-  const yearInCreateDate = date.substring(2, 4);
-  const monthInCreateDate = date.substring(4, 6);
-  const dayInCreateDate = date.substring(6, 8);
-  const createDate = `${yearInCreateDate}.${monthInCreateDate}.${dayInCreateDate}`;
-  return createDate;
-}
-
-function composeCreateTime(date: string) {
-  const hourInCreateDate = date.substring(8, 10);
-  const minutesInCreateDate = date.substring(10, 12);
-  const createTime = changeHourTimeTo12(hourInCreateDate, minutesInCreateDate);
-  return createTime;
-}
-
-function splitDate(date: string) {
-  const createDate = composeCreateDate(date);
-  const createTime = composeCreateTime(date);
-  return { createDate, createTime };
-}
-
 async function composeMessages(roomId: string, messages: MessageFromDB[]) {
   const users = await findUserInfo(roomId);
 
@@ -89,14 +69,12 @@ async function composeMessages(roomId: string, messages: MessageFromDB[]) {
       userMatched = users[1];
     }
 
-    const { createDate, createTime } = splitDate(message.createdAt);
-
     const messageComposed = {
       messageId: message.messageId,
       roomId: message.roomId,
       content: message.content,
-      createDate,
-      createTime,
+      createDate: message.createDate,
+      createTime: message.createTime,
       isReadByReceiver: Boolean(message.isReadByReceiver),
       senderUserName: userMatched.userName,
       senderUserImg: userMatched.userImg,
@@ -119,6 +97,7 @@ export default async function getMessages(roomId: string, loginUserId: string) {
   await checkTheRoomAndUser(roomId, loginUserId);
 
   const messagesFromDB = await getMessagesFromDB(roomId);
+  if (messagesFromDB.length === 0) return [];
 
   const messages = await composeMessages(roomId, messagesFromDB);
 
