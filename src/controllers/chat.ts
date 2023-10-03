@@ -22,6 +22,7 @@ export const getRoomIdController: RequestHandler = (async (req, res) => {
       res.status(400).json({ message: error.message });
     }
 
+    console.log(error);
     res.status(500).end();
   }
 }) as RequestHandler;
@@ -34,6 +35,7 @@ export const getRoomsController: RequestHandler = (async (req, res) => {
 
     res.json(rooms);
   } catch (error: any) {
+    console.log(error);
     res.status(500).end();
   }
 }) as RequestHandler;
@@ -55,6 +57,7 @@ export const getMessagesController: RequestHandler = (async (req, res) => {
       res.status(400).json({ message: error.message });
     }
 
+    console.log(error);
     res.status(500).end();
   }
 }) as RequestHandler;

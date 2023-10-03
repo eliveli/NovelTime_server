@@ -7,7 +7,11 @@ export default function changeHourTimeTo12(hour: string, mins: string) {
   if (hour === "00") {
     createTime = `12 : ${mins} AM`;
   } else if (Number(hour) > 0 && Number(hour) < 12) {
-    createTime = `${hour[1]} : ${mins} AM`;
+    if (hour[0] === "1") {
+      createTime = `${hour} : ${mins} AM`;
+    } else {
+      createTime = `${hour[1]} : ${mins} AM`;
+    }
   } else if (hour === "12") {
     createTime = `12 : ${mins} PM`;
   } else if (Number(hour) > 12 && Number(hour) < 24) {

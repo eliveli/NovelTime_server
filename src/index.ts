@@ -9,6 +9,8 @@ import novels from "./routes/novels";
 import user from "./routes/user";
 import userContent from "./routes/userContent";
 import chat from "./routes/chat";
+import createMessage, { MessageWithSocket } from "./services/chat/createMessage";
+import changeMessageRead from "./services/chat/changeMessageRead";
 
 const app = express();
 
@@ -48,16 +50,19 @@ io.on("connection", (socket) => {
     socket.join(roomId);
   });
 
-  socket.on("send message", (data) => {
-    io.to(data.roomId).emit("new message", data.msg);
-    console.log("inside end message");
+  socket.on("send message", async (data: MessageWithSocket) => {
+    const messageToUser = await createMessage({ ...data });
+
+    io.to(data.roomId).emit("new message", messageToUser);
+  });
+
+  socket.on("change message read", async (messageId: string) => {
+    await changeMessageRead(messageId);
   });
 
   socket.on("disconnect", (reason) => {
     console.log("user disconnected");
   });
-
-  console.log("outside send message ");
 });
 
 const port = 8082;
