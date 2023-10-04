@@ -1,6 +1,5 @@
 import getUserNameAndImg from "../home/shared/getUserNameAndImg";
 import db from "../utils/db";
-import { extractCreateDate, getCurrentTimeExceptMilliSec } from "../utils/getCurrentTime";
 
 type RoomsFromDB = { roomId: string; userId1: string; userId2: string };
 
@@ -14,7 +13,7 @@ async function getRoomsFromDB(loginUserId: string) {
 }
 
 async function getPartnerUser(loginUserId: string, userId1: string, userId2: string) {
-  const partnerUserId = loginUserId === userId1 ? userId1 : userId2;
+  const partnerUserId = loginUserId === userId1 ? userId2 : userId1;
 
   const partnerUser = await getUserNameAndImg(partnerUserId);
 
@@ -39,18 +38,12 @@ async function getLatestMessageFromDB(roomId: string) {
 function composeLatestMessage(message: PartOfMessage) {
   const latestMessageContent = message.content;
 
-  let latestMessageDate = "";
-
-  const messageCreateDate = extractCreateDate(message.createDateTime);
-  const currentDate = extractCreateDate(getCurrentTimeExceptMilliSec());
-
-  if (messageCreateDate === currentDate) {
-    latestMessageDate = message.createTime;
-  } else {
-    latestMessageDate = message.createDate;
-  }
-
-  return { latestMessageContent, latestMessageDate };
+  return {
+    latestMessageContent,
+    latestMessageDateTime: message.createDateTime,
+    latestMessageDate: message.createDate,
+    latestMessageTime: message.createTime,
+  };
 }
 
 async function getLatestMessage(roomId: string) {
@@ -86,7 +79,9 @@ async function composeRooms(roomsFromDB: RoomsFromDB[], loginUserId: string) {
         partnerUserName: partnerUser.userName,
         partnerUserImg: partnerUser.userImg,
         latestMessageContent: "",
+        latestMessageDateTime: "",
         latestMessageDate: "",
+        latestMessageTime: "",
         unreadMessageNo: 0,
       };
 
@@ -110,12 +105,38 @@ async function composeRooms(roomsFromDB: RoomsFromDB[], loginUserId: string) {
   return rooms;
 }
 
+type RoomComposed = {
+  roomId: string;
+  partnerUserName: string;
+  partnerUserImg: {
+    src: string;
+    position: string;
+  };
+  latestMessageContent: string;
+  latestMessageDateTime: string;
+  latestMessageDate: string;
+  latestMessageTime: string;
+  unreadMessageNo: number;
+};
+
+const sortByMessageCreateTime = (room1: RoomComposed, room2: RoomComposed) => {
+  if (room1.latestMessageDateTime < room2.latestMessageDateTime) return 1;
+  if (room1.latestMessageDateTime > room2.latestMessageDateTime) return -1;
+  return 0;
+};
+
+function sortRooms(rooms: RoomComposed[]) {
+  return rooms.sort(sortByMessageCreateTime);
+}
+
 export default async function getRooms(loginUserId: string) {
   const roomsFromDB = await getRoomsFromDB(loginUserId);
 
   if (!roomsFromDB.length) return [];
 
-  const rooms = await composeRooms(roomsFromDB, loginUserId);
+  const roomsComposed = await composeRooms(roomsFromDB, loginUserId);
+
+  const rooms = sortRooms(roomsComposed);
 
   return rooms;
 }
