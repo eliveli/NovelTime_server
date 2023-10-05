@@ -13,6 +13,15 @@ type MessageFromDB = {
   isReadByReceiver: 0 | 1;
 };
 
+type User = {
+  userName: string;
+  userImg: {
+    src: string;
+    position: string;
+  };
+  userId: string;
+};
+
 async function getMessagesFromDB(roomId: string) {
   const query = "SELECT * FROM message WHERE roomId = (?) ORDER BY createDateTime";
   const messages = (await db(query, roomId, "all")) as MessageFromDB[];
@@ -31,6 +40,7 @@ async function checkTheRoomAndUser(roomId: string, loginUserId: string) {
     else throw Error("room doesn't exist");
   }
 }
+
 async function getUserIDsInTheRoom(roomId: string) {
   const query = "SELECT userId1, userId2 FROM chatroom WHERE roomId = (?)";
 
@@ -39,7 +49,7 @@ async function getUserIDsInTheRoom(roomId: string) {
   return userIDs;
 }
 
-async function findUserInfo(roomId: string) {
+async function getUsersInTheRoom(roomId: string) {
   const { userId1, userId2 } = await getUserIDsInTheRoom(roomId);
 
   const users = [];
@@ -56,9 +66,21 @@ async function findUserInfo(roomId: string) {
   return users;
 }
 
-async function composeMessages(roomId: string, messages: MessageFromDB[]) {
-  const users = await findUserInfo(roomId);
+function setPartnerUser(users: User[], loginUserId: string) {
+  if (loginUserId === users[0].userId) {
+    return {
+      userName: users[1].userName,
+      userImg: users[1].userImg,
+    };
+  }
 
+  return {
+    userName: users[0].userName,
+    userImg: users[0].userImg,
+  };
+}
+
+function composeMessages(users: User[], messages: MessageFromDB[]) {
   const messagesComposed = [];
 
   for (const message of messages) {
@@ -73,6 +95,7 @@ async function composeMessages(roomId: string, messages: MessageFromDB[]) {
       messageId: message.messageId,
       roomId: message.roomId,
       content: message.content,
+      createDateTime: message.createDateTime,
       createDate: message.createDate,
       createTime: message.createTime,
       isReadByReceiver: Boolean(message.isReadByReceiver),
@@ -96,12 +119,24 @@ async function markMessageRead(roomId: string, loginUserId: string) {
 export default async function getMessages(roomId: string, loginUserId: string) {
   await checkTheRoomAndUser(roomId, loginUserId);
 
-  const messagesFromDB = await getMessagesFromDB(roomId);
-  if (messagesFromDB.length === 0) return [];
+  const users = await getUsersInTheRoom(roomId);
+  const partnerUser = setPartnerUser(users, loginUserId);
 
-  const messages = await composeMessages(roomId, messagesFromDB);
+  const messagesFromDB = await getMessagesFromDB(roomId);
+
+  if (messagesFromDB.length === 0) {
+    return {
+      partnerUser,
+      messages: [],
+    };
+  }
+
+  const messages = composeMessages(users, messagesFromDB);
 
   await markMessageRead(roomId, loginUserId);
 
-  return messages;
+  return {
+    partnerUser,
+    messages,
+  };
 }

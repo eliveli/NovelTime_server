@@ -50,7 +50,7 @@ export const getMessagesController: RequestHandler = (async (req, res) => {
 
     const data = await getMessages(roomId, loginUserId);
 
-    res.json(data); // it can be empty array
+    res.json(data);
     //
   } catch (error: any) {
     if (error.message === "room doesn't exist" || error.message === "user is not in the room") {
