@@ -16,6 +16,7 @@ type MessageToUser = {
   messageId: string;
   roomId: string;
   content: string;
+  createDateTime: string;
   createDate: string;
   createTime: string;
   isReadByReceiver: boolean;
@@ -75,6 +76,7 @@ export default async function createMessage(messageWithSocket: MessageWithSocket
       messageId,
       roomId,
       content,
+      createDateTime,
       createDate,
       createTime,
       isReadByReceiver: false,

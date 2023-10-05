@@ -46,8 +46,14 @@ app.use("/api/chat", chat);
 const io = new Server(server, { path: "/socket.io" });
 
 io.on("connection", (socket) => {
-  socket.on("join room", (roomId: string) => {
+  socket.on("join a room", (roomId: string) => {
     socket.join(roomId);
+  });
+
+  socket.on("join rooms", (roomIDs: string[]) => {
+    roomIDs.forEach((roomId) => {
+      socket.join(roomId);
+    });
   });
 
   socket.on("send message", async (data: MessageWithSocket) => {

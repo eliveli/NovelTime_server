@@ -58,7 +58,7 @@ export function getCurrentTimeExceptMilliSec() {
 }
 
 // in below three, parameter "dateTime" was made by getCurrentTimeExceptMilliSec above
-export function extractCreateDate(dateTime: string) {
+function extractCreateDate(dateTime: string) {
   const yearInCreateDate = dateTime.substring(2, 4);
   const monthInCreateDate = dateTime.substring(4, 6);
   const dayInCreateDate = dateTime.substring(6, 8);
