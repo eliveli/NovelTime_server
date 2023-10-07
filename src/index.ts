@@ -11,10 +11,10 @@ import userContent from "./routes/userContent";
 import chat from "./routes/chat";
 import createMessage, { MessageWithSocket } from "./services/chat/createMessage";
 import changeMessageRead from "./services/chat/changeMessageRead";
+import getRooms from "./services/chat/getRooms";
 
 const app = express();
 
-const server = http.createServer(app);
 app.use(cookieParser());
 
 // Init Middleware
@@ -43,16 +43,37 @@ app.use("/api/chat", chat);
 // and send the current message to user
 // ------------------------------------------------------------------//
 
+const server = http.createServer(app);
+
 const io = new Server(server, { path: "/socket.io" });
 
 io.on("connection", (socket) => {
+  // { [userId: string] : socket.id } []
+  const users: { [userId: string]: string }[] = [];
+
   socket.on("join a room", (roomId: string) => {
     socket.join(roomId);
+    console.log("user joins the room:", roomId);
+  });
+
+  socket.on("join all rooms with userId", async (userId: string) => {
+    users.push({ [userId]: socket.id });
+
+    const rooms = await getRooms(userId);
+
+    rooms.forEach((room) => {
+      socket.join(room.roomId);
+      console.log("user joins the room:", room.roomId);
+    });
+
+    // send rooms to the user
+    io.in(socket.id).emit("rooms", rooms);
   });
 
   socket.on("join rooms", (roomIDs: string[]) => {
     roomIDs.forEach((roomId) => {
       socket.join(roomId);
+      console.log("user joins the room:", roomId);
     });
   });
 
@@ -60,15 +81,21 @@ io.on("connection", (socket) => {
     const messageToUser = await createMessage({ ...data });
 
     io.to(data.roomId).emit("new message", messageToUser);
+
+    console.log("message was sent to the room:", data.roomId);
   });
 
   socket.on("change message read", async (messageId: string) => {
     await changeMessageRead(messageId);
+
+    console.log("change message read");
   });
 
   socket.on("disconnect", (reason) => {
     console.log("user disconnected");
   });
+
+  console.log("socket connection fired");
 });
 
 const port = 8082;
