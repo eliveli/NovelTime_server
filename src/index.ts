@@ -12,6 +12,7 @@ import chat from "./routes/chat";
 import createMessage, { MessageWithSocket } from "./services/chat/createMessage";
 import changeMessageRead from "./services/chat/changeMessageRead";
 import getRooms from "./services/chat/getRooms";
+import getMessages from "./services/chat/getMessages";
 
 const app = express();
 
@@ -56,7 +57,7 @@ io.on("connection", (socket) => {
     console.log("user joins the room:", roomId);
   });
 
-  socket.on("join all rooms with userId", async (userId: string) => {
+  socket.on("join all rooms", async (userId: string) => {
     users.push({ [userId]: socket.id });
 
     const rooms = await getRooms(userId);
@@ -70,11 +71,29 @@ io.on("connection", (socket) => {
     io.in(socket.id).emit("rooms", rooms);
   });
 
-  socket.on("join rooms", (roomIDs: string[]) => {
-    roomIDs.forEach((roomId) => {
-      socket.join(roomId);
-      console.log("user joins the room:", roomId);
-    });
+  socket.on("get messages", async ({ roomId, userId }: { roomId: string; userId: string }) => {
+    try {
+      const data = await getMessages(roomId, userId);
+
+      io.in(socket.id).emit("messages in the room", { status: 200, data });
+
+      console.log("data from an event get-messages:", data);
+      //
+    } catch (error: any) {
+      console.log(error);
+
+      if (error.message === "room doesn't exist" || error.message === "user is not in the room") {
+        io.in(socket.id).emit("messages in the room", {
+          status: 400,
+          error: { message: error.message },
+        });
+      } else {
+        io.in(socket.id).emit("messages in the room", {
+          status: 500,
+          error: { message: undefined },
+        });
+      }
+    }
   });
 
   socket.on("send message", async (data: MessageWithSocket) => {
