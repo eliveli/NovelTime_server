@@ -8,11 +8,11 @@ import comment from "./routes/comment";
 import novels from "./routes/novels";
 import user from "./routes/user";
 import userContent from "./routes/userContent";
-import chat from "./routes/chat";
 import createMessage, { MessageWithSocket } from "./services/chat/createMessage";
 import changeMessageRead from "./services/chat/changeMessageRead";
 import getRooms from "./services/chat/getRooms";
 import getMessages from "./services/chat/getMessages";
+import createRoom from "./services/chat/createRoom";
 
 const app = express();
 
@@ -29,20 +29,6 @@ app.use("/api/comment", comment);
 app.use("/api/novels", novels);
 app.use("/api/user", user);
 app.use("/api/userContent", userContent);
-app.use("/api/chat", chat);
-
-// socket io server // configure private message
-// -- it is required
-// -- configure from backend!! : variable isContinuous------------------
-// when user send a message,
-// get one just before the message from database
-// if two are same in userName, createTime,
-//
-// look at the socket client event handler
-// set isContinuous, isContinuousFirst, isContinuousLast of two messages
-//
-// and send the current message to user
-// ------------------------------------------------------------------//
 
 const server = http.createServer(app);
 
@@ -50,15 +36,49 @@ const io = new Server(server, { path: "/socket.io" });
 
 io.on("connection", (socket) => {
   // { [userId: string] : socket.id } []
-  const users: { [userId: string]: string }[] = [];
+  const users: { [userId: string]: string } = {};
+  // * later, remove a user who disconnects
 
-  socket.on("join a room", (roomId: string) => {
-    socket.join(roomId);
-    console.log("user joins the room:", roomId);
+  socket.on("create a room", async (loginUserId: string, partnerUserName: string) => {
+    try {
+      const { room, partnerUserId, type } = await createRoom(partnerUserName, loginUserId);
+
+      // join the room if the room was created just before
+      if (type === "new") {
+        socket.join(room.roomId);
+
+        if (users[partnerUserId]) {
+          // make the partner join if he/she logged in
+          io.in(users[partnerUserId]).socketsJoin(room.roomId);
+        }
+      }
+
+      // send new room to login user
+      io.in(socket.id).emit("newRoom", { status: 200, room });
+      // - partner user can know that he/she was invited to the room
+      //    when the login user sends a message in the room
+
+      console.log("new room is:", room);
+      //
+    } catch (error: any) {
+      console.log(error);
+
+      if (error.message === "user doesn't exist") {
+        io.in(socket.id).emit("newRoom", {
+          status: 400,
+          error: { message: error.message },
+        });
+      } else {
+        io.in(socket.id).emit("newRoom", {
+          status: 500,
+          error: { message: undefined },
+        });
+      }
+    }
   });
 
   socket.on("join all rooms", async (userId: string) => {
-    users.push({ [userId]: socket.id });
+    users[userId] = socket.id;
 
     const rooms = await getRooms(userId);
 

@@ -64,40 +64,43 @@ async function getUnreadMessageNo(roomId: string, partnerUserId: string) {
   return Number(unreadMessageNo);
 }
 
+async function composeRoom(loginUserId: string, userId1: string, userId2: string, roomId: string) {
+  const partnerUser = await getPartnerUser(loginUserId, userId1, userId2);
+  if (!partnerUser) return;
+
+  const latestMessage = await getLatestMessage(roomId);
+
+  if (!latestMessage) {
+    return {
+      roomId,
+      partnerUserName: partnerUser.userName,
+      partnerUserImg: partnerUser.userImg,
+      latestMessageContent: "",
+      latestMessageDateTime: "",
+      latestMessageDate: "",
+      latestMessageTime: "",
+      unreadMessageNo: 0,
+    };
+  }
+
+  const unreadMessageNo = await getUnreadMessageNo(roomId, partnerUser.userId);
+
+  return {
+    roomId,
+    partnerUserName: partnerUser.userName,
+    partnerUserImg: partnerUser.userImg,
+    ...latestMessage,
+    unreadMessageNo,
+  };
+}
+
 async function composeRooms(roomsFromDB: RoomsFromDB[], loginUserId: string) {
   const rooms = [];
 
   for (const { roomId, userId1, userId2 } of roomsFromDB) {
-    const partnerUser = await getPartnerUser(loginUserId, userId1, userId2);
-    if (!partnerUser) continue;
+    const room = await composeRoom(loginUserId, userId1, userId2, roomId);
 
-    const latestMessage = await getLatestMessage(roomId);
-
-    if (!latestMessage) {
-      const room = {
-        roomId,
-        partnerUserName: partnerUser.userName,
-        partnerUserImg: partnerUser.userImg,
-        latestMessageContent: "",
-        latestMessageDateTime: "",
-        latestMessageDate: "",
-        latestMessageTime: "",
-        unreadMessageNo: 0,
-      };
-
-      rooms.push(room);
-      continue;
-    }
-
-    const unreadMessageNo = await getUnreadMessageNo(roomId, partnerUser.userId);
-
-    const room = {
-      roomId,
-      partnerUserName: partnerUser.userName,
-      partnerUserImg: partnerUser.userImg,
-      ...latestMessage,
-      unreadMessageNo,
-    };
+    if (!room) continue;
 
     rooms.push(room);
   }
