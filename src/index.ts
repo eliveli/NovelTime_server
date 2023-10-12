@@ -34,10 +34,23 @@ const server = http.createServer(app);
 
 const io = new Server(server, { path: "/socket.io" });
 
+// { [userId: string] : socket.id } []
+const users: { [userId: string]: string } = {};
+
 io.on("connection", (socket) => {
-  // { [userId: string] : socket.id } []
-  const users: { [userId: string]: string } = {};
-  // * later, remove a user who disconnects
+  socket.on("join all rooms", async (userId: string) => {
+    users[userId] = socket.id;
+
+    const rooms = await getRooms(userId);
+
+    rooms.forEach((room) => {
+      socket.join(room.roomId);
+      console.log("user joins the room:", room.roomId);
+    });
+
+    // send rooms to the user
+    io.in(socket.id).emit("rooms", rooms);
+  });
 
   socket.on("create a room", async (loginUserId: string, partnerUserName: string) => {
     try {
@@ -54,7 +67,7 @@ io.on("connection", (socket) => {
       }
 
       // send new room to login user
-      io.in(socket.id).emit("newRoom", { status: 200, room });
+      io.in(socket.id).emit("newRoom", { status: 200, data: room });
       // - partner user can know that he/she was invited to the room
       //    when the login user sends a message in the room
 
@@ -75,20 +88,6 @@ io.on("connection", (socket) => {
         });
       }
     }
-  });
-
-  socket.on("join all rooms", async (userId: string) => {
-    users[userId] = socket.id;
-
-    const rooms = await getRooms(userId);
-
-    rooms.forEach((room) => {
-      socket.join(room.roomId);
-      console.log("user joins the room:", room.roomId);
-    });
-
-    // send rooms to the user
-    io.in(socket.id).emit("rooms", rooms);
   });
 
   socket.on("get messages", async ({ roomId, userId }: { roomId: string; userId: string }) => {
@@ -130,8 +129,28 @@ io.on("connection", (socket) => {
     console.log("change message read");
   });
 
-  socket.on("disconnect", (reason) => {
+  socket.on("logout", async (userId: string) => {
+    // leave all the room he/she joined
+    io.in(socket.id).socketsLeave([...socket.rooms]); // socket.rooms holds socket id as a room
+
+    // remove the user
+    delete users[userId];
+
     console.log("user disconnected");
+  });
+
+  // when the page is refreshed or the user leaves the website
+  // - user automatically leaves all the room he/she joined
+  socket.on("disconnect", async (reason) => {
+    // remove the user
+    const [currentUser] = Object.entries(users).filter(
+      ([userId, socketId]) => socketId === socket.id,
+    );
+    if (currentUser) {
+      delete users[currentUser[0]];
+    }
+
+    console.log("user disconnected, reason:", reason);
   });
 
   console.log("socket connection fired");
