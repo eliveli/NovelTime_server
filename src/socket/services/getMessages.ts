@@ -1,6 +1,6 @@
 /* eslint-disable prefer-destructuring */
-import getUserNameAndImg from "../home/shared/getUserNameAndImg";
-import db from "../utils/db";
+import getUserNameAndImg from "../../services/home/shared/getUserNameAndImg";
+import db from "../../services/utils/db";
 
 type MessageFromDB = {
   messageId: string;

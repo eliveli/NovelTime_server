@@ -1,4 +1,4 @@
-import db from "../utils/db";
+import db from "../../services/utils/db";
 
 export default async function changeMessageRead(messageId: string) {
   try {

@@ -1,6 +1,6 @@
-import createId from "../utils/createId";
-import db from "../utils/db";
-import { getCurrentTimeExceptMilliSec, splitDateTime } from "../utils/getCurrentTime";
+import createId from "../../services/utils/createId";
+import db from "../../services/utils/db";
+import { getCurrentTimeExceptMilliSec, splitDateTime } from "../../services/utils/getCurrentTime";
 
 type MessageToDB = {
   messageId: string;

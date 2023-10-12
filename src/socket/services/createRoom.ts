@@ -1,5 +1,5 @@
-import createId from "../utils/createId";
-import db from "../utils/db";
+import createId from "../../services/utils/createId";
+import db from "../../services/utils/db";
 
 async function createRoomInDB(partnerUserId: string, loginUserId: string) {
   const roomId = createId();
