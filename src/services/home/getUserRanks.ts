@@ -41,38 +41,14 @@ export async function getNovelListRank() {
 export async function getNovelListLikeRankFromDB() {
   return (await db(
     `
-    SELECT novelListId, count(*) AS count FROM novelListLike
-      GROUP BY novelListId
+    SELECT novelList.userId, count(*) AS count FROM novelListLike
+      INNER JOIN novelList ON novelListLike.novelListId = novelList.novelListId
+      GROUP BY novelList.userId
       ORDER BY count(*) DESC LIMIT 10; 
     `,
     undefined,
     "all",
-  )) as { novelListId: string; count: BigInt }[];
-}
-export async function getUserWhoCreatedNovelList(novelListId: string) {
-  return (await db(
-    `SELECT userId FROM novelList WHERE novelListId = (?)
-    `,
-    novelListId,
-    "first",
-  )) as { userId: string };
-}
-
-type NovelListLikeRank = {
-  novelListId: string;
-  count: BigInt;
-};
-export async function composeNovelListLikeRank(novelListRanks: NovelListLikeRank[]) {
-  const ranksWithUserId = [];
-
-  for (const novelListRank of novelListRanks) {
-    const { userId } = await getUserWhoCreatedNovelList(novelListRank.novelListId);
-
-    if (!userId) continue;
-
-    ranksWithUserId.push({ userId, count: novelListRank.count });
-  }
-  return ranksWithUserId;
+  )) as { userId: string; count: BigInt }[];
 }
 
 export async function getNovelListLikeRank() {
@@ -80,7 +56,7 @@ export async function getNovelListLikeRank() {
 
   if (novelListRanks.length === 0) return [];
 
-  return composeNovelListLikeRank(novelListRanks);
+  return novelListRanks;
 }
 
 export async function getUserRankByContent(

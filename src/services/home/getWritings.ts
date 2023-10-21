@@ -20,8 +20,10 @@ async function getNovelTitle(novelId: string) {
 }
 
 export async function getWritingsFromDB(contentType: "T" | "R") {
+  const limitNo = contentType === "T" ? 5 : 4;
+
   return (await db(
-    "SELECT * FROM writing WHERE talkOrRecommend = (?) ORDER BY createDate DESC limit 3",
+    `SELECT * FROM writing WHERE talkOrRecommend = (?) ORDER BY createDate DESC limit ${limitNo}`,
     contentType,
     "all",
   )) as Writing[];
