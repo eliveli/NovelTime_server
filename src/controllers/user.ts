@@ -16,6 +16,21 @@ dotenv.config();
 
 const privateKey = process.env.JWT_PRIVATE_KEY as string;
 
+const setCookieOption = () => {
+  type SameSite = boolean | "none" | "lax" | "strict" | undefined;
+  const sameSite: SameSite = process.env.NODE_ENV === "production" ? "none" : "lax";
+  // - sameSite:none for cross-request
+
+  return {
+    path: "/api/user/refreshToken",
+    expires: new Date(Date.now().valueOf() + 2 * 30 * 24 * 60 * 60 * 1000), // 2 months
+    httpOnly: true, // You can't access these tokens in the client's javascript
+    secure: process.env.NODE_ENV === "production", // Forces to use https in production
+    sameSite,
+    // ㄴ"secure:true", "sameSite:none" must be set
+  };
+};
+
 // note : don't make controller async
 //  just use promise then/catch in controller instead of using async/await to controller itself
 //  to avoid the following eslint error
@@ -30,14 +45,7 @@ export const loginController: RequestHandler = (req, res) => {
 
       await setRefreshTokenDB(userInfo.userId, refreshToken);
 
-      res.cookie("refreshToken", refreshToken, {
-        path: "/api/user/refreshToken",
-        expires: new Date(Date.now() + 2 * 30 * 24 * 60 * 60 * 1000), // 2 months
-        httpOnly: true, // You can't access these tokens in the client's javascript
-        secure: process.env.NODE_ENV === "production", // Forces to use https in production
-        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax", // set to none for cross-request
-        // to set "sameSite:none", "secure:true" must be set
-      });
+      res.cookie("refreshToken", refreshToken, setCookieOption());
 
       return res.json({ accessToken, userInfo });
     })
@@ -49,13 +57,15 @@ export const loginController: RequestHandler = (req, res) => {
     });
 };
 
-type ChangedUserInfo = {
+type TokenDecoded = {
   userId: string;
   userName: string;
   userImgSrc: string;
   userImgPosition: string;
   userBGSrc: string;
   userBGPosition: string;
+  iat: number;
+  exp: number;
 };
 
 // it only accepts the case when the user logged in and the token was validated
@@ -68,9 +78,9 @@ export const authenticateAccessTokenMiddleware: RequestHandler = (req, res, next
     return res.status(400);
   }
   try {
-    const payload = jwt.verify(token, privateKey) as ChangedUserInfo;
+    const tokenPayload = jwt.verify(token, privateKey) as TokenDecoded;
 
-    req.userId = payload.userId;
+    req.userId = tokenPayload.userId;
 
     next();
   } catch (error) {
@@ -85,8 +95,8 @@ export const getUserIdByTokenMiddleware: RequestHandler = (req, res, next) => {
     const authHeader = req.headers.authorization;
     const token = authHeader && authHeader.split(" ")[1];
     if (token) {
-      const payload = jwt.verify(token, privateKey) as ChangedUserInfo;
-      req.userId = payload.userId;
+      const tokenPayload = jwt.verify(token, privateKey) as TokenDecoded;
+      req.userId = tokenPayload.userId;
     }
     // for user novel list page - my list page or other's list page
     // I can't get the login user id by request parameter because of security issue
@@ -109,8 +119,7 @@ export const logoutController: RequestHandler = (req, res) => {
       res.clearCookie("refreshToken", { path: "/api/user/refreshToken" });
       res.removeHeader("authorization");
 
-      console.log("로그아웃 완료");
-      res.json("로그아웃 완료");
+      res.json("success to log out");
       // 리프레시 토큰 디비에서 지우기
       // 리프레시 토큰 쿠키 지우기
       // 헤더 액세스 토큰 지우기
@@ -118,83 +127,96 @@ export const logoutController: RequestHandler = (req, res) => {
     })
     .catch((error) => {
       console.log(error);
+      return res.status(500).json("error occurred in logout");
     });
 };
 
 // 1. 리프레시 토큰 검증 2. 액세스 토큰 발급
-export const refreshTokenController: RequestHandler = (req, res) => {
+export const refreshTokenController: RequestHandler = (async (req, res) => {
   const { refreshToken } = req.cookies;
 
-  console.log("refresh token : ", refreshToken);
   // if the cookie was not set, return an unauthorized error
   // user didn't login before
   if (!refreshToken) return res.status(401).json({ message: "non login user" });
 
-  let payload: ChangedUserInfo;
+  let tokenDecoded: TokenDecoded;
   try {
     // Parse the JWT string and store the result in `payload`.
     // Note that we are passing the key in this method as well. This method will throw an error
     // if the token is invalid (if it has expired according to the expiry time we set on sign in),
     // or if the signature does not match
-    payload = jwt.verify(refreshToken as string, privateKey) as ChangedUserInfo;
-    console.log("payload refresh token info: ", payload);
+    tokenDecoded = jwt.verify(refreshToken as string, privateKey) as TokenDecoded;
   } catch (e) {
-    if (e instanceof jwt.JsonWebTokenError) {
-      console.log("payload refresh catch : ", e);
+    if (e instanceof jwt.TokenExpiredError) {
+      const tokenExpired = jwt.verify(refreshToken as string, privateKey) as TokenDecoded;
+      try {
+        await deleteRefreshTokenDB(tokenExpired.userId);
 
-      // if the error thrown is because the JWT is unauthorized, return a 401 error
-      return res.status(401).end();
+        res.clearCookie("refreshToken", { path: "/api/user/refreshToken" });
+        res.removeHeader("authorization");
+
+        return res.status(419).json({ message: "token was expired" });
+      } catch (error) {
+        return res.status(400).end({ message: "error occurred while removing expired token" });
+      }
+    }
+    if (e instanceof jwt.JsonWebTokenError) {
+      return res.status(401).json({ message: "token is invalid or malformed" });
     }
 
-    // otherwise, return a bad request error
-    return res.status(400).end();
+    console.log("error : ", e);
+    return res.status(400).end({ message: "failed to verify token" });
   }
 
-  // Make sure that refresh token is the one in DB
-  getRefreshTokenDB(payload.userId)
-    .then((data) => {
-      if (!data) {
-        throw new Error("user id might be not correct");
-      }
-      const isUsersToken = refreshToken === data.refreshToken;
+  // Make sure that refresh token is the one in DB //
+  try {
+    const data = await getRefreshTokenDB(tokenDecoded.userId);
 
-      if (!isUsersToken) {
-        throw new Error("access token is different from one in DB");
-      }
+    if (!data) {
+      throw new Error("user id might be not correct");
+    }
 
-      const userInfoToClient = {
-        userId: payload.userId,
-        userName: payload.userName,
-        userImg: {
-          src: payload.userImgSrc,
-          position: payload.userImgPosition,
-        },
-        userBG: {
-          src: payload.userBGSrc,
-          position: payload.userBGPosition,
-        },
-      };
-      const userInfoParams = {
-        userId: payload.userId,
-        userName: payload.userName,
-        userImgSrc: payload.userImgSrc,
-        userImgPosition: payload.userImgPosition,
-        userBGSrc: payload.userBGSrc,
-        userBGPosition: payload.userBGPosition,
-      };
+    const isUsersToken = refreshToken === data.refreshToken;
 
-      const accessToken = generateAccessToken(userInfoParams);
+    if (!isUsersToken) {
+      throw new Error("access token is different from one in DB");
+    }
+  } catch (e) {
+    console.log("error: ", e);
+    return res.status(400).json("refresh token is different from one in DB");
+  }
 
-      console.log("new access token: ", accessToken);
-      return res.json({ accessToken, userInfo: userInfoToClient });
-    })
-    .catch((err) => {
-      console.log(err);
-      return res
-        .status(400)
-        .json("refresh token is different from one in DB or failed to make new access token");
-    });
-};
+  // Generate new access token //
+  try {
+    const userInfoToClient = {
+      userId: tokenDecoded.userId,
+      userName: tokenDecoded.userName,
+      userImg: {
+        src: tokenDecoded.userImgSrc,
+        position: tokenDecoded.userImgPosition,
+      },
+      userBG: {
+        src: tokenDecoded.userBGSrc,
+        position: tokenDecoded.userBGPosition,
+      },
+    };
+    const userInfoParams = {
+      userId: tokenDecoded.userId,
+      userName: tokenDecoded.userName,
+      userImgSrc: tokenDecoded.userImgSrc,
+      userImgPosition: tokenDecoded.userImgPosition,
+      userBGSrc: tokenDecoded.userBGSrc,
+      userBGPosition: tokenDecoded.userBGPosition,
+    };
+
+    const accessToken = generateAccessToken(userInfoParams);
+
+    return res.json({ accessToken, userInfo: userInfoToClient });
+  } catch (err) {
+    console.log("error:", err);
+    return res.status(500).json("failed to generate new access token");
+  }
+}) as RequestHandler;
 
 export const checkUserNameController: RequestHandler = (req, res) => {
   const { newUserName } = req.body;
@@ -256,14 +278,7 @@ export const saveChangedInfoController: RequestHandler = (req, res) => {
 
       await setRefreshTokenDB(userInfo.userId, refreshToken);
 
-      res.cookie("refreshToken", refreshToken, {
-        path: "/api/user/refreshToken",
-        expires: new Date(Date.now() + 2 * 30 * 24 * 60 * 60 * 1000), // 2 months
-        httpOnly: true, // You can't access these tokens in the client's javascript
-        secure: process.env.NODE_ENV === "production", // Forces to use https in production
-        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax", // set to none for cross-request
-        // to set "sameSite:none", "secure:true" must be set
-      });
+      res.cookie("refreshToken", refreshToken, setCookieOption());
 
       return res.json({ accessToken, userInfo });
     })
