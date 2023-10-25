@@ -13,8 +13,7 @@ export function generateAccessToken(changedUserInfo: UserInfoInDB) {
     algorithm: "HS256",
     expiresIn: jwtExpirySeconds,
   });
-  console.log("access token: ", accessToken);
-  console.log("changedUserInfo: ", changedUserInfo);
+
   return accessToken;
 }
 export function generateRefreshToken(changedUserInfo: UserInfoInDB) {
@@ -23,7 +22,7 @@ export function generateRefreshToken(changedUserInfo: UserInfoInDB) {
     algorithm: "HS256",
     expiresIn: jwtExpirySeconds,
   });
-  console.log("refresh token: ", refreshToken);
+
   return refreshToken;
 }
 export function generateToken({ userInfo }: { userInfo: UserInfo }) {
@@ -35,8 +34,7 @@ export function generateToken({ userInfo }: { userInfo: UserInfo }) {
     userBGSrc: userInfo.userBG.src,
     userBGPosition: userInfo.userBG.position,
   };
-  console.log("in generateToken function : userInfo:", userInfo);
-  console.log("in generateToken function : changedUserInfo:", changedUserInfo);
+
   const accessToken = generateAccessToken(changedUserInfo);
   const refreshToken = generateRefreshToken(changedUserInfo);
 

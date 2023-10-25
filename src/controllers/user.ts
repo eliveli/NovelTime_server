@@ -147,25 +147,60 @@ export const refreshTokenController: RequestHandler = (async (req, res) => {
     // or if the signature does not match
     tokenDecoded = jwt.verify(refreshToken as string, privateKey) as TokenDecoded;
   } catch (e) {
+    console.log("error : ", e);
+
+    // when user enters the website and tries to login automatically
+    //  with refresh token that expired in cookie
     if (e instanceof jwt.TokenExpiredError) {
-      const tokenExpired = jwt.verify(refreshToken as string, privateKey) as TokenDecoded;
-      try {
-        await deleteRefreshTokenDB(tokenExpired.userId);
-
-        res.clearCookie("refreshToken", { path: "/api/user/refreshToken" });
-        res.removeHeader("authorization");
-
-        return res.status(419).json({ message: "token was expired" });
-      } catch (error) {
-        return res.status(400).end({ message: "error occurred while removing expired token" });
-      }
+      // user need to connect to oauth website to login again
+      return res.status(419).json({ message: "token was expired" });
     }
+
     if (e instanceof jwt.JsonWebTokenError) {
       return res.status(401).json({ message: "token is invalid or malformed" });
     }
 
-    console.log("error : ", e);
     return res.status(400).end({ message: "failed to verify token" });
+  }
+
+  const userInfo = {
+    userId: tokenDecoded.userId,
+    userName: tokenDecoded.userName,
+    userImg: {
+      src: tokenDecoded.userImgSrc,
+      position: tokenDecoded.userImgPosition,
+    },
+    userBG: {
+      src: tokenDecoded.userBGSrc,
+      position: tokenDecoded.userBGPosition,
+    },
+  };
+
+  // Renew refresh token //
+  //   when refresh token is going to expire soon
+  //      + case1. user tries to login with refresh token in cookie
+  //      + case2. user already logged in and tries to renew access token
+  //  If refresh token is not renewed,
+  //     login user may lose the current work (such as a post the user is writing).
+  //     token should renew in advance because it can't renew after it expired.
+  //  If the user enters website and tries to login with token that expired,
+  //     the user can't do. he/she needs to connect to oauth website to login (see the code above)
+  try {
+    const timeToCompare = (Date.now().valueOf() + 30 * 60 * 1000) / 1000;
+    // = (current time + 30 mins) / (converter from milliseconds to seconds)
+    //    note. 30 mins is the time interval to renew access token
+    if (tokenDecoded.exp <= timeToCompare) {
+      const { accessToken, refreshToken: newRefreshToken } = generateToken({ userInfo });
+
+      await setRefreshTokenDB(userInfo.userId, newRefreshToken);
+
+      res.cookie("refreshToken", newRefreshToken, setCookieOption());
+
+      return res.json({ accessToken, userInfo });
+    }
+  } catch (error) {
+    console.log("error occurred while setting tokens : ", error);
+    return res.status(500).end({ message: "error occurred while renewing tokens" });
   }
 
   // Make sure that refresh token is the one in DB //
@@ -188,19 +223,7 @@ export const refreshTokenController: RequestHandler = (async (req, res) => {
 
   // Generate new access token //
   try {
-    const userInfoToClient = {
-      userId: tokenDecoded.userId,
-      userName: tokenDecoded.userName,
-      userImg: {
-        src: tokenDecoded.userImgSrc,
-        position: tokenDecoded.userImgPosition,
-      },
-      userBG: {
-        src: tokenDecoded.userBGSrc,
-        position: tokenDecoded.userBGPosition,
-      },
-    };
-    const userInfoParams = {
+    const userToGenerateToken = {
       userId: tokenDecoded.userId,
       userName: tokenDecoded.userName,
       userImgSrc: tokenDecoded.userImgSrc,
@@ -209,9 +232,9 @@ export const refreshTokenController: RequestHandler = (async (req, res) => {
       userBGPosition: tokenDecoded.userBGPosition,
     };
 
-    const accessToken = generateAccessToken(userInfoParams);
+    const accessToken = generateAccessToken(userToGenerateToken);
 
-    return res.json({ accessToken, userInfo: userInfoToClient });
+    return res.json({ accessToken, userInfo });
   } catch (err) {
     console.log("error:", err);
     return res.status(500).json("failed to generate new access token");
