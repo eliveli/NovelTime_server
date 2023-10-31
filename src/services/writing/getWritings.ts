@@ -27,6 +27,9 @@ function matchSortType(sortBy: string) {
 }
 
 function setQueryPartForNovelGenre(novelGenre: string) {
+  // "all" or "extra" or specific genre
+  // - specific genre : "패러디", "로판", "로맨스", "현판", "판타지", "무협", "라이트노벨", "BL", "미스터리"
+
   const queryPart = "AND novelGenre";
 
   if (novelGenre === "all") return `${queryPart} = novelGenre`;

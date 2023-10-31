@@ -29,7 +29,12 @@ export async function getWritingsFromDB(contentType: "T" | "R") {
   )) as Writing[];
 }
 
-async function composeTalkWithNovel(userName: string, userImg: UserImg, writing: Writing) {
+async function composeTalkWithNovel(
+  userName: string,
+  userImg: UserImg,
+  writing: Writing,
+  searchType?: string,
+) {
   const novel = await getNovelTitle(writing.novelId);
 
   if (!novel) return;
@@ -42,11 +47,17 @@ async function composeTalkWithNovel(userName: string, userImg: UserImg, writing:
     likeNO: writing.likeNO,
     commentNO: writing.commentNO,
     talkTitle: writing.writingTitle,
+    talkDesc: searchType === "writingDesc" ? writing.writingDesc : undefined,
     talkImg: writing.writingImg,
     novelTitle: novel.novelTitle,
   };
 }
-async function composeRecommendWithNovel(userName: string, userImg: UserImg, writing: Writing) {
+async function composeRecommendWithNovel(
+  userName: string,
+  userImg: UserImg,
+  writing: Writing,
+  searchType?: string,
+) {
   const novel = await getNovelInfo(writing.novelId);
 
   if (!novel) return;
@@ -59,6 +70,7 @@ async function composeRecommendWithNovel(userName: string, userImg: UserImg, wri
       createDate: writing.createDate,
       likeNO: writing.likeNO,
       recommendTitle: writing.writingTitle,
+      recommendDesc: searchType === "writingDesc" ? writing.writingDesc : undefined,
     },
     novel: {
       novelImg: novel.novelImg,
@@ -70,7 +82,11 @@ async function composeRecommendWithNovel(userName: string, userImg: UserImg, wri
   };
 }
 
-export async function composeWritings(contentType: "T" | "R", writings: Writing[]) {
+export async function composeWritings(
+  contentType: "T" | "R",
+  writings: Writing[],
+  searchType?: string,
+) {
   if (writings.length === 0) return;
 
   const writingsReturned = [];
@@ -82,7 +98,12 @@ export async function composeWritings(contentType: "T" | "R", writings: Writing[
     if (!user) continue;
 
     if (contentType === "T") {
-      const writingSet = await composeTalkWithNovel(user.userName, user.userImg, writing);
+      const writingSet = await composeTalkWithNovel(
+        user.userName,
+        user.userImg,
+        writing,
+        searchType,
+      );
 
       if (!writingSet) continue;
 
@@ -90,7 +111,12 @@ export async function composeWritings(contentType: "T" | "R", writings: Writing[
     }
 
     if (contentType === "R") {
-      const writingSet = await composeRecommendWithNovel(user.userName, user.userImg, writing);
+      const writingSet = await composeRecommendWithNovel(
+        user.userName,
+        user.userImg,
+        writing,
+        searchType,
+      );
 
       if (!writingSet) continue;
 

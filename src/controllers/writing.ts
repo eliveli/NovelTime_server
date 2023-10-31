@@ -9,6 +9,8 @@ import deleteWriting from "../services/writing/deleteWriting";
 
 dotenv.config();
 
+export type SearchType = "writingTitle" | "writingDesc" | "userName" | "novelTitle" | "no";
+
 export const writingListController: RequestHandler = (async (req, res) => {
   try {
     const { writingType, novelGenre, searchType, searchWord, sortBy, pageNo } = req.params;
@@ -26,14 +28,11 @@ export const writingListController: RequestHandler = (async (req, res) => {
     const data = await getWritings(
       writingType as "T" | "R",
       novelGenre,
-      // ㄴ "all" or "extra"
-      // ㄴ or specific genre : "패러디", "로판", "로맨스", "현판", "판타지", "무협", "라이트노벨", "BL", "미스터리"
       {
-        searchType: searchType as "writingTitle" | "writingDesc" | "userName" | "novelTitle" | "no",
+        searchType: searchType as SearchType,
         searchWord,
       },
       sortBy,
-      // ㄴ"newDate" or "oldDate" or "manyComments" or "fewComments" or "manyLikes" or "fewLikes"
       Number(pageNo),
     );
 
@@ -42,7 +41,7 @@ export const writingListController: RequestHandler = (async (req, res) => {
       return;
     }
 
-    const writings = await composeWritings(writingType as "T" | "R", data.writings);
+    const writings = await composeWritings(writingType as "T" | "R", data.writings, searchType);
 
     if (writingType === "T") {
       res.json({
