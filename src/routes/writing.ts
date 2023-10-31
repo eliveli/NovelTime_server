@@ -12,7 +12,7 @@ import { toggleLikeController } from "../controllers/userContent";
 const router = express.Router();
 
 router.get(
-  "/:writingType/:novelGenre/:searchType/:searchWord/:sortBy/:pageNo",
+  "/:writingType/:novelGenre/:searchType/:isSearchWord/:searchWord/:sortBy/:pageNo",
   writingListController,
 );
 

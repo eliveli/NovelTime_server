@@ -9,27 +9,29 @@ import deleteWriting from "../services/writing/deleteWriting";
 
 dotenv.config();
 
-export type SearchType = "writingTitle" | "writingDesc" | "userName" | "novelTitle" | "no";
+type SearchType = "writingTitle" | "writingDesc" | "userName" | "novelTitle";
 
 export const writingListController: RequestHandler = (async (req, res) => {
   try {
-    const { writingType, novelGenre, searchType, searchWord, sortBy, pageNo } = req.params;
+    const { writingType, novelGenre, searchType, isSearchWord, searchWord, sortBy, pageNo } =
+      req.params;
 
     if (!["T", "R"].includes(writingType)) throw Error;
 
-    if (!["writingTitle", "writingDesc", "novelTitle", "userName", "no"].includes(searchType)) {
+    if (!["true", "false"].includes(isSearchWord)) throw Error;
+
+    if (!["writingTitle", "writingDesc", "novelTitle", "userName"].includes(searchType)) {
       throw Error;
     }
 
-    // params must not be an empty string
-    // . if searchType is "no" then do not search
-    //  ㄴif searchWord was not set then searchType should be "no" in front side work
+    // if isSearchWord is "false" then do not search
 
     const data = await getWritings(
       writingType as "T" | "R",
       novelGenre,
       {
         searchType: searchType as SearchType,
+        isSearchWord,
         searchWord,
       },
       sortBy,

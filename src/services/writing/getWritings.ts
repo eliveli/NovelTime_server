@@ -59,13 +59,14 @@ export default async function getWritings(
   writingType: "T" | "R",
   novelGenre: string,
   search: {
-    searchType: "writingTitle" | "writingDesc" | "userName" | "novelTitle" | "no";
+    searchType: "writingTitle" | "writingDesc" | "userName" | "novelTitle";
+    isSearchWord: string; // "true" | "false"
     searchWord: string;
   },
   sortBy: string, // 작성일 up/down, 댓글 up/down, 좋아요 up/down
   pageNo: number,
 ) {
-  const { searchType, searchWord } = search;
+  const { searchType, isSearchWord, searchWord } = search;
 
   const queryPartForNovelGenre = setQueryPartForNovelGenre(novelGenre);
 
@@ -73,6 +74,27 @@ export default async function getWritings(
   const queryPartForPageLimit = `LIMIT ${(pageNo - 1) * writingNoPerPage}, ${writingNoPerPage}`;
 
   const sortType = matchSortType(sortBy);
+
+  if (isSearchWord === "false") {
+    const writings = (await db(
+      `SELECT * FROM writing WHERE talkOrRecommend = (?) ${queryPartForNovelGenre} ORDER BY ${sortType} ${queryPartForPageLimit}`,
+      [writingType],
+      "all",
+    )) as Writing[];
+
+    if (writings.length === 0) return;
+
+    const { totalNoAsBigInt } = (await db(
+      `SELECT count(*) AS totalNoAsBigInt FROM writing WHERE talkOrRecommend = (?) ${queryPartForNovelGenre}`,
+      [writingType],
+      "first",
+    )) as { totalNoAsBigInt: BigInt };
+
+    const lastPageNo = getLastPageNo(totalNoAsBigInt, writingNoPerPage);
+    if (lastPageNo === undefined) return;
+
+    return { writings, lastPageNo };
+  }
 
   if (searchType === "userName") {
     const userIDs = await getUserIdBySimilarUserName(searchWord);
@@ -148,27 +170,6 @@ export default async function getWritings(
     const { totalNoAsBigInt } = (await db(
       `SELECT count(*) AS totalNoAsBigInt FROM writing WHERE ${queryPartForNovelIDs} AND talkOrRecommend = (?) ${queryPartForNovelGenre}`,
       [...novelIDs, writingType],
-      "first",
-    )) as { totalNoAsBigInt: BigInt };
-
-    const lastPageNo = getLastPageNo(totalNoAsBigInt, writingNoPerPage);
-    if (lastPageNo === undefined) return;
-
-    return { writings, lastPageNo };
-  }
-
-  if (searchType === "no") {
-    const writings = (await db(
-      `SELECT * FROM writing WHERE talkOrRecommend = (?) ${queryPartForNovelGenre} ORDER BY ${sortType} ${queryPartForPageLimit}`,
-      [writingType],
-      "all",
-    )) as Writing[];
-
-    if (writings.length === 0) return;
-
-    const { totalNoAsBigInt } = (await db(
-      `SELECT count(*) AS totalNoAsBigInt FROM writing WHERE talkOrRecommend = (?) ${queryPartForNovelGenre}`,
-      [writingType],
       "first",
     )) as { totalNoAsBigInt: BigInt };
 
