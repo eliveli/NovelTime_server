@@ -2,11 +2,12 @@ import db from "../utils/db";
 import { Comment } from "../utils/types";
 
 async function getTalkTitle(talkId: string) {
-  const { talkTitle } = (await db(
+  const { writingTitle: talkTitle } = (await db(
     "SELECT writingTitle FROM writing WHERE writingId = (?)",
     talkId,
     "first",
-  )) as { talkTitle: string };
+  )) as { writingTitle: string };
+
   return talkTitle;
 }
 

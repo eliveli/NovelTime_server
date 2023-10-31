@@ -75,7 +75,7 @@ export async function getWriting(writingType: "T" | "R", writingId: string, logi
     "first",
   )) as Writing;
 
-  if (!writing.userId) return;
+  if (!writing?.userId) return;
   const user = await getUserNameAndImg(writing.userId);
   if (!user) return;
 
