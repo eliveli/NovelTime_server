@@ -1,4 +1,5 @@
 import db from "../utils/db";
+import { Comment } from "../utils/types";
 
 async function checkIfItHasReComment(commentId: string) {
   const query = "SELECT * FROM comment WHERE parentCommentId = (?)";
@@ -60,6 +61,55 @@ async function decreaseCommentNo(writingId: string) {
   await db(query, [writingId]);
 }
 
+async function getParent(commentId: string) {
+  const query = "SELECT parentCommentId FROM comment WHERE commentId = (?)";
+
+  const { parentCommentId } = (await db(query, [commentId], "first")) as {
+    parentCommentId: string;
+  };
+
+  return parentCommentId;
+}
+
+// check if the parent comment is regarded as deleted
+async function checkIfItIsRegardedAsDeleted(parentCommentId: string) {
+  const query = "SELECT * FROM comment WHERE commentId = (?) and isDeleted = 1";
+
+  const commentFromDB = (await db(query, [parentCommentId], "all")) as Comment[];
+
+  if (commentFromDB.length) return true;
+  return false;
+}
+
+// loop until a parent comment doesn't exist that is regarded as deleted
+async function keepOnDeletingParentComment(commentId: string) {
+  if (commentId) {
+    const isRegardedAsDeleted = await checkIfItIsRegardedAsDeleted(commentId);
+
+    if (isRegardedAsDeleted) {
+      const hasReComment = await checkIfItHasReComment(commentId);
+
+      if (!hasReComment) {
+        const rootCommentId = await getFirstAncestorCommentId(commentId);
+
+        if (rootCommentId) {
+          await decreaseReCommentNoForRootComment(rootCommentId);
+        }
+
+        const writingId = await getWritingId(commentId);
+
+        await decreaseCommentNo(writingId);
+
+        const parentCommentId = await getParent(commentId);
+
+        await deleteCommentWithCommentId(commentId);
+
+        await keepOnDeletingParentComment(parentCommentId);
+      }
+    }
+  }
+}
+
 export default async function deleteComment(commentId: string) {
   const hasReComment = await checkIfItHasReComment(commentId);
 
@@ -78,6 +128,11 @@ export default async function deleteComment(commentId: string) {
 
     await decreaseCommentNo(writingId);
 
+    const parentCommentId = await getParent(commentId);
+
     await deleteCommentWithCommentId(commentId);
+
+    // Delete parent comment if it is regarded as deleted
+    await keepOnDeletingParentComment(parentCommentId);
   }
 }

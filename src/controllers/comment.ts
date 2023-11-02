@@ -127,6 +127,7 @@ export const deleteCommentController: RequestHandler = (async (req, res) => {
 
     res.json("a comment was deleted");
   } catch (error: any) {
+    console.log("error:", error);
     res.status(500).json("failed to delete a comment");
   }
 }) as RequestHandler;
